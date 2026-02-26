@@ -1,0 +1,232 @@
+body {
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+.navbar {
+    display: flex;
+    justify-content: space-between; /* Garante que os itens estejam nos extremos e no centro */
+    align-items: center; /* Centraliza verticalmente os itens */
+    background-color: #0F00CC; /* Cor de fundo do navbar */
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.menu-icon, .logo-right, .logo-central {
+    flex-grow: 0; /* Não permite que os itens cresçam */
+    flex-shrink: 0; /* Não permite que os itens encolham */
+}
+
+.menu-icon, .logo-right {
+    margin: 0; /* Remove margens para que fiquem nos extremos */
+}
+
+.logo-central {
+    flex-grow: 1; /* Permite que a logo central cresça e ocupe todo o espaço restante */
+    text-align: center; /* Centraliza a logo no espaço disponível */
+}
+
+.material-symbols-outlined {
+    font-size: 24px; /* Ajuste o tamanho do ícone conforme necessário */
+}
+
+.logo-central img, .logo-right img {
+    height: 4vh; /* Ajuste a altura conforme necessário */
+}
+
+
+
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 50px;
+    margin: 40px;
+}
+
+.product-container {
+    text-align: center;
+}
+
+.product-item {
+    transition: transform 0.3s ease;
+}
+
+.product-item img {
+    width: 100%;
+    height: auto;
+}
+
+p {
+    font-size: 18px;
+    color: #5e5e5e;
+    font-weight: bold;
+    font-family: 'GellixMedium';
+}
+
+.product-item:hover {
+    transform: translateY(-10px);
+}
+
+.footer {
+    position: relative;
+    width: 100%;
+    margin-bottom: -10px;
+    background-color: #0f00cc;
+}
+
+
+.resgatar {
+    width: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 45px;
+    background-color: black;
+    color: white;
+    display: block;
+    margin: 0 auto;
+    border: none;
+    font-family: 'GellixRegular';
+    font-size: 17px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.preview-container {
+    position: relative;
+    padding-bottom: 100%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    margin: 20px auto;
+    width: 90%;
+    max-width: 800px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+.preview-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.ad1 {
+    display: block;
+    margin: 0 auto;
+    background-color: rgb(226, 226, 226);
+    width: 90%;
+    border-radius: 15px;
+}
+
+.ad2 {
+    display: block;
+    margin: 0 auto;
+    background-color: rgb(226, 226, 226);
+    width: 90%;
+    border-radius: 15px;
+    height: 60vh;
+}
+
+
+
+
+
+#loadingGif, #loadingGif2 {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.spinner {
+    border: 6px solid rgba(0, 0, 0, 0.1);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border-left-color: #007bff;
+    animation: spin 1s ease infinite;
+    display: flex;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#custom-popup {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+#popup-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 80%; /* Ajustar a largura do pop-up */
+    max-width: 400px; /* Limitar a largura máxima em dispositivos maiores */
+}
+
+#popup-content h2 {
+    color: red;
+    margin-bottom: 20px;
+}
+
+#popup-content p {
+    margin-bottom: 20px;
+}
+
+#popup-content button {
+    display: block;
+    margin: 20px auto 0;
+    padding: 15px 30px; /* Aumentar o tamanho do botão */
+    font-size: 16px; /* Aumentar o tamanho da fonte */
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#popup-content button:hover {
+    background-color: darkgreen;
+}

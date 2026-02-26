@@ -1,0 +1,229 @@
+<?php
+/* ============================================
+   Create Mangofy PIX Payment
+   POST /api/payment.php
+   Body: { customer, items, amount, metadata }
+   ============================================ */
+
+require_once __DIR__ . '/config.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'Method not allowed']);
+    exit;
+}
+
+$input = json_decode(file_get_contents('php://input'), true);
+
+if (!$input || !isset($input['customer']) || !isset($input['amount'])) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Missing required fields: customer, amount']);
+    exit;
+}
+
+$customer = $input['customer'];
+$amount = intval($input['amount']); // in cents
+$items = isset($input['items']) ? $input['items'] : [];
+$metadata = isset($input['metadata']) ? $input['metadata'] : [];
+$trackingParams = isset($input['trackingParameters']) ? $input['trackingParameters'] : [];
+
+// Generate unique external code
+$externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+
+// Get client IP
+$clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+// Build Mangofy items
+$mangofyItems = [];
+foreach ($items as $item) {
+    $mangofyItems[] = [
+        'code' => 'ITEM-' . $externalCode . '-' . ($item['id'] ?? 'item'),
+        'amount' => intval($item['quantity'] ?? 1),
+        'price' => intval($item['price'] ?? $amount)
+    ];
+}
+if (empty($mangofyItems)) {
+    $mangofyItems[] = [
+        'code' => 'ITEM-' . $externalCode,
+        'amount' => 1,
+        'price' => $amount
+    ];
+}
+
+// Build Mangofy payment payload
+$payload = [
+    'store_code' => MANGOFY_STORE_CODE,
+    'external_code' => $externalCode,
+    'payment_method' => 'pix',
+    'payment_amount' => $amount,
+    'payment_format' => 'regular',
+    'installments' => 1,
+    'pix' => [
+        'expires_in_days' => 1
+    ],
+    'postback_url' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') .
+                       '://' . $_SERVER['HTTP_HOST'] . '/api/webhook.php',
+    'items' => $mangofyItems,
+    'customer' => [
+        'email' => $customer['email'] ?? '',
+        'name' => strtoupper($customer['name'] ?? ''),
+        'document' => preg_replace('/\D/', '', $customer['document'] ?? ''),
+        'phone' => preg_replace('/\D/', '', $customer['phone'] ?? ''),
+        'ip' => $clientIp
+    ],
+    'metadata' => array_merge($metadata, [
+        'session_id' => $externalCode
+    ])
+];
+
+// Call Mangofy API
+$response = apiPost(
+    MANGOFY_API_URL . '/payment',
+    [
+        'Content-Type: application/json',
+        'Accept: application/json',
+        'Authorization: ' . MANGOFY_AUTHORIZATION,
+        'Store-Code: ' . MANGOFY_STORE_CODE
+    ],
+    $payload
+);
+
+if ($response['status'] !== 200 && $response['status'] !== 201) {
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'Mangofy payment creation failed',
+        'details' => $response['body'] ?? $response['raw']
+    ]);
+    exit;
+}
+
+$mangofyData = $response['body'];
+$paymentCode = $mangofyData['payment_code'] ?? null;
+
+if (!$paymentCode) {
+    http_response_code(500);
+    echo json_encode(['error' => 'No payment_code returned from Mangofy']);
+    exit;
+}
+
+// Store payment locally
+$payments = getPayments();
+$createdAt = date('Y-m-d H:i:s');
+$payments[$paymentCode] = [
+    'payment_code' => $paymentCode,
+    'external_code' => $externalCode,
+    'status' => 'pending',
+    'amount' => $amount,
+    'customer' => $customer,
+    'items' => $items,
+    'tracking' => $trackingParams,
+    'created_at' => $createdAt,
+    'paid_at' => null
+];
+savePayments($payments);
+
+// Send UTMify waiting_payment event (non-blocking)
+$utmifyProducts = [];
+foreach ($items as $item) {
+    $utmifyProducts[] = [
+        'id' => $paymentCode,
+        'name' => $item['name'] ?? 'Produto',
+        'planId' => $item['id'] ?? 'item',
+        'planName' => $item['name'] ?? 'Produto',
+        'quantity' => intval($item['quantity'] ?? 1),
+        'priceInCents' => intval($item['price'] ?? $amount)
+    ];
+}
+if (empty($utmifyProducts)) {
+    $utmifyProducts[] = [
+        'id' => $paymentCode,
+        'name' => 'Pedido',
+        'planId' => 'order',
+        'planName' => 'Pedido',
+        'quantity' => 1,
+        'priceInCents' => $amount
+    ];
+}
+
+$utmifyPayload = [
+    'orderId' => $paymentCode,
+    'platform' => 'MercadoLivre25Anos',
+    'paymentMethod' => 'pix',
+    'status' => 'waiting_payment',
+    'createdAt' => $createdAt,
+    'approvedDate' => null,
+    'refundedAt' => null,
+    'customer' => [
+        'name' => strtoupper($customer['name'] ?? ''),
+        'email' => $customer['email'] ?? '',
+        'phone' => preg_replace('/\D/', '', $customer['phone'] ?? ''),
+        'document' => preg_replace('/\D/', '', $customer['document'] ?? ''),
+        'country' => 'BR',
+        'ip' => $clientIp
+    ],
+    'products' => $utmifyProducts,
+    'trackingParameters' => [
+        'src' => $trackingParams['src'] ?? null,
+        'sck' => $trackingParams['sck'] ?? null,
+        'utm_source' => $trackingParams['utm_source'] ?? null,
+        'utm_campaign' => $trackingParams['utm_campaign'] ?? null,
+        'utm_medium' => $trackingParams['utm_medium'] ?? null,
+        'utm_content' => $trackingParams['utm_content'] ?? null,
+        'utm_term' => $trackingParams['utm_term'] ?? null,
+        'fbclid' => $trackingParams['fbclid'] ?? null,
+        'fbp' => $trackingParams['fbp'] ?? null
+    ],
+    'commission' => [
+        'totalPriceInCents' => $amount,
+        'gatewayFeeInCents' => 0,
+        'userCommissionInCents' => $amount
+    ],
+    'isTest' => false
+];
+
+apiPost(
+    UTMIFY_API_URL,
+    [
+        'Content-Type: application/json',
+        'x-api-token: ' . UTMIFY_API_TOKEN
+    ],
+    $utmifyPayload
+);
+
+// Send Facebook CAPI AddToCart event (server-side)
+$fbAddToCart = [
+    'data' => [
+        [
+            'event_name' => 'AddToCart',
+            'event_time' => time(),
+            'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/',
+            'action_source' => 'website',
+            'user_data' => array_filter([
+                'em' => [hash('sha256', strtolower(trim($customer['email'] ?? '')))],
+                'ph' => [hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? ''))],
+                'client_ip_address' => $clientIp,
+                'fbc' => $trackingParams['fbc'] ?? null,
+                'fbp' => $trackingParams['fbp'] ?? null
+            ], function($v) { return $v !== null; }),
+            'custom_data' => [
+                'currency' => 'BRL',
+                'value' => $amount / 100,
+                'content_ids' => array_map(function($item) { return $item['id'] ?? 'item'; }, $items),
+                'content_type' => 'product'
+            ]
+        ]
+    ]
+];
+
+$fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
+apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
+
+// Return success with QR code data
+echo json_encode([
+    'success' => true,
+    'payment_code' => $paymentCode,
+    'external_code' => $externalCode,
+    'pix_qrcode_text' => $mangofyData['pix']['pix_qrcode_text'] ?? '',
+    'amount' => $amount,
+    'expires_at' => $mangofyData['expires_at'] ?? ''
+]);

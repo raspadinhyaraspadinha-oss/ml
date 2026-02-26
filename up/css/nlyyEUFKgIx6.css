@@ -1,0 +1,556 @@
+body {
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  .navbar {
+    display: flex;
+    justify-content: space-between; /* Garante que os itens estejam nos extremos e no centro */
+    align-items: center; /* Centraliza verticalmente os itens */
+    background-color: #ffffff; /* Cor de fundo do navbar */
+    padding-left: 10px;
+}
+
+.menu-icon, .logo-right, .logo-central {
+    flex-grow: 0; /* Não permite que os itens cresçam */
+    flex-shrink: 0; /* Não permite que os itens encolham */
+}
+
+.menu-icon, .logo-right {
+    margin: 0; /* Remove margens para que fiquem nos extremos */
+}
+
+.logo-central {
+    flex-grow: 1; /* Permite que a logo central cresça e ocupe todo o espaço restante */
+    text-align: center; /* Centraliza a logo no espaço disponível */
+}
+
+.material-symbols-outlined {
+    font-size: 24px; /* Ajuste o tamanho do ícone conforme necessário */
+}
+
+.material-symbols-outlined2 {
+    font-size: 30px; /* Ajuste o tamanho do ícone conforme necessário */
+}
+
+.logo-central img, .logo-right img {
+    height: 4vh; /* Ajuste a altura conforme necessário */
+}
+
+
+
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+
+.bracelet-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    padding: 5px;
+    padding-top: 20px;
+}
+
+.bracelet-item {
+    width: 44%;
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    position: relative;
+    border-radius: 10px;
+}
+
+.bracelet-item img {
+    width: 100%;
+    height: auto;
+}
+
+.bracelet-item p {
+    margin: 10px 0;
+    color: #333;
+}
+
+.price-tag {
+    background-color: #FF69B4;
+    color: white;
+    padding: 5px 10px;
+    position: absolute;
+    bottom: -10px;
+    right: 10px;
+    border-radius: 50%;
+    font-size: 16px;
+}
+
+.bracelet-item:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+
+.footer {
+    position: relative;
+    width: 100%;
+    margin-bottom: -15px;
+    background-color: #E8F1FF;
+    padding-bottom: 2px;
+}
+
+.dinheiro2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-left: 5%;
+    margin-right: 5%; /* Adicione margem à direita para que o ">" não fique colado na borda */
+    margin-bottom: 15px;
+    font-family: 'GellixMedium';
+}
+
+.old {
+    font-family: 'GellixMedium';
+    font-size: 18px;
+    color: #229617;
+    background-color: #c5ffc8;
+    border-radius: 15px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+}
+
+
+
+.new {
+    font-family: 'GellixSemiBold';
+    padding: 3px 10px 3px 10px;
+    border-radius: 15px;
+    text-align: center;
+    font-size: 20px;
+}
+
+.nome {
+    font-family: 'GellixMedium';
+    text-align: center;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.title {
+    font-family: 'GellixMedium';
+    text-align: center;
+    font-size: 24px;
+    margin-left: 5%;
+    margin-right: 5%;
+    color: rgb(37, 37, 37);
+}
+
+.title3 {
+    font-family: 'GellixMedium';
+    text-align: center;
+    font-size: 32px;
+    margin-left: 5%;
+    margin-right: 5%;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    color: #0D3BDD;
+}
+
+.title4 {
+    font-family: 'GellixRegular';
+    text-align: center;
+    font-size: 16px;
+    margin-left: 5%;
+    margin-right: 5%;
+    margin-bottom: 15px;
+    margin-bottom: -10px;
+    color: #ff7676;
+    text-decoration: line-through;
+}
+
+.subtitle {
+    text-align: center;
+    font-size: 18px;
+    margin-left: 2%;
+    margin-bottom: 10px;
+    color: rgb(37, 37, 37);
+    font-family: 'GellixRegular';
+}
+
+.code {
+    font-family: 'GellixRegular';
+    text-align: center;
+    font-size: 14px;
+    margin-left: 10%;
+    margin-right: 10%;
+    color: rgb(128, 128, 128);
+    margin-top: -15px;
+}
+
+.sizes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around; /* Centraliza os botões e mantém espaço entre eles */
+    max-width: 500px; /* Largura máxima do contêiner para alinhar os botões corretamente */
+    margin: auto; /* Centraliza o contêiner na página */
+}
+
+.size-btn {
+    padding: 10px 10px; /* Ajusta o padding para melhorar a apresentação */
+    margin: 5px; /* Mantém uma margem entre os botões */
+    background-color: #ffffff;
+    border: 2px solid #ddd;
+    color: #171717;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    border-radius: 15px;
+    flex-basis: calc(20% - 10px); /* Calcula a largura de cada botão menos a margem */
+    text-align: center; /* Centraliza o texto dentro do botão */
+    font-family: 'GellixMedium';
+}
+
+.size-btn:hover, .size-btn.active {
+    background-color: #fff8f4;
+    border-color: #FEEDE4;
+}
+
+.resgatar {
+    width: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 45px;
+    background-color: black;
+    color: white;
+    display: block;
+    margin: 0 auto;
+    border: none;
+    font-family: 'GellixRegular';
+    font-size: 17px;
+    margin-top: 30px;
+}
+
+.divisoria {
+    width: 90%;
+    left: 2.5%;
+    right: 2.5%;
+    display: flex;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.divisoria2 {
+    width: 90%;
+    border-top: 1px solid rgb(85, 85, 85);
+    left: 2.5%;
+    right: 2.5%;
+    display: flex;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+
+.text2 {
+    font-family: 'GellixRegular';
+    color: rgb(137, 137, 137);
+    margin-left: 5%;
+    margin-right: 5%;
+    border: 1px solid rgb(160, 160, 160);
+    padding: 10px;
+    border-radius: 0px 10px 10px 10px;
+    font-size: 15px;
+}
+
+.title2 {
+    font-family: 'GellixRegular';
+    color: white;
+    font-size: 16px;
+    background-color: rgb(188, 188, 188);
+    padding: 10px;
+    border-radius: 10px 10px 0px 0px;
+    margin-bottom: -15px;
+}
+
+
+
+.button-container {
+    width: 90%;
+    max-width: 600px;
+    display: flex;
+    margin: 0 auto;
+}
+
+.styled-button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: transparent;
+    border: none;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+}
+
+.styled-button2 {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #0ddd4b;
+    border: none;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    animation: pulse 2s infinite;
+
+}
+
+.styled-button3 {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #10c746;
+    border: none;
+    border-radius: 15px;
+    color: white;
+    cursor: pointer;
+    animation: pulse 2s infinite;
+
+}
+
+.styled-button4 {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #d6cece;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    animation: pulse 4s infinite;
+
+}
+
+
+
+.button-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.button-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    font-family: 'GellixSemiBold';
+    color: #3b3b3b;
+}
+
+.button-title2 {
+    font-size: 1.1rem;
+    font-weight: bold;
+    font-family: 'GellixSemiBold';
+    color: white;
+}
+.button-title3 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    font-family: 'GellixSemiBold';
+    color: white;
+}
+.button-title4 {
+    font-size: 1rem;
+    font-weight: bold;
+    font-family: 'GellixSemiBold';
+    color: black; /* Código de cor para rosa */
+}
+
+@keyframes pulse {
+    0% {
+      transform: scale(0.95);
+    }
+    50% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(0.95);
+    }
+  }
+
+.button-subtitle {
+    font-size: 1rem;
+    margin-top: 5px;
+    font-family: 'GellixRegular';
+}
+
+.button-icon {
+    font-size: 1.5rem;
+}
+
+
+.main-image {
+    width: 100%;
+    display: block;
+}
+
+.desc-image {
+    width: 80%;
+    border-radius: 10px;
+    margin: 0 auto;
+    display: flex;
+    margin-top: 20px;
+}
+
+.pag-image {
+    width: 90%;
+    margin: 0 auto;
+    display: flex;
+}
+
+.pag-image2 {
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+}
+
+.thumbnails {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.thumbnails img {
+    width: 20%;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.thumbnails img:hover {
+    opacity: 1;
+}
+
+.sizes {
+    list-style: none;
+    padding: 0;
+}
+
+.sizes li {
+    display: inline-block;
+    margin-right: 10px;
+    background: #ddd;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+
+
+
+.entrega-container {
+    width: 90%;
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+}
+
+.entrega-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #0F00CC;
+    border-radius: 15px 15px 0px 0px;
+}
+
+.entrega-content {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+}
+
+.icon-container {
+    background-color: #0F00CC;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon-container2 {
+    background-color: #0dbe00;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    color: white;
+}
+
+.icon-container3 {
+    background-color: #ffc300;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    color: white;
+}
+
+.icon-container .material-symbols-outlined {
+    color: #fff;
+    font-size: 24px;
+}
+
+.text-container {
+    flex: 1;
+}
+
+.entrega-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.entrega-title2 {
+    font-size: 16px;
+    font-weight: bold;
+    color: rgb(255, 0, 0);
+    background-color: rgb(255, 222, 222);
+    padding: 6px 15px 6px 15px;
+    border-radius: 15px;
+}
+
+.entrega-description {
+    font-size: 14px;
+    color: #666;
+}
+
+.price {
+    font-weight: bold;
+    color: #333;
+}
+
+ .invoice-icon::before {
+    content: "📃";
+    font-size: 24px; /* Ajuste o tamanho conforme necessário */
+    margin-right: 5px;
+}

@@ -1,0 +1,10 @@
+# Allow PHP files to be accessed
+<FilesMatch "\.php$">
+    Allow from all
+</FilesMatch>
+
+# Block access to data directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^data/ - [F,L]
+</IfModule>
