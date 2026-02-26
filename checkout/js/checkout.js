@@ -577,14 +577,18 @@
   /* ---- SOCIAL PROOF ---- */
   function initSocialProof() {
     var names = [
-      'Maria S. de São Paulo',
-      'João P. de Recife',
-      'Ana L. de Curitiba',
-      'Carlos M. de BH',
-      'Fernanda R. do Rio',
-      'Pedro A. de Salvador',
-      'Juliana C. de Brasília',
-      'Bruno F. de Fortaleza'
+      'Carlos H. de São Paulo',
+      'Felipe A. de Recife',
+      'Isabela M. de Curitiba',
+      'Ricardo M. de BH',
+      'Tatiane F. do Rio',
+      'Daniel V. de Salvador',
+      'Letícia N. de Brasília',
+      'Lucas F. de Fortaleza',
+      'Vanessa B. de Manaus',
+      'Gabriela D. de Campinas',
+      'Natália R. de Goiânia',
+      'Bianca M. de Porto Alegre'
     ];
 
     var actions = [
