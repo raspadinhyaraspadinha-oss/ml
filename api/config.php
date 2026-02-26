@@ -6,16 +6,16 @@
 
 // Mangofy
 define('MANGOFY_API_URL', 'https://checkout.mangofy.com.br/api/v1');
-define('MANGOFY_AUTHORIZATION', 'SEU_TOKEN_MANGOFY_AQUI');
-define('MANGOFY_STORE_CODE', 'SEU_STORE_CODE_AQUI');
+define('MANGOFY_AUTHORIZATION', '2d7ec7be4856d113b6dea617d389cb711dlhqysglpgl6h8tiy3jd5lzc6tx2ei');
+define('MANGOFY_STORE_CODE', '0d4e1ba5d97eba0bb822b05fae41df4b');
 
 // UTMify
 define('UTMIFY_API_URL', 'https://api.utmify.com.br/api-credentials/orders');
-define('UTMIFY_API_TOKEN', 'SEU_TOKEN_UTMIFY_AQUI');
+define('UTMIFY_API_TOKEN', 'fKoyOKl8UkZN9Y5r0OMXRaXHEVtcUvps0qdP');
 
 // Facebook Conversions API
-define('FB_PIXEL_ID', '25660827120250641');
-define('FB_ACCESS_TOKEN', 'SEU_FB_ACCESS_TOKEN_AQUI');
+define('FB_PIXEL_ID', '895868873361776');
+define('FB_ACCESS_TOKEN', 'EAAMJ4lbAOXMBQy8xkl2eKvSBDOGbwOdwP0cwJS6CNZBWRKOOkbVtd47IzZCEkVZCLte9nFkR4hEwZCDymU8OPrca47jnprc43IOEG94YJdZC5XZAZCfFQAxFpvo8GZAyJNIi51Xnq2lCxZBoi0uJZBrRmX5MIrZBSq8PNEwNJCIjyiZA9NUxOiP7tEZA1gDKimLjTcQZDZD');
 define('FB_API_VERSION', 'v21.0');
 
 // Data storage path
