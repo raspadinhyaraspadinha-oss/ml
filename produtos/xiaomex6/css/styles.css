@@ -1,0 +1,125 @@
+body {
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+.navbar {
+    display: flex;
+    justify-content: space-between; /* Garante que os itens estejam nos extremos e no centro */
+    align-items: center; /* Centraliza verticalmente os itens */
+    background-color: #FFE600; /* Cor de fundo do navbar */
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.menu-icon, .logo-right, .logo-central {
+    flex-grow: 0; /* Não permite que os itens cresçam */
+    flex-shrink: 0; /* Não permite que os itens encolham */
+}
+
+.menu-icon, .logo-right {
+    margin: 0; /* Remove margens para que fiquem nos extremos */
+}
+
+.logo-central {
+    flex-grow: 1; /* Permite que a logo central cresça e ocupe todo o espaço restante */
+    text-align: center; /* Centraliza a logo no espaço disponível */
+}
+
+.material-symbols-outlined {
+    font-size: 24px; /* Ajuste o tamanho do ícone conforme necessário */
+}
+
+.logo-central img, .logo-right img {
+    height: 4vh; /* Ajuste a altura conforme necessário */
+}
+
+
+
+
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 24
+}
+
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 50px;
+    margin: 40px;
+}
+
+.product-container {
+    text-align: center;
+}
+
+.product-item {
+    transition: transform 0.3s ease;
+}
+
+.product-item img {
+    width: 100%;
+    height: auto;
+}
+
+p {
+    font-size: 18px;
+    color: #5e5e5e;
+    font-weight: bold;
+    font-family: 'GellixMedium';
+}
+
+.product-item:hover {
+    transform: translateY(-10px);
+}
+
+.footer {
+    position: relative;
+    width: 100%;
+    margin-bottom: -10px;
+    background-color: #E8F1FF;
+}
+
+
+.resgatar {
+    width: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 45px;
+    background-color: black;
+    color: white;
+    display: block;
+    margin: 0 auto;
+    border: none;
+    font-family: 'GellixRegular';
+    font-size: 17px;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.preview-container {
+    position: relative;
+    padding-bottom: 100%; /* 16:9 aspect ratio */
+    height: 0;
+    overflow: hidden;
+    margin: 20px auto;
+    width: 90%;
+    max-width: 800px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+.preview-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}

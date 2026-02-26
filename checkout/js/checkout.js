@@ -284,6 +284,10 @@
         setField('cidade', data.localidade || '');
         setField('uf', data.uf || '');
 
+        // Show shipping options after successful CEP lookup
+        var shippingCard = document.getElementById('shipping-card');
+        if (shippingCard) shippingCard.style.display = '';
+
         // Focus on número field
         var numEl = document.getElementById('numero');
         if (numEl) numEl.focus();
@@ -298,7 +302,14 @@
 
   function setField(id, val) {
     var el = document.getElementById(id);
-    if (el) el.value = val;
+    if (el) {
+      el.value = val;
+      // If ViaCEP returned empty for this field, make it editable
+      if (!val && el.hasAttribute('readonly')) {
+        el.removeAttribute('readonly');
+        el.placeholder = 'Digite aqui';
+      }
+    }
   }
 
   /* ---- SHIPPING SELECTION ---- */
