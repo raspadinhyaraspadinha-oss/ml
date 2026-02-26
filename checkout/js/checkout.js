@@ -576,19 +576,29 @@
 
   /* ---- SOCIAL PROOF ---- */
   function initSocialProof() {
-    var names = [
-      'Carlos H. de São Paulo',
-      'Felipe A. de Recife',
-      'Isabela M. de Curitiba',
-      'Ricardo M. de BH',
-      'Tatiane F. do Rio',
-      'Daniel V. de Salvador',
-      'Letícia N. de Brasília',
-      'Lucas F. de Fortaleza',
-      'Vanessa B. de Manaus',
-      'Gabriela D. de Campinas',
-      'Natália R. de Goiânia',
-      'Bianca M. de Porto Alegre'
+    var people = [
+      { name: 'Carlos H. de São Paulo', img: '../images/carloshenrique.jpeg' },
+      { name: 'Felipe A. de Recife', img: '../images/felipeandrade.jpeg' },
+      { name: 'Isabela M. de Curitiba', img: '../images/isabelamonteiro.jpeg' },
+      { name: 'Ricardo M. de BH', img: '../images/ricardomoura.jpeg' },
+      { name: 'Tatiane F. do Rio', img: '../images/tatianefreitas.jpeg' },
+      { name: 'Daniel V. de Salvador', img: '../images/danielvasques.jpeg' },
+      { name: 'Letícia N. de Brasília', img: '../images/leticianunes.jpeg' },
+      { name: 'Lucas F. de Fortaleza', img: '../images/lucasferreira.jpeg' },
+      { name: 'Vanessa B. de Manaus', img: '../images/vanessabarros.jpeg' },
+      { name: 'Gabriela D. de Campinas', img: '../images/gabrieladuarte.jpeg' },
+      { name: 'Natália R. de Goiânia', img: '../images/nataliaribeiro.jpeg' },
+      { name: 'Bianca M. de Porto Alegre', img: '../images/biancamartins.jpeg' },
+      { name: 'Thaís G. de Florianópolis', img: '../images/thaisgomes.jpeg' },
+      { name: 'Simone O. de Belém', img: '../images/simoneoliveira.jpeg' },
+      { name: 'Carolina V. de Vitória', img: '../images/carolinavasconcelos.jpeg' },
+      { name: 'Ana Paula M. de Natal', img: '../images/anapaulamendes.jpg' },
+      { name: 'Mariana T. de Santos', img: '../images/marianatorres.jpg' },
+      { name: 'Larissa A. de Joinville', img: '../images/larissaaparecida.jpeg' },
+      { name: 'Renata L. de Ribeirão Preto', img: '../images/renatalima.jpeg' },
+      { name: 'Patrícia S. de Aracaju', img: '../images/patriciasilva.jpeg' },
+      { name: 'Camila F. de Maceió', img: '../images/camilafernandes.jpeg' },
+      { name: 'Aline R. de Cuiabá', img: '../images/alinerocha.jpeg' }
     ];
 
     var actions = [
@@ -602,11 +612,16 @@
     if (!el) return;
 
     setInterval(function() {
-      var name = names[Math.floor(Math.random() * names.length)];
+      var person = people[Math.floor(Math.random() * people.length)];
       var action = actions[Math.floor(Math.random() * actions.length)];
+      var imgEl = el.querySelector('img');
       var textEl = el.querySelector('p');
+      if (imgEl) {
+        imgEl.src = person.img;
+        imgEl.alt = person.name;
+      }
       if (textEl) {
-        textEl.innerHTML = '<b>' + name + '</b> ' + action;
+        textEl.innerHTML = '<b>' + person.name + '</b> ' + action;
       }
       el.classList.add('show');
       setTimeout(function() {
