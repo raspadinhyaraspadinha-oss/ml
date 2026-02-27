@@ -83,14 +83,43 @@ function trySkalepay($cust, $amount, $items, $clientIp) {
         'items' => $skItems
     ];
 
+    // ── LOG: Request sendo enviado para SkalePay ──
+    writeLog('SKALEPAY_REQUEST', [
+        'url' => SKALEPAY_API_URL . '/transactions',
+        'customer' => ($cust['name'] ?? '') . ' <' . ($cust['email'] ?? '') . '>',
+        'doc' => substr(preg_replace('/\D/', '', $cust['document'] ?? ''), 0, 3) . '***',
+        'amount' => $amount,
+        'items' => count($skItems),
+        'payload' => json_encode($payload, JSON_UNESCAPED_UNICODE)
+    ]);
+
     $response = apiPost(
         SKALEPAY_API_URL . '/transactions',
         ['Content-Type: application/json', 'Accept: application/json', 'Authorization: ' . $auth],
         $payload
     );
 
+    // ── LOG: Response recebido da SkalePay ──
+    writeLog('SKALEPAY_RESPONSE', [
+        'http_status' => $response['status'],
+        'curl_error' => $response['error'] ?: 'nenhum',
+        'body_type' => $response['body'] !== null ? 'json_valido' : 'json_invalido_ou_vazio',
+        'body_keys' => is_array($response['body']) ? implode(',', array_keys($response['body'])) : 'N/A',
+        'has_id' => isset($response['body']['id']) ? 'SIM (' . $response['body']['id'] . ')' : 'NAO',
+        'has_pix' => isset($response['body']['pix']) ? 'SIM' : 'NAO',
+        'has_qrcode' => isset($response['body']['pix']['qrcode']) ? 'SIM' : 'NAO',
+        'raw_response' => substr($response['raw'] ?? '', 0, 2000)
+    ]);
+
     if (($response['status'] === 200 || $response['status'] === 201) &&
         isset($response['body']['id']) && isset($response['body']['pix']['qrcode'])) {
+
+        writeLog('SKALEPAY_SUCESSO', [
+            'id' => $response['body']['id'],
+            'qrcode_len' => strlen($response['body']['pix']['qrcode']),
+            'amount' => $amount
+        ]);
+
         return [
             'gateway' => 'skalepay',
             'gateway_id' => strval($response['body']['id']),
@@ -100,7 +129,34 @@ function trySkalepay($cust, $amount, $items, $clientIp) {
         ];
     }
 
-    return ['error' => true, 'status' => $response['status'], 'raw' => $response['raw'] ?? ''];
+    // ── LOG: Diagnóstico detalhado da falha ──
+    $failReason = 'desconhecido';
+    if (!empty($response['error'])) {
+        $failReason = 'curl_error: ' . $response['error'];
+    } elseif ($response['status'] === 0) {
+        $failReason = 'conexao_falhou (timeout ou DNS)';
+    } elseif ($response['status'] >= 500) {
+        $failReason = 'servidor_skalepay_erro_' . $response['status'];
+    } elseif ($response['status'] >= 400) {
+        $failReason = 'requisicao_rejeitada_' . $response['status'];
+    } elseif ($response['body'] === null) {
+        $failReason = 'resposta_nao_e_json_valido';
+    } elseif (!isset($response['body']['id'])) {
+        $failReason = 'campo_id_ausente_na_resposta';
+    } elseif (!isset($response['body']['pix'])) {
+        $failReason = 'objeto_pix_ausente_na_resposta';
+    } elseif (!isset($response['body']['pix']['qrcode'])) {
+        $failReason = 'campo_pix.qrcode_ausente_na_resposta';
+    }
+
+    writeLog('SKALEPAY_FALHOU', [
+        'motivo' => $failReason,
+        'http_status' => $response['status'],
+        'curl_error' => $response['error'] ?: 'nenhum',
+        'response_preview' => substr($response['raw'] ?? '', 0, 1000)
+    ]);
+
+    return ['error' => true, 'status' => $response['status'], 'raw' => $response['raw'] ?? '', 'fail_reason' => $failReason];
 }
 
 function tryMangofy($cust, $amount, $items, $externalCode, $clientIp, $metadata) {
@@ -168,30 +224,45 @@ $result = null;
 $usedFallback = false;
 
 if ($activeGateway === 'skalepay') {
+    writeLog('GATEWAY_CHAIN_INICIO', ['gateway' => 'skalepay', 'amount' => $amount, 'customer' => $customer['name'] ?? '']);
+
     // 1) SkalePay com dados reais
     $result = trySkalepay($customer, $amount, $items, $clientIp);
 
     if (isset($result['error'])) {
         writeLog('SKALEPAY_ERRO_TENTATIVA_1', [
-            'status' => $result['status'], 'erro' => $result['raw'], 'customer' => $customer['name'] ?? ''
+            'motivo' => $result['fail_reason'] ?? 'desconhecido',
+            'http_status' => $result['status'],
+            'customer' => ($customer['name'] ?? '') . ' <' . ($customer['email'] ?? '') . '>',
+            'response_preview' => substr($result['raw'] ?? '', 0, 500)
         ]);
 
         // 2) SkalePay com fallback customer
+        writeLog('SKALEPAY_TENTATIVA_2_FALLBACK', ['usando' => 'fallback_customer']);
         $result = trySkalepay($FALLBACK_CUSTOMER, $amount, $items, $clientIp);
 
         if (!isset($result['error'])) {
             $usedFallback = true;
-            writeLog('SKALEPAY_FALLBACK_USADO', [
-                'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? '')
+            writeLog('SKALEPAY_FALLBACK_SUCESSO', [
+                'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                'payment_id' => $result['gateway_id'] ?? ''
             ]);
         } else {
-            writeLog('SKALEPAY_ERRO_FALLBACK', ['status' => $result['status'], 'erro' => $result['raw']]);
+            writeLog('SKALEPAY_ERRO_TENTATIVA_2', [
+                'motivo' => $result['fail_reason'] ?? 'desconhecido',
+                'http_status' => $result['status'],
+                'response_preview' => substr($result['raw'] ?? '', 0, 500)
+            ]);
 
             // 3) Mangofy como ultima tentativa (dados reais)
+            writeLog('MANGOFY_BACKUP_TENTATIVA_1', ['motivo' => 'skalepay_falhou_2x']);
             $result = tryMangofy($customer, $amount, $items, $externalCode, $clientIp, $metadata);
 
             if (isset($result['error'])) {
-                writeLog('MANGOFY_BACKUP_ERRO_1', ['status' => $result['status'], 'erro' => $result['raw']]);
+                writeLog('MANGOFY_BACKUP_ERRO_1', [
+                    'http_status' => $result['status'],
+                    'response_preview' => substr($result['raw'] ?? '', 0, 500)
+                ]);
 
                 // 4) Mangofy com fallback customer
                 $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
@@ -199,12 +270,23 @@ if ($activeGateway === 'skalepay') {
 
                 if (!isset($result['error'])) {
                     $usedFallback = true;
-                    writeLog('MANGOFY_BACKUP_FALLBACK_USADO', [
-                        'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? '')
+                    writeLog('MANGOFY_BACKUP_FALLBACK_SUCESSO', [
+                        'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                        'payment_code' => $result['payment_code'] ?? ''
+                    ]);
+                } else {
+                    writeLog('MANGOFY_BACKUP_ERRO_2_FINAL', [
+                        'http_status' => $result['status'],
+                        'response_preview' => substr($result['raw'] ?? '', 0, 500)
                     ]);
                 }
             }
         }
+    } else {
+        writeLog('SKALEPAY_SUCESSO_DIRETO', [
+            'payment_id' => $result['gateway_id'] ?? '',
+            'customer' => ($customer['name'] ?? '')
+        ]);
     }
 } else {
     // Mangofy primary
@@ -231,7 +313,13 @@ if ($activeGateway === 'skalepay') {
 
 // All attempts failed
 if (!$result || isset($result['error'])) {
-    writeLog('PAGAMENTO_FALHOU_TOTAL', ['gateway_tentado' => $activeGateway, 'amount' => $amount]);
+    writeLog('PAGAMENTO_FALHOU_TOTAL', [
+        'gateway_primario' => $activeGateway,
+        'amount' => $amount,
+        'customer' => ($originalCustomer['name'] ?? '') . ' <' . ($originalCustomer['email'] ?? '') . '>',
+        'ultimo_erro' => $result['fail_reason'] ?? ($result['raw'] ?? 'sem detalhes'),
+        'ultimo_http' => $result['status'] ?? 0
+    ]);
     http_response_code(500);
     echo json_encode(['error' => 'Todas as tentativas de pagamento falharam', 'details' => $result['raw'] ?? '']);
     exit;

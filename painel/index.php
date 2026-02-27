@@ -101,7 +101,7 @@ function exportCSV(string $dir, array $params): void {
     fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
     fputcsv($out, [
-        'Codigo', 'Status', 'Valor', 'Nome', 'Email', 'Telefone', 'Documento',
+        'Codigo', 'Gateway', 'Status', 'Valor', 'Nome', 'Email', 'Telefone', 'Documento',
         'Produtos', 'UTM Source', 'UTM Campaign', 'UTM Medium', 'UTM Content',
         'Criado em', 'Pago em'
     ], ';');
@@ -118,6 +118,7 @@ function exportCSV(string $dir, array $params): void {
 
         fputcsv($out, [
             $p['payment_code'] ?? '',
+            $p['gateway'] ?? 'mangofy',
             $p['status'] ?? '',
             number_format(($p['amount'] ?? 0) / 100, 2, ',', '.'),
             $p['customer']['name'] ?? '',
@@ -174,14 +175,14 @@ if ($isAuthenticated) {
     <title>Painel de Controle</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* ── Reset & Base ── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { font-size: 14px; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0f1117;
+            background: #09090b;
             color: #e4e4e7;
             line-height: 1.6;
             min-height: 100vh;
@@ -189,106 +190,187 @@ if ($isAuthenticated) {
         a { color: #60a5fa; text-decoration: none; }
         a:hover { text-decoration: underline; }
 
+        /* ── Accent bar top ── */
+        .accent-bar {
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 40%, #06b6d4 70%, #10b981 100%);
+        }
+
         /* ── Login ── */
         .login-wrap {
             display: flex; align-items: center; justify-content: center;
             min-height: 100vh; padding: 1rem;
+            background: radial-gradient(ellipse at 50% 0%, #1e1b4b33 0%, transparent 60%);
         }
         .login-box {
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 12px; padding: 2.5rem; width: 100%; max-width: 400px;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 400px;
             text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
         }
         .login-box h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: #fff; }
         .login-box p { color: #71717a; margin-bottom: 1.5rem; font-size: 0.9rem; }
         .login-box input[type="password"] {
-            width: 100%; padding: 0.75rem 1rem; background: #0f1117;
-            border: 1px solid #2a2b35; border-radius: 8px; color: #fff;
+            width: 100%; padding: 0.75rem 1rem; background: #09090b;
+            border: 1px solid #27272a; border-radius: 10px; color: #fff;
             font-size: 1rem; font-family: inherit; margin-bottom: 1rem;
             transition: border-color 0.2s;
         }
         .login-box input[type="password"]:focus {
-            outline: none; border-color: #3b82f6;
+            outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px #3b82f622;
         }
         .login-box button {
-            width: 100%; padding: 0.75rem; background: #3b82f6;
-            color: #fff; border: none; border-radius: 8px;
+            width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: #fff; border: none; border-radius: 10px;
             font-size: 1rem; font-weight: 600; cursor: pointer;
-            font-family: inherit; transition: background 0.2s;
+            font-family: inherit; transition: opacity 0.2s;
         }
-        .login-box button:hover { background: #2563eb; }
+        .login-box button:hover { opacity: 0.9; }
         .login-error {
             background: #7f1d1d44; border: 1px solid #991b1b;
-            color: #fca5a5; padding: 0.5rem; border-radius: 6px;
+            color: #fca5a5; padding: 0.5rem; border-radius: 8px;
             margin-bottom: 1rem; font-size: 0.85rem;
         }
 
         /* ── Dashboard Layout ── */
-        .dashboard { max-width: 1440px; margin: 0 auto; padding: 1.5rem; }
+        .dashboard { max-width: 1440px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 
         /* Header */
         .header {
             display: flex; align-items: center; justify-content: space-between;
             flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem; border-bottom: 1px solid #1e1f2a;
+            padding-bottom: 1rem;
         }
-        .header h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-meta { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-        .header-meta span { font-size: 0.8rem; color: #71717a; }
+        .header h1 {
+            font-size: 1.5rem; font-weight: 800; color: #fff;
+            background: linear-gradient(135deg, #fff 60%, #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .header-actions span { font-size: 0.78rem; color: #52525b; }
         .btn {
-            padding: 0.5rem 1rem; border-radius: 6px; border: none;
-            font-family: inherit; font-size: 0.85rem; font-weight: 500;
+            padding: 0.5rem 1rem; border-radius: 8px; border: none;
+            font-family: inherit; font-size: 0.82rem; font-weight: 500;
             cursor: pointer; transition: all 0.2s; display: inline-flex;
             align-items: center; gap: 0.4rem;
         }
         .btn-primary { background: #3b82f6; color: #fff; }
         .btn-primary:hover { background: #2563eb; }
-        .btn-secondary { background: #27272a; color: #e4e4e7; border: 1px solid #3f3f46; }
+        .btn-secondary { background: #27272a; color: #d4d4d8; border: 1px solid #3f3f46; }
         .btn-secondary:hover { background: #3f3f46; }
-        .btn-danger { background: #7f1d1d; color: #fca5a5; }
-        .btn-danger:hover { background: #991b1b; }
-        .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+        .btn-danger { background: #450a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+        .btn-danger:hover { background: #7f1d1d; }
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
 
-        /* Gateway Switcher */
-        .gw-switch { display: inline-flex; align-items: center; gap: 0.5rem; background: #1a1b23; border: 1px solid #2a2b35; border-radius: 8px; padding: 0.35rem 0.6rem; }
-        .gw-label { font-size: 0.72rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; }
-        .gw-toggle { display: inline-flex; border-radius: 6px; overflow: hidden; border: 1px solid #3f3f46; }
-        .gw-opt { padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: #71717a; transition: all 0.2s; font-family: inherit; }
-        .gw-opt.active-mg { background: #059669; color: #fff; }
-        .gw-opt.active-sk { background: #7c3aed; color: #fff; }
-        .gw-opt:hover:not(.active-mg):not(.active-sk) { background: #27272a; color: #e4e4e7; }
-        .gw-status { font-size: 0.72rem; font-weight: 600; }
+        /* ════════════════════════════════════════════
+           GATEWAY SWITCHER - Prominent Card
+           ════════════════════════════════════════════ */
+        .gw-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .gw-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+        }
+        .gw-card.gw-mangofy::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .gw-card.gw-skalepay::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+        .gw-info { display: flex; align-items: center; gap: 1rem; }
+        .gw-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; font-weight: 800;
+        }
+        .gw-mangofy .gw-icon { background: #10b98118; color: #34d399; }
+        .gw-skalepay .gw-icon { background: #8b5cf618; color: #a78bfa; }
+
+        .gw-text-label { font-size: 0.72rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+        .gw-text-name { font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
+        .gw-live-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            animation: gwPulse 2s infinite;
+        }
+        .gw-mangofy .gw-live-dot { background: #34d399; box-shadow: 0 0 8px #34d39966; }
+        .gw-skalepay .gw-live-dot { background: #a78bfa; box-shadow: 0 0 8px #a78bfa66; }
+        @keyframes gwPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .gw-toggle-group {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: #09090b; border: 1px solid #27272a;
+            border-radius: 10px; padding: 4px;
+        }
+        .gw-btn {
+            padding: 0.5rem 1.25rem; border-radius: 8px; border: none;
+            font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: all 0.25s; color: #71717a;
+            background: transparent; position: relative;
+        }
+        .gw-btn:hover:not(.gw-active) { color: #d4d4d8; background: #27272a; }
+        .gw-btn.gw-active {
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .gw-btn.gw-active-mg { background: #059669; }
+        .gw-btn.gw-active-sk { background: #7c3aed; }
+        .gw-btn:disabled { opacity: 0.5; cursor: wait; }
 
         /* Filter Bar */
         .filter-bar {
             display: flex; align-items: center; gap: 0.75rem;
             flex-wrap: wrap; margin-bottom: 1.5rem;
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 10px; padding: 1rem 1.25rem;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; padding: 0.85rem 1.25rem;
         }
-        .filter-bar label { font-size: 0.85rem; font-weight: 500; color: #a1a1aa; }
+        .filter-bar label { font-size: 0.82rem; font-weight: 500; color: #a1a1aa; }
         .filter-bar input[type="date"] {
-            background: #0f1117; border: 1px solid #3f3f46; color: #fff;
-            padding: 0.45rem 0.75rem; border-radius: 6px; font-family: inherit;
-            font-size: 0.85rem;
+            background: #09090b; border: 1px solid #3f3f46; color: #fff;
+            padding: 0.45rem 0.75rem; border-radius: 8px; font-family: inherit;
+            font-size: 0.82rem;
         }
-        .filter-bar input[type="date"]:focus { outline: none; border-color: #3b82f6; }
+        .filter-bar input[type="date"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f622; }
         .filter-sep { color: #3f3f46; }
 
         /* KPI Cards */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: 1rem; margin-bottom: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+            gap: 0.85rem; margin-bottom: 1.5rem;
         }
         .kpi-card {
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 10px; padding: 1.25rem;
-            transition: border-color 0.2s, transform 0.2s;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; padding: 1.25rem;
+            transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+            position: relative; overflow: hidden;
         }
-        .kpi-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
-        .kpi-label { font-size: 0.78rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-bottom: 0.5rem; }
-        .kpi-value { font-size: 1.75rem; font-weight: 700; color: #fff; }
+        .kpi-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        }
+        .kpi-card:nth-child(1)::before { background: #3b82f6; }
+        .kpi-card:nth-child(2)::before { background: #fbbf24; }
+        .kpi-card:nth-child(3)::before { background: #34d399; }
+        .kpi-card:nth-child(4)::before { background: #a78bfa; }
+        .kpi-card:nth-child(5)::before { background: #34d399; }
+        .kpi-card:nth-child(6)::before { background: #f472b6; }
+        .kpi-card:hover { border-color: #3f3f46; transform: translateY(-2px); box-shadow: 0 8px 25px -5px rgba(0,0,0,0.3); }
+        .kpi-label { font-size: 0.75rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.5rem; }
+        .kpi-value { font-size: 1.7rem; font-weight: 700; color: #fff; }
         .kpi-value.green { color: #34d399; }
         .kpi-value.blue { color: #60a5fa; }
         .kpi-value.yellow { color: #fbbf24; }
@@ -296,7 +378,7 @@ if ($isAuthenticated) {
 
         /* Section Titles */
         .section-title {
-            font-size: 1.1rem; font-weight: 600; color: #fff;
+            font-size: 1.05rem; font-weight: 600; color: #fff;
             margin-bottom: 1rem; margin-top: 2rem;
             display: flex; align-items: center; gap: 0.5rem;
         }
@@ -306,103 +388,106 @@ if ($isAuthenticated) {
         .charts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 1rem; margin-bottom: 1.5rem;
+            gap: 0.85rem; margin-bottom: 1.5rem;
         }
         .chart-card {
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 10px; padding: 1.25rem;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; padding: 1.25rem;
         }
-        .chart-card h3 { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 1rem; }
+        .chart-card h3 { font-size: 0.9rem; font-weight: 600; color: #d4d4d8; margin-bottom: 1rem; }
         .chart-card canvas { width: 100% !important; height: 220px !important; }
 
         /* Tables */
         .table-wrap {
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem;
         }
         .table-header {
             padding: 1rem 1.25rem;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #2a2b35;
+            border-bottom: 1px solid #27272a;
         }
-        .table-header h3 { font-size: 0.95rem; font-weight: 600; color: #fff; }
+        .table-header h3 { font-size: 0.9rem; font-weight: 600; color: #d4d4d8; }
         .table-scroll { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         thead th {
-            padding: 0.75rem 1rem; font-size: 0.78rem; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.04em;
-            color: #71717a; background: #15161d;
-            border-bottom: 1px solid #2a2b35; text-align: left;
+            padding: 0.7rem 1rem; font-size: 0.72rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            color: #71717a; background: #111113;
+            border-bottom: 1px solid #27272a; text-align: left;
             white-space: nowrap; cursor: pointer; user-select: none;
             transition: color 0.2s;
         }
-        thead th:hover { color: #e4e4e7; }
+        thead th:hover { color: #d4d4d8; }
         thead th.sorted-asc::after { content: ' \25B2'; font-size: 0.65rem; }
         thead th.sorted-desc::after { content: ' \25BC'; font-size: 0.65rem; }
         tbody td {
-            padding: 0.65rem 1rem; font-size: 0.85rem;
-            border-bottom: 1px solid #1e1f2a; white-space: nowrap;
+            padding: 0.6rem 1rem; font-size: 0.82rem;
+            border-bottom: 1px solid #1c1c1f; white-space: nowrap;
         }
         tbody tr { transition: background 0.15s; }
-        tbody tr:hover { background: #1e1f2a; }
+        tbody tr:hover { background: #1c1c1f; }
 
         /* Status Badges */
         .badge {
-            display: inline-block; padding: 0.2rem 0.6rem;
-            border-radius: 20px; font-size: 0.72rem; font-weight: 600;
+            display: inline-block; padding: 0.2rem 0.65rem;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 0.03em;
         }
         .badge-paid { background: #064e3b; color: #34d399; }
         .badge-pending { background: #78350f44; color: #fbbf24; }
-        .badge-mg { background: #05966922; color: #34d399; }
-        .badge-sk { background: #7c3aed22; color: #a78bfa; }
+        .badge-mg { background: #05966920; color: #34d399; }
+        .badge-sk { background: #7c3aed20; color: #a78bfa; }
 
         /* Event Log */
         .log-container {
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem;
         }
         .log-header {
             padding: 1rem 1.25rem;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid #2a2b35;
+            border-bottom: 1px solid #27272a; flex-wrap: wrap; gap: 0.75rem;
         }
-        .log-header h3 { font-size: 0.95rem; font-weight: 600; color: #fff; }
+        .log-header h3 { font-size: 0.9rem; font-weight: 600; color: #d4d4d8; }
         .log-body { max-height: 400px; overflow-y: auto; padding: 0.5rem 0; }
         .log-line {
-            padding: 0.4rem 1.25rem; font-size: 0.78rem;
+            padding: 0.35rem 1.25rem; font-size: 0.75rem;
             font-family: 'Courier New', monospace;
-            border-bottom: 1px solid #1e1f2a;
-            word-break: break-all;
+            border-bottom: 1px solid #1c1c1f;
+            word-break: break-all; line-height: 1.5;
         }
         .log-line.pix { color: #60a5fa; }
         .log-line.webhook { color: #fbbf24; }
         .log-line.aprovado { color: #34d399; }
+        .log-line.skalepay { color: #a78bfa; }
+        .log-line.gateway { color: #f472b6; }
+        .log-line.erro { color: #f87171; }
 
         /* Pagination */
         .pagination {
             display: flex; align-items: center; justify-content: center;
-            gap: 0.4rem; padding: 1rem;
+            gap: 0.35rem; padding: 1rem;
         }
         .pagination button {
-            padding: 0.4rem 0.8rem; border-radius: 6px;
-            border: 1px solid #3f3f46; background: #1a1b23;
-            color: #e4e4e7; cursor: pointer; font-family: inherit;
-            font-size: 0.8rem; transition: all 0.2s;
+            padding: 0.35rem 0.75rem; border-radius: 6px;
+            border: 1px solid #3f3f46; background: #18181b;
+            color: #d4d4d8; cursor: pointer; font-family: inherit;
+            font-size: 0.78rem; transition: all 0.2s;
         }
         .pagination button:hover { background: #3f3f46; }
         .pagination button.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
-        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
 
         /* Settings */
         .settings-bar {
             display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 2rem;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 2rem;
         }
         .toggle-label {
             display: flex; align-items: center; gap: 0.5rem;
-            font-size: 0.85rem; color: #a1a1aa; cursor: pointer;
+            font-size: 0.82rem; color: #a1a1aa; cursor: pointer;
         }
         .toggle-switch {
             position: relative; width: 40px; height: 22px;
@@ -428,31 +513,34 @@ if ($isAuthenticated) {
             .kpi-grid { grid-template-columns: repeat(2, 1fr); }
             .charts-grid { grid-template-columns: 1fr; }
             .filter-bar { flex-direction: column; align-items: stretch; }
+            .gw-card { flex-direction: column; align-items: stretch; text-align: center; }
+            .gw-info { justify-content: center; }
+            .gw-toggle-group { justify-content: center; }
         }
         @media (max-width: 480px) {
             .kpi-grid { grid-template-columns: 1fr; }
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f1117; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
         ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
         /* Pie chart container */
         .pie-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
-        .pie-legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: #a1a1aa; }
-        .pie-legend-color { width: 10px; height: 10px; border-radius: 2px; }
+        .pie-legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.73rem; color: #a1a1aa; }
+        .pie-legend-color { width: 10px; height: 10px; border-radius: 3px; }
 
         /* No data */
-        .no-data { text-align: center; padding: 3rem; color: #71717a; font-size: 0.9rem; }
+        .no-data { text-align: center; padding: 3rem; color: #52525b; font-size: 0.88rem; }
 
         /* Log Filters */
-        .log-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .log-filters { display: flex; gap: 0.35rem; flex-wrap: wrap; }
         .log-filter-btn {
-            padding: 0.3rem 0.75rem; border-radius: 20px;
+            padding: 0.28rem 0.7rem; border-radius: 20px;
             border: 1px solid #3f3f46; background: transparent;
-            color: #a1a1aa; font-family: inherit; font-size: 0.75rem;
+            color: #a1a1aa; font-family: inherit; font-size: 0.73rem;
             font-weight: 500; cursor: pointer; transition: all 0.2s;
         }
         .log-filter-btn:hover { border-color: #60a5fa; color: #60a5fa; }
@@ -461,7 +549,7 @@ if ($isAuthenticated) {
         /* API Badges */
         .api-badge {
             display: inline-block; padding: 0.15rem 0.5rem;
-            border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+            border-radius: 4px; font-size: 0.68rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 0.03em;
         }
         .api-badge.utmify { background: #1e3a5f; color: #60a5fa; }
@@ -477,12 +565,12 @@ if ($isAuthenticated) {
 
         /* Clickable row */
         .clickable-row { cursor: pointer; }
-        .clickable-row:hover { background: #252630 !important; }
+        .clickable-row:hover { background: #1f1f23 !important; }
 
         /* Detail Button */
         .btn-detail {
-            padding: 0.25rem 0.6rem; border-radius: 4px;
-            border: 1px solid #3f3f46; background: #1a1b23;
+            padding: 0.25rem 0.6rem; border-radius: 6px;
+            border: 1px solid #3f3f46; background: #18181b;
             color: #60a5fa; font-size: 0.72rem; cursor: pointer;
             font-family: inherit; transition: all 0.2s;
             white-space: nowrap;
@@ -492,33 +580,35 @@ if ($isAuthenticated) {
         /* Modal */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.75); z-index: 1000;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+            z-index: 1000;
             display: flex; align-items: flex-start; justify-content: center;
             padding: 2rem; overflow-y: auto;
             opacity: 0; pointer-events: none; transition: opacity 0.25s;
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal-content {
-            background: #1a1b23; border: 1px solid #2a2b35;
-            border-radius: 12px; width: 100%; max-width: 840px;
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 16px; width: 100%; max-width: 840px;
             margin-top: 1rem; margin-bottom: 2rem;
-            animation: modalIn 0.25s ease-out;
+            animation: modalIn 0.3s ease-out;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
         }
         @keyframes modalIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { transform: translateY(20px) scale(0.98); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
         }
         .modal-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 1.25rem 1.5rem; border-bottom: 1px solid #2a2b35;
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid #27272a;
         }
         .modal-header h2 { font-size: 1.1rem; font-weight: 600; color: #fff; }
         .modal-close {
             background: none; border: none; color: #71717a;
             font-size: 1.5rem; cursor: pointer; padding: 0.25rem 0.5rem;
-            line-height: 1; transition: color 0.2s; border-radius: 4px;
+            line-height: 1; transition: color 0.2s; border-radius: 6px;
         }
-        .modal-close:hover { color: #fff; background: #3f3f46; }
+        .modal-close:hover { color: #fff; background: #27272a; }
         .modal-body { padding: 1.5rem; }
 
         /* Detail Cards */
@@ -528,17 +618,17 @@ if ($isAuthenticated) {
         }
         @media (max-width: 600px) { .detail-grid { grid-template-columns: 1fr; } }
         .detail-card {
-            background: #0f1117; border: 1px solid #2a2b35;
-            border-radius: 8px; padding: 1rem;
+            background: #09090b; border: 1px solid #27272a;
+            border-radius: 10px; padding: 1rem;
         }
         .detail-card h4 {
-            font-size: 0.78rem; font-weight: 600; color: #71717a;
-            text-transform: uppercase; letter-spacing: 0.04em;
+            font-size: 0.75rem; font-weight: 600; color: #71717a;
+            text-transform: uppercase; letter-spacing: 0.05em;
             margin-bottom: 0.75rem;
         }
         .detail-row {
             display: flex; justify-content: space-between; gap: 1rem;
-            padding: 0.3rem 0; font-size: 0.85rem;
+            padding: 0.3rem 0; font-size: 0.82rem;
         }
         .detail-row .label { color: #a1a1aa; white-space: nowrap; }
         .detail-row .value { color: #fff; font-weight: 500; text-align: right; word-break: break-all; }
@@ -549,56 +639,69 @@ if ($isAuthenticated) {
             margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;
         }
         .api-trail-item {
-            background: #0f1117; border: 1px solid #2a2b35;
-            border-radius: 8px; margin-bottom: 0.75rem; overflow: hidden;
+            background: #09090b; border: 1px solid #27272a;
+            border-radius: 10px; margin-bottom: 0.75rem; overflow: hidden;
         }
         .api-trail-header {
             display: flex; align-items: center; gap: 0.75rem;
             padding: 0.75rem 1rem; cursor: pointer;
             transition: background 0.15s; flex-wrap: wrap;
         }
-        .api-trail-header:hover { background: #15161d; }
-        .api-trail-header .time { font-size: 0.75rem; color: #71717a; min-width: 110px; }
-        .api-trail-header .event-name { font-weight: 600; color: #e4e4e7; font-size: 0.85rem; }
+        .api-trail-header:hover { background: #111113; }
+        .api-trail-header .time { font-size: 0.73rem; color: #71717a; min-width: 110px; }
+        .api-trail-header .event-name { font-weight: 600; color: #d4d4d8; font-size: 0.82rem; }
         .api-trail-header .http-status {
             margin-left: auto; padding: 0.15rem 0.5rem;
-            border-radius: 4px; font-size: 0.72rem; font-weight: 600;
+            border-radius: 4px; font-size: 0.7rem; font-weight: 600;
         }
-        .api-trail-header .expand-icon { color: #52525b; font-size: 0.75rem; transition: transform 0.2s; }
+        .api-trail-header .expand-icon { color: #52525b; font-size: 0.73rem; transition: transform 0.2s; }
         .http-ok { background: #064e3b; color: #34d399; }
         .http-err { background: #7f1d1d; color: #fca5a5; }
         .api-trail-body {
             display: none; padding: 0.75rem 1rem;
-            border-top: 1px solid #2a2b35; font-size: 0.8rem;
+            border-top: 1px solid #27272a; font-size: 0.78rem;
         }
         .api-trail-body.open { display: block; }
         .response-box {
-            background: #0a0b10; border: 1px solid #1e1f2a;
-            border-radius: 6px; padding: 0.75rem; margin-top: 0.25rem;
-            font-family: 'Courier New', monospace; font-size: 0.73rem;
+            background: #050506; border: 1px solid #1c1c1f;
+            border-radius: 8px; padding: 0.75rem; margin-top: 0.25rem;
+            font-family: 'Courier New', monospace; font-size: 0.72rem;
             color: #a1a1aa; max-height: 200px; overflow-y: auto;
             white-space: pre-wrap; word-break: break-all; line-height: 1.4;
         }
         .response-label {
-            font-size: 0.72rem; font-weight: 600; color: #52525b;
+            font-size: 0.7rem; font-weight: 600; color: #52525b;
             text-transform: uppercase; margin-top: 0.75rem; margin-bottom: 0.2rem;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
         }
         .no-api-events { text-align: center; padding: 2rem; color: #52525b; font-size: 0.85rem; }
 
         /* API filter tabs */
-        .api-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .api-filters { display: flex; gap: 0.35rem; flex-wrap: wrap; }
         .api-filter-btn {
-            padding: 0.3rem 0.75rem; border-radius: 20px;
+            padding: 0.28rem 0.7rem; border-radius: 20px;
             border: 1px solid #3f3f46; background: transparent;
-            color: #a1a1aa; font-family: inherit; font-size: 0.75rem;
+            color: #a1a1aa; font-family: inherit; font-size: 0.73rem;
             font-weight: 500; cursor: pointer; transition: all 0.2s;
         }
         .api-filter-btn:hover { border-color: #60a5fa; color: #60a5fa; }
         .api-filter-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem; z-index: 2000;
+            padding: 0.85rem 1.5rem; border-radius: 10px; font-size: 0.88rem; font-weight: 500;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.35s ease; pointer-events: none;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-success { background: #065f46; color: #34d399; border: 1px solid #10b981; }
+        .toast-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
     </style>
 </head>
 <body>
+<div class="accent-bar"></div>
 <?php if (!$isAuthenticated): ?>
     <!-- ── Login Screen ── -->
     <div class="login-wrap">
@@ -618,17 +721,30 @@ if ($isAuthenticated) {
         <!-- Header -->
         <div class="header">
             <h1>Painel de Controle</h1>
-            <div class="header-meta">
-                <div class="gw-switch" id="gwSwitch">
-                    <span class="gw-label">Gateway:</span>
-                    <div class="gw-toggle">
-                        <button class="gw-opt<?php echo $activeGateway === 'mangofy' ? ' active-mg' : ''; ?>" data-gw="mangofy" onclick="switchGateway('mangofy')">Mangofy</button>
-                        <button class="gw-opt<?php echo $activeGateway === 'skalepay' ? ' active-sk' : ''; ?>" data-gw="skalepay" onclick="switchGateway('skalepay')">SkalePay</button>
-                    </div>
-                </div>
+            <div class="header-actions">
                 <span id="lastUpdated">Atualizado: <?php echo date('d/m/Y H:i:s'); ?></span>
                 <button class="btn btn-secondary btn-sm" onclick="location.reload()">Atualizar</button>
                 <a href="?logout=1" class="btn btn-danger btn-sm">Sair</a>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             GATEWAY SWITCHER - Prominent Card
+             ═══════════════════════════════════════ -->
+        <div class="gw-card gw-<?php echo $activeGateway; ?>" id="gwCard">
+            <div class="gw-info">
+                <div class="gw-icon" id="gwIcon"><?php echo $activeGateway === 'skalepay' ? 'SK' : 'MG'; ?></div>
+                <div>
+                    <div class="gw-text-label">Gateway Ativo</div>
+                    <div class="gw-text-name" id="gwName">
+                        <span class="gw-live-dot"></span>
+                        <?php echo $activeGateway === 'skalepay' ? 'SkalePay' : 'Mangofy'; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="gw-toggle-group">
+                <button class="gw-btn<?php echo $activeGateway === 'mangofy' ? ' gw-active gw-active-mg' : ''; ?>" data-gw="mangofy" onclick="switchGateway('mangofy')">Mangofy</button>
+                <button class="gw-btn<?php echo $activeGateway === 'skalepay' ? ' gw-active gw-active-sk' : ''; ?>" data-gw="skalepay" onclick="switchGateway('skalepay')">SkalePay</button>
             </div>
         </div>
 
@@ -778,6 +894,8 @@ if ($isAuthenticated) {
                         <button class="log-filter-btn" data-log-filter="pix" onclick="filterLog('pix')">PIX</button>
                         <button class="log-filter-btn" data-log-filter="webhook" onclick="filterLog('webhook')">Webhook</button>
                         <button class="log-filter-btn" data-log-filter="aprovado" onclick="filterLog('aprovado')">Aprovados</button>
+                        <button class="log-filter-btn" data-log-filter="skalepay" onclick="filterLog('skalepay')">SkalePay</button>
+                        <button class="log-filter-btn" data-log-filter="gateway" onclick="filterLog('gateway')">Gateway</button>
                         <button class="log-filter-btn" data-log-filter="erro" onclick="filterLog('erro')">Erros</button>
                         <button class="log-filter-btn" data-log-filter="api" onclick="filterLog('api')">API</button>
                     </div>
@@ -797,12 +915,16 @@ if ($isAuthenticated) {
                         if (strpos($line, 'PIX_GERADO') !== false) $cls = 'pix';
                         elseif (strpos($line, 'WEBHOOK_RECEBIDO') !== false) $cls = 'webhook';
                         elseif (strpos($line, 'PAGAMENTO_APROVADO') !== false) $cls = 'aprovado';
+                        elseif (strpos($line, 'SKALEPAY_') !== false) $cls = 'skalepay';
+                        elseif (strpos($line, 'GATEWAY_') !== false) $cls = 'gateway';
+                        elseif (strpos($line, 'ERRO') !== false || strpos($line, 'FALHOU') !== false) $cls = 'erro';
                     ?>
                     <div class="log-line <?php echo $cls; ?>"><?php echo sanitize($line); ?></div>
                 <?php endforeach; ?>
                 <?php if (empty($logLines)): ?>
                     <div class="no-data">Nenhum evento registrado</div>
                 <?php endif; ?>
+                <div id="logNoResult" class="no-data" style="display:none">Nenhum evento para este filtro</div>
             </div>
         </div>
 
@@ -847,6 +969,9 @@ if ($isAuthenticated) {
             </div>
         </div>
 
+        <!-- Toast Notification -->
+        <div class="toast" id="toast"></div>
+
         <!-- Settings -->
         <div class="settings-bar">
             <label class="toggle-label">
@@ -856,8 +981,8 @@ if ($isAuthenticated) {
                 </div>
                 <span>Auto-refresh (30s)</span>
             </label>
-            <span style="color:#52525b">|</span>
-            <span style="font-size:0.8rem;color:#71717a;">Dados carregados de: api/data/</span>
+            <span style="color:#27272a">|</span>
+            <span style="font-size:0.78rem;color:#52525b;">Dados carregados de: api/data/</span>
         </div>
     </div>
 
@@ -876,6 +1001,14 @@ if ($isAuthenticated) {
     let trafficPage = 1;
     let autoRefreshTimer = null;
     let sortState = {};
+
+    // ── Toast ──
+    function showToast(msg, type) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast toast-' + (type || 'success') + ' show';
+        setTimeout(() => { t.classList.remove('show'); }, 3000);
+    }
 
     // ── Utils ──
     function formatBRL(cents) {
@@ -976,7 +1109,7 @@ if ($isAuthenticated) {
         ctx.clearRect(0, 0, W, H);
 
         if (!data.length) {
-            ctx.fillStyle = '#71717a';
+            ctx.fillStyle = '#52525b';
             ctx.font = '13px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('Sem dados para o periodo', W / 2, H / 2);
@@ -993,7 +1126,7 @@ if ($isAuthenticated) {
         const barW = Math.max(Math.min(chartW / labels.length - 4, 40), 8);
 
         // Grid lines
-        ctx.strokeStyle = '#1e1f2a';
+        ctx.strokeStyle = '#1c1c1f';
         ctx.lineWidth = 1;
         for (let i = 0; i <= 4; i++) {
             const y = padTop + (chartH / 4) * i;
@@ -1002,7 +1135,6 @@ if ($isAuthenticated) {
             ctx.lineTo(W - padRight, y);
             ctx.stroke();
 
-            // Y labels
             const val = maxVal - (maxVal / 4) * i;
             ctx.fillStyle = '#52525b';
             ctx.font = '10px Inter, sans-serif';
@@ -1017,7 +1149,6 @@ if ($isAuthenticated) {
             const x = padLeft + step * i + (step - barW) / 2;
             const y = padTop + chartH - barH;
 
-            // Bar
             ctx.fillStyle = color;
             ctx.globalAlpha = 0.85;
             ctx.beginPath();
@@ -1031,11 +1162,10 @@ if ($isAuthenticated) {
             ctx.fill();
             ctx.globalAlpha = 1;
 
-            // X label
-            ctx.fillStyle = '#71717a';
+            ctx.fillStyle = '#52525b';
             ctx.font = '10px Inter, sans-serif';
             ctx.textAlign = 'center';
-            const lbl = d.label.substring(5); // MM-DD
+            const lbl = d.label.substring(5);
             ctx.fillText(lbl.replace('-', '/'), padLeft + step * i + step / 2, H - padBottom + 18);
         });
     }
@@ -1057,7 +1187,7 @@ if ($isAuthenticated) {
         legendEl.innerHTML = '';
 
         if (!data.length) {
-            ctx.fillStyle = '#71717a';
+            ctx.fillStyle = '#52525b';
             ctx.font = '13px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('Sem dados para o periodo', W / 2, H / 2);
@@ -1080,7 +1210,6 @@ if ($isAuthenticated) {
             ctx.fillStyle = col;
             ctx.fill();
 
-            // Label inside slice if big enough
             if (slice > 0.3) {
                 const mid = startAngle + slice / 2;
                 const lx = cx + Math.cos(mid) * r * 0.6;
@@ -1095,7 +1224,6 @@ if ($isAuthenticated) {
 
             startAngle += slice;
 
-            // Legend
             const item = document.createElement('div');
             item.className = 'pie-legend-item';
             const swatch = document.createElement('span');
@@ -1123,7 +1251,6 @@ if ($isAuthenticated) {
             }
         });
 
-        // Also include days with 0 sales in range
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value || new Date().toISOString().substring(0, 10);
         if (from) {
@@ -1159,14 +1286,12 @@ if ($isAuthenticated) {
     function getTrafficTable() {
         const map = {};
 
-        // Count views by source+campaign+medium+content
         filteredPageviews.forEach(pv => {
             const key = [pv.utm_source || '(direto)', pv.utm_campaign || '-', pv.utm_medium || '-', pv.utm_content || '-'].join('||');
             if (!map[key]) map[key] = { source: pv.utm_source || '(direto)', campaign: pv.utm_campaign || '-', medium: pv.utm_medium || '-', content: pv.utm_content || '-', views: 0, pix: 0, sales: 0, revenue: 0 };
             map[key].views++;
         });
 
-        // Count payments by tracking info
         filteredPayments.forEach(p => {
             const t = p.tracking || {};
             const key = [t.utm_source || '(direto)', t.utm_campaign || '-', t.utm_medium || '-', t.utm_content || '-'].join('||');
@@ -1235,7 +1360,6 @@ if ($isAuthenticated) {
             </tr>`;
         }).join('');
 
-        // Pagination
         const pagDiv = document.getElementById('trafficPagination');
         if (totalPages <= 1) { pagDiv.innerHTML = ''; return; }
         let html = '';
@@ -1360,7 +1484,6 @@ if ($isAuthenticated) {
             sortState[tableId] = {};
             sortState[tableId][col] = dir;
 
-            // Remove sorted class from siblings
             this.parentElement.querySelectorAll('th').forEach(t => t.classList.remove('sorted-asc', 'sorted-desc'));
             this.classList.add(dir === 'asc' ? 'sorted-asc' : 'sorted-desc');
 
@@ -1418,9 +1541,7 @@ if ($isAuthenticated) {
         fetch(window.location.pathname + '?get_log=1&_t=' + Date.now())
             .then(r => r.text())
             .then(html => {
-                // If page returns login form, skip
                 if (html.indexOf('dashboard_password') !== -1) return;
-                // Reload entire page for simplicity
                 location.reload();
             })
             .catch(() => {});
@@ -1450,12 +1571,13 @@ if ($isAuthenticated) {
             else if (type === 'pix' && text.indexOf('PIX_GERADO') !== -1) show = true;
             else if (type === 'webhook' && text.indexOf('WEBHOOK_RECEBIDO') !== -1) show = true;
             else if (type === 'aprovado' && text.indexOf('PAGAMENTO_APROVADO') !== -1) show = true;
-            else if (type === 'erro' && (text.indexOf('ERRO') !== -1 || text.indexOf('erro') !== -1)) show = true;
+            else if (type === 'skalepay' && text.indexOf('SKALEPAY_') !== -1) show = true;
+            else if (type === 'gateway' && (text.indexOf('GATEWAY_') !== -1 || text.indexOf('GATEWAY_CHAIN') !== -1)) show = true;
+            else if (type === 'erro' && (text.indexOf('ERRO') !== -1 || text.indexOf('erro') !== -1 || text.indexOf('FALHOU') !== -1)) show = true;
             else if (type === 'api' && (text.indexOf('UTMIFY') !== -1 || text.indexOf('FB_CAPI') !== -1 || text.indexOf('TIKTOK') !== -1 || text.indexOf('MANGOFY') !== -1)) show = true;
             line.style.display = show ? '' : 'none';
             if (show) visible++;
         });
-        // Show "no results" if none visible
         const noResult = document.getElementById('logNoResult');
         if (noResult) noResult.style.display = visible === 0 ? '' : 'none';
     }
@@ -1483,7 +1605,6 @@ if ($isAuthenticated) {
             data = data.filter(e => e.api === apiFilterType);
         }
 
-        // Apply date filters
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
         if (from) data = data.filter(e => (e.timestamp || '').substring(0, 10) >= from);
@@ -1512,15 +1633,14 @@ if ($isAuthenticated) {
 
             return `<tr class="clickable-row" onclick="openSaleDetail('${pc}')">
                 <td>${formatDateBR(e.timestamp)}</td>
-                <td style="font-family:monospace;font-size:0.78rem">${pc || '-'}</td>
+                <td style="font-family:monospace;font-size:0.76rem">${pc || '-'}</td>
                 <td>${esc(e.event || '-')}</td>
                 <td><span class="api-badge ${apiBadgeCls}">${esc(e.api || '-')}</span></td>
-                <td><span class="${statusCls}" style="padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:600">${e.http_status || '-'}</span></td>
+                <td><span class="${statusCls}" style="padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600">${e.http_status || '-'}</span></td>
                 <td><span class="status-dot ${dotCls}"></span>${e.success ? 'OK' : 'Erro'}</td>
             </tr>`;
         }).join('');
 
-        // Pagination
         const pagDiv = document.getElementById('apiEventsPagination');
         if (totalPages <= 1) { pagDiv.innerHTML = ''; return; }
         let html = '';
@@ -1565,7 +1685,7 @@ if ($isAuthenticated) {
                 </div>
                 <div class="detail-card">
                     <h4>Pagamento</h4>
-                    <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace;font-size:0.78rem">${esc(paymentCode)}</span></div>
+                    <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace;font-size:0.76rem">${esc(paymentCode)}</span></div>
                     <div class="detail-row"><span class="label">Valor</span><span class="value">${formatBRL(payment.amount || 0)}</span></div>
                     <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge ${payment.status==='paid'?'badge-paid':'badge-pending'}">${payment.status==='paid'?'Pago':'Pendente'}</span></span></div>
                     <div class="detail-row"><span class="label">Gateway</span><span class="value"><span class="badge ${(payment.gateway||'mangofy')==='skalepay'?'badge-sk':'badge-mg'}">${(payment.gateway||'mangofy')==='skalepay'?'SkalePay':'Mangofy'}</span></span></div>
@@ -1658,31 +1778,37 @@ if ($isAuthenticated) {
 
     // ── Gateway Switcher ──
     function switchGateway(gw) {
-        if (!confirm('Trocar gateway ativo para ' + gw.toUpperCase() + '?')) return;
-        var btns = document.querySelectorAll('.gw-opt');
-        btns.forEach(function(b) { b.classList.remove('active-mg', 'active-sk'); b.disabled = true; });
+        if (!confirm('Trocar gateway ativo para ' + gw.toUpperCase() + '?\n\nTodos os novos pagamentos usarao esta gateway.')) return;
+        const btns = document.querySelectorAll('.gw-btn');
+        btns.forEach(b => { b.classList.remove('gw-active', 'gw-active-mg', 'gw-active-sk'); b.disabled = true; });
 
         fetch('/api/gateway.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ gateway: gw })
         })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            btns.forEach(function(b) { b.disabled = false; });
+        .then(r => r.json())
+        .then(data => {
+            btns.forEach(b => { b.disabled = false; });
             if (data.success) {
-                btns.forEach(function(b) {
+                btns.forEach(b => {
                     if (b.dataset.gw === gw) {
-                        b.classList.add(gw === 'mangofy' ? 'active-mg' : 'active-sk');
+                        b.classList.add('gw-active', gw === 'mangofy' ? 'gw-active-mg' : 'gw-active-sk');
                     }
                 });
+                // Update card visual
+                const card = document.getElementById('gwCard');
+                card.className = 'gw-card gw-' + gw;
+                document.getElementById('gwIcon').textContent = gw === 'skalepay' ? 'SK' : 'MG';
+                document.getElementById('gwName').innerHTML = '<span class="gw-live-dot"></span> ' + (gw === 'skalepay' ? 'SkalePay' : 'Mangofy');
+                showToast('Gateway alterado para ' + (gw === 'skalepay' ? 'SkalePay' : 'Mangofy'), 'success');
             } else {
-                alert('Erro: ' + (data.error || 'falha ao trocar gateway'));
+                showToast('Erro: ' + (data.error || 'falha ao trocar gateway'), 'error');
                 location.reload();
             }
         })
-        .catch(function() {
-            alert('Erro de rede ao trocar gateway');
+        .catch(() => {
+            showToast('Erro de rede ao trocar gateway', 'error');
             location.reload();
         });
     }
