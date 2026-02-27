@@ -218,6 +218,17 @@ $fbAddToCart = [
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
 apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
 
+// Log PIX generated
+writeLog('PIX_GERADO', [
+    'payment_code' => $paymentCode,
+    'valor' => 'R$ ' . number_format($amount / 100, 2, ',', '.'),
+    'nome' => $customer['name'] ?? '',
+    'email' => $customer['email'] ?? '',
+    'telefone' => $customer['phone'] ?? '',
+    'itens' => array_map(function($i) { return ($i['name'] ?? 'item') . ' x' . ($i['quantity'] ?? 1); }, $items),
+    'ip' => $clientIp
+]);
+
 // Return success with QR code data
 echo json_encode([
     'success' => true,

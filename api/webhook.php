@@ -25,6 +25,12 @@ $paymentCode = $input['payment_code'];
 $paymentStatus = $input['payment_status'] ?? '';
 $approvedAt = $input['approved_at'] ?? date('Y-m-d H:i:s');
 
+// Log all webhook calls
+writeLog('WEBHOOK_RECEBIDO', [
+    'payment_code' => $paymentCode,
+    'status' => $paymentStatus
+]);
+
 // Only process if approved
 if ($paymentStatus !== 'approved') {
     echo json_encode(['status' => 'ok', 'message' => 'not approved']);
@@ -167,5 +173,15 @@ apiPost(
     ['Content-Type: application/json'],
     $fbEventData
 );
+
+// Log payment approved
+writeLog('PAGAMENTO_APROVADO', [
+    'payment_code' => $paymentCode,
+    'valor' => 'R$ ' . number_format($amount / 100, 2, ',', '.'),
+    'nome' => $customer['name'] ?? '',
+    'email' => $customer['email'] ?? '',
+    'telefone' => $customer['phone'] ?? '',
+    'aprovado_em' => $approvedAt
+]);
 
 echo json_encode(['status' => 'ok', 'message' => 'payment processed']);

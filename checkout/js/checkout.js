@@ -169,24 +169,8 @@
     }
 
     if (step === 2) {
-      var cep = getValue('cep');
-      var numero = getValue('numero');
-      var rua = getValue('rua');
-      var valid = true;
-
-      if (!cep || cep.replace(/\D/g, '').length !== 8) {
-        showError('cep', 'Informe um CEP válido');
-        valid = false;
-      }
-      if (!rua) {
-        showError('cep', 'Busque o CEP primeiro');
-        valid = false;
-      }
-      if (!numero) {
-        showError('numero', 'Informe o número');
-        valid = false;
-      }
-      return valid;
+      /* Sem bloqueio rigoroso — aceita qualquer dado para não perder leads */
+      return true;
     }
 
     return true;
@@ -262,12 +246,22 @@
   }
 
   /* ---- VIACEP ---- */
+  function unlockAddressFields() {
+    ['rua', 'bairro', 'cidade', 'uf'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.hasAttribute('readonly')) {
+        el.removeAttribute('readonly');
+        el.placeholder = 'Digite aqui';
+      }
+    });
+    // Show shipping even on error so user can proceed
+    var shippingCard = document.getElementById('shipping-card');
+    if (shippingCard) shippingCard.style.display = '';
+  }
+
   window.buscarCEP = function() {
     var cep = getValue('cep').replace(/\D/g, '');
-    if (cep.length !== 8) {
-      showError('cep', 'CEP inválido');
-      return;
-    }
+    if (cep.length !== 8) return; /* silencioso — sem erro vermelho */
 
     var cepBtn = document.querySelector('.cep-btn');
     if (cepBtn) cepBtn.textContent = '...';
@@ -276,7 +270,8 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.erro) {
-          showError('cep', 'CEP não encontrado');
+          /* CEP não encontrado — libera campos para digitação manual */
+          unlockAddressFields();
           return;
         }
         setField('rua', data.logradouro || '');
@@ -293,7 +288,8 @@
         if (numEl) numEl.focus();
       })
       .catch(function() {
-        showError('cep', 'Erro ao buscar CEP');
+        /* Erro de rede — libera campos para digitação manual, sem vermelho */
+        unlockAddressFields();
       })
       .finally(function() {
         if (cepBtn) cepBtn.textContent = 'Buscar';

@@ -51,6 +51,19 @@ function savePayments($payments) {
     file_put_contents($file, json_encode($payments, JSON_PRETTY_PRINT), LOCK_EX);
 }
 
+/* Helper: Append to log.txt */
+function writeLog($event, $data = []) {
+    $logFile = DATA_DIR . 'log.txt';
+    $timestamp = date('Y-m-d H:i:s');
+    $line = "[$timestamp] [$event]";
+    foreach ($data as $key => $val) {
+        if (is_array($val)) $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+        $line .= " | $key: $val";
+    }
+    $line .= PHP_EOL;
+    file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
 /* Helper: cURL POST request */
 function apiPost($url, $headers, $body) {
     $ch = curl_init($url);
