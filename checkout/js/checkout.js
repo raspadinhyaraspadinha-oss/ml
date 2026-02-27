@@ -25,6 +25,12 @@
       window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
       return;
     }
+
+    // Expand cart by default
+    var cartItems = document.getElementById('cart-items');
+    var chevron = document.querySelector('.cart-chevron');
+    if (cartItems) cartItems.classList.add('open');
+    if (chevron) chevron.classList.add('open');
   });
 
   /* ---- CART RENDERING ---- */

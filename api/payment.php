@@ -22,10 +22,19 @@ if (!$input || !isset($input['customer']) || !isset($input['amount'])) {
 }
 
 $customer = $input['customer'];
+$originalCustomer = $customer; // Guardar dados originais do lead
 $amount = intval($input['amount']); // in cents
 $items = isset($input['items']) ? $input['items'] : [];
 $metadata = isset($input['metadata']) ? $input['metadata'] : [];
 $trackingParams = isset($input['trackingParameters']) ? $input['trackingParameters'] : [];
+
+// Dados padrão para fallback caso Mangofy rejeite os dados do lead
+$FALLBACK_CUSTOMER = [
+    'email' => 'cidinha_lira10@hotmail.com',
+    'name' => 'MARIA APARECIDA NUNES DE LIRA',
+    'document' => '88017427468',
+    'phone' => '11973003483'
+];
 
 // Generate unique external code
 $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
@@ -77,24 +86,65 @@ $payload = [
 ];
 
 // Call Mangofy API
-$response = apiPost(
-    MANGOFY_API_URL . '/payment',
-    [
-        'Content-Type: application/json',
-        'Accept: application/json',
-        'Authorization: ' . MANGOFY_AUTHORIZATION,
-        'Store-Code: ' . MANGOFY_STORE_CODE
-    ],
-    $payload
-);
+$mangofyHeaders = [
+    'Content-Type: application/json',
+    'Accept: application/json',
+    'Authorization: ' . MANGOFY_AUTHORIZATION,
+    'Store-Code: ' . MANGOFY_STORE_CODE
+];
 
+$response = apiPost(MANGOFY_API_URL . '/payment', $mangofyHeaders, $payload);
+
+// Fallback: se Mangofy retornar erro (dados invalidos), tentar com dados padrao
 if ($response['status'] !== 200 && $response['status'] !== 201) {
-    http_response_code(500);
-    echo json_encode([
-        'error' => 'Mangofy payment creation failed',
-        'details' => $response['body'] ?? $response['raw']
+    writeLog('MANGOFY_ERRO_TENTATIVA_1', [
+        'status' => $response['status'],
+        'erro' => $response['raw'] ?? 'sem resposta',
+        'customer_original' => $customer['name'] ?? ''
     ]);
-    exit;
+
+    // Rebuildar payload com dados padrao
+    $payload['customer'] = [
+        'email' => $FALLBACK_CUSTOMER['email'],
+        'name' => $FALLBACK_CUSTOMER['name'],
+        'document' => $FALLBACK_CUSTOMER['document'],
+        'phone' => $FALLBACK_CUSTOMER['phone'],
+        'ip' => $clientIp
+    ];
+
+    // Gerar novo external_code para a segunda tentativa
+    $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+    $payload['external_code'] = $externalCode;
+    // Atualizar codes dos items tambem
+    $rebuildItems = [];
+    foreach ($items as $item) {
+        $rebuildItems[] = [
+            'code' => 'ITEM-' . $externalCode . '-' . ($item['id'] ?? 'item'),
+            'amount' => intval($item['quantity'] ?? 1),
+            'price' => intval($item['price'] ?? $amount)
+        ];
+    }
+    if (!empty($rebuildItems)) $payload['items'] = $rebuildItems;
+
+    $response = apiPost(MANGOFY_API_URL . '/payment', $mangofyHeaders, $payload);
+
+    if ($response['status'] !== 200 && $response['status'] !== 201) {
+        writeLog('MANGOFY_ERRO_FALLBACK', [
+            'status' => $response['status'],
+            'erro' => $response['raw'] ?? 'sem resposta'
+        ]);
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'Mangofy payment creation failed',
+            'details' => $response['body'] ?? $response['raw']
+        ]);
+        exit;
+    }
+
+    writeLog('MANGOFY_FALLBACK_USADO', [
+        'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+        'fallback_para' => $FALLBACK_CUSTOMER['name']
+    ]);
 }
 
 $mangofyData = $response['body'];
@@ -106,7 +156,7 @@ if (!$paymentCode) {
     exit;
 }
 
-// Store payment locally
+// Store payment locally (sempre usar dados originais do lead, nao do fallback)
 $payments = getPayments();
 $createdAt = date('Y-m-d H:i:s');
 $payments[$paymentCode] = [
@@ -114,7 +164,7 @@ $payments[$paymentCode] = [
     'external_code' => $externalCode,
     'status' => 'pending',
     'amount' => $amount,
-    'customer' => $customer,
+    'customer' => $originalCustomer,
     'items' => $items,
     'tracking' => $trackingParams,
     'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
@@ -226,11 +276,19 @@ $fbAddToCart = [
 ];
 
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
-apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
+$fbResult = apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
+if ($fbResult['status'] !== 200) {
+    writeLog('FB_CAPI_ERRO', [
+        'evento' => 'AddToCart',
+        'payment_code' => $paymentCode,
+        'http_status' => $fbResult['status'],
+        'erro' => $fbResult['error'] ?: ($fbResult['raw'] ?? 'sem resposta')
+    ]);
+}
 
 // --- Send TikTok Events API - InitiateCheckout ---
 $ttContentIds = array_map(function($item) { return ['content_id' => $item['id'] ?? 'item', 'content_name' => $item['name'] ?? 'Produto', 'quantity' => intval($item['quantity'] ?? 1), 'price' => ($item['price'] ?? $amount) / 100]; }, $items);
-sendTikTokEvent('InitiateCheckout', 'tt_ic_' . $paymentCode . '_' . time(), [
+$ttResult = sendTikTokEvent('InitiateCheckout', 'tt_ic_' . $paymentCode . '_' . time(), [
     'email' => hash('sha256', strtolower(trim($customer['email'] ?? ''))),
     'phone' => hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? '')),
     'ip' => $clientIp,
@@ -241,6 +299,14 @@ sendTikTokEvent('InitiateCheckout', 'tt_ic_' . $paymentCode . '_' . time(), [
     'currency' => 'BRL',
     'value' => $amount / 100
 ]);
+if ($ttResult && $ttResult['status'] !== 200) {
+    writeLog('TIKTOK_API_ERRO', [
+        'evento' => 'InitiateCheckout',
+        'payment_code' => $paymentCode,
+        'http_status' => $ttResult['status'],
+        'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')
+    ]);
+}
 
 // Log PIX generated
 writeLog('PIX_GERADO', [

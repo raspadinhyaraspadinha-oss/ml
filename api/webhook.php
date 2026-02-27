@@ -174,15 +174,23 @@ $fbEventData['data'][0]['user_data'] = array_filter(
 
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
 
-apiPost(
+$fbResult = apiPost(
     $fbUrl,
     ['Content-Type: application/json'],
     $fbEventData
 );
+if ($fbResult['status'] !== 200) {
+    writeLog('FB_CAPI_ERRO', [
+        'evento' => 'Purchase',
+        'payment_code' => $paymentCode,
+        'http_status' => $fbResult['status'],
+        'erro' => $fbResult['error'] ?: ($fbResult['raw'] ?? 'sem resposta')
+    ]);
+}
 
 // --- Send TikTok Events API - CompletePayment ---
 $ttContentIds = array_map(function($item) { return ['content_id' => $item['id'] ?? 'item', 'content_name' => $item['name'] ?? 'Produto', 'quantity' => intval($item['quantity'] ?? 1), 'price' => ($item['price'] ?? $amount) / 100]; }, $items);
-sendTikTokEvent('CompletePayment', 'tt_cp_' . $paymentCode . '_' . time(), [
+$ttResult = sendTikTokEvent('CompletePayment', 'tt_cp_' . $paymentCode . '_' . time(), [
     'email' => hash('sha256', strtolower(trim($customer['email'] ?? ''))),
     'phone' => hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? '')),
     'ip' => $customer['ip'] ?? '0.0.0.0',
@@ -194,6 +202,14 @@ sendTikTokEvent('CompletePayment', 'tt_cp_' . $paymentCode . '_' . time(), [
     'value' => $amount / 100,
     'order_id' => $paymentCode
 ]);
+if ($ttResult && $ttResult['status'] !== 200) {
+    writeLog('TIKTOK_API_ERRO', [
+        'evento' => 'CompletePayment',
+        'payment_code' => $paymentCode,
+        'http_status' => $ttResult['status'],
+        'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')
+    ]);
+}
 
 // Log payment approved
 writeLog('PAGAMENTO_APROVADO', [

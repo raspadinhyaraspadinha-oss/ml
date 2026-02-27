@@ -529,6 +529,7 @@ if ($isAuthenticated) {
                     <tbody id="trafficBody"></tbody>
                 </table>
             </div>
+            <div class="pagination" id="trafficPagination"></div>
         </div>
 
         <!-- Top Products Table -->
@@ -633,6 +634,7 @@ if ($isAuthenticated) {
     let filteredPayments = [];
     let filteredPageviews = [];
     let salesPage = 1;
+    let trafficPage = 1;
     let autoRefreshTimer = null;
     let sortState = {};
 
@@ -688,6 +690,7 @@ if ($isAuthenticated) {
         });
 
         salesPage = 1;
+        trafficPage = 1;
         renderAll();
     }
 
@@ -697,6 +700,7 @@ if ($isAuthenticated) {
         filteredPayments = [...RAW_PAYMENTS];
         filteredPageviews = [...RAW_PAGEVIEWS];
         salesPage = 1;
+        trafficPage = 1;
         renderAll();
     }
 
@@ -966,11 +970,18 @@ if ($isAuthenticated) {
     function renderTrafficTable() {
         const data = getTrafficTable();
         const tbody = document.getElementById('trafficBody');
-        if (!data.length) {
+        const TRAFFIC_PER_PAGE = 15;
+        const totalPages = Math.max(1, Math.ceil(data.length / TRAFFIC_PER_PAGE));
+        if (trafficPage > totalPages) trafficPage = totalPages;
+        const start = (trafficPage - 1) * TRAFFIC_PER_PAGE;
+        const pageData = data.slice(start, start + TRAFFIC_PER_PAGE);
+
+        if (!pageData.length) {
             tbody.innerHTML = '<tr><td colspan="9" class="no-data">Sem dados</td></tr>';
+            document.getElementById('trafficPagination').innerHTML = '';
             return;
         }
-        tbody.innerHTML = data.map(r => {
+        tbody.innerHTML = pageData.map(r => {
             const cvr = r.pix > 0 ? ((r.sales / r.pix) * 100).toFixed(1) : '0.0';
             return `<tr>
                 <td>${esc(r.source)}</td>
@@ -984,6 +995,23 @@ if ($isAuthenticated) {
                 <td>${cvr}%</td>
             </tr>`;
         }).join('');
+
+        // Pagination
+        const pagDiv = document.getElementById('trafficPagination');
+        if (totalPages <= 1) { pagDiv.innerHTML = ''; return; }
+        let html = '';
+        html += `<button ${trafficPage <= 1 ? 'disabled' : ''} onclick="trafficPage=1;renderTrafficTable()">&#171;</button>`;
+        html += `<button ${trafficPage <= 1 ? 'disabled' : ''} onclick="trafficPage--;renderTrafficTable()">&#8249;</button>`;
+        const maxButtons = 7;
+        let startP = Math.max(1, trafficPage - Math.floor(maxButtons / 2));
+        let endP = Math.min(totalPages, startP + maxButtons - 1);
+        if (endP - startP < maxButtons - 1) startP = Math.max(1, endP - maxButtons + 1);
+        for (let i = startP; i <= endP; i++) {
+            html += `<button class="${i === trafficPage ? 'active' : ''}" onclick="trafficPage=${i};renderTrafficTable()">${i}</button>`;
+        }
+        html += `<button ${trafficPage >= totalPages ? 'disabled' : ''} onclick="trafficPage++;renderTrafficTable()">&#8250;</button>`;
+        html += `<button ${trafficPage >= totalPages ? 'disabled' : ''} onclick="trafficPage=${totalPages};renderTrafficTable()">&#187;</button>`;
+        pagDiv.innerHTML = html;
     }
 
     function renderProductsTable() {
