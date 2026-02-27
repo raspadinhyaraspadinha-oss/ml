@@ -117,6 +117,7 @@ $payments[$paymentCode] = [
     'customer' => $customer,
     'items' => $items,
     'tracking' => $trackingParams,
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
     'created_at' => $createdAt,
     'paid_at' => null
 ];
@@ -191,25 +192,34 @@ apiPost(
 );
 
 // Send Facebook CAPI AddToCart event (server-side)
+$nameParts = explode(' ', trim($customer['name'] ?? ''));
+$firstName = $nameParts[0] ?? '';
+$lastName = count($nameParts) > 1 ? end($nameParts) : '';
+
 $fbAddToCart = [
     'data' => [
         [
             'event_name' => 'AddToCart',
+            'event_id' => 'atc_' . $paymentCode . '_' . time(),
             'event_time' => time(),
             'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/',
             'action_source' => 'website',
             'user_data' => array_filter([
                 'em' => [hash('sha256', strtolower(trim($customer['email'] ?? '')))],
                 'ph' => [hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? ''))],
+                'fn' => [hash('sha256', strtolower(trim($firstName)))],
+                'ln' => [hash('sha256', strtolower(trim($lastName)))],
                 'client_ip_address' => $clientIp,
+                'client_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
                 'fbc' => $trackingParams['fbc'] ?? null,
                 'fbp' => $trackingParams['fbp'] ?? null
-            ], function($v) { return $v !== null; }),
+            ], function($v) { return $v !== null && $v !== ''; }),
             'custom_data' => [
                 'currency' => 'BRL',
                 'value' => $amount / 100,
                 'content_ids' => array_map(function($item) { return $item['id'] ?? 'item'; }, $items),
-                'content_type' => 'product'
+                'content_type' => 'product',
+                'order_id' => $paymentCode
             ]
         ]
     ]
@@ -217,6 +227,20 @@ $fbAddToCart = [
 
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
 apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
+
+// --- Send TikTok Events API - InitiateCheckout ---
+$ttContentIds = array_map(function($item) { return ['content_id' => $item['id'] ?? 'item', 'content_name' => $item['name'] ?? 'Produto', 'quantity' => intval($item['quantity'] ?? 1), 'price' => ($item['price'] ?? $amount) / 100]; }, $items);
+sendTikTokEvent('InitiateCheckout', 'tt_ic_' . $paymentCode . '_' . time(), [
+    'email' => hash('sha256', strtolower(trim($customer['email'] ?? ''))),
+    'phone' => hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? '')),
+    'ip' => $clientIp,
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? ''
+], [
+    'contents' => $ttContentIds,
+    'content_type' => 'product',
+    'currency' => 'BRL',
+    'value' => $amount / 100
+]);
 
 // Log PIX generated
 writeLog('PIX_GERADO', [

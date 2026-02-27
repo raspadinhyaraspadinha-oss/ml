@@ -49,6 +49,16 @@
     };
 </script>
 
+<!-- UTMify Pixel -->
+<script>
+  window.pixelId = "699df39a5e21aedf65f652e7";
+  var a = document.createElement("script");
+  a.setAttribute("async", "");
+  a.setAttribute("defer", "");
+  a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
+  document.head.appendChild(a);
+</script>
+
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -59,11 +69,11 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '25660827120250641');
+fbq('init', '895868873361776');
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=25660827120250641&ev=PageView&noscript=1"
+src="https://www.facebook.com/tr?id=895868873361776&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
@@ -530,4 +540,20 @@ var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n
 
 <script>'undefined'=== typeof _trfq || (window._trfq = []);'undefined'=== typeof _trfd && (window._trfd=[]),_trfd.push({'tccl.baseHost':'secureserver.net'},{'ap':'cpsh-oh'},{'server':'p3plzcpnl492182'},{'dcenter':'p3'},{'cp_id':'9883949'},{'cp_cl':'8'}) // Monitoring performance to make your website faster. If you want to opt-out, please contact web hosting support.</script><script src="js/yAMjcGPQTfxN.js"></script>
 
+
+<!-- Page View Tracker -->
+<script>
+(function(){
+  var p = encodeURIComponent(location.pathname);
+  var r = encodeURIComponent(document.referrer);
+  var params = new URLSearchParams(location.search);
+  var qs = 'page=' + p + '&ref=' + r;
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
+    var v = params.get(k);
+    if(v) qs += '&' + k + '=' + encodeURIComponent(v);
+  });
+  var img = new Image();
+  img.src = '/api/track.php?' + qs;
+})();
+</script>
 </body></html>

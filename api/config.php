@@ -18,6 +18,10 @@ define('FB_PIXEL_ID', '895868873361776');
 define('FB_ACCESS_TOKEN', 'EAAMJ4lbAOXMBQy8xkl2eKvSBDOGbwOdwP0cwJS6CNZBWRKOOkbVtd47IzZCEkVZCLte9nFkR4hEwZCDymU8OPrca47jnprc43IOEG94YJdZC5XZAZCfFQAxFpvo8GZAyJNIi51Xnq2lCxZBoi0uJZBrRmX5MIrZBSq8PNEwNJCIjyiZA9NUxOiP7tEZA1gDKimLjTcQZDZD');
 define('FB_API_VERSION', 'v21.0');
 
+// TikTok Events API
+define('TIKTOK_PIXEL_ID', 'D6G7SLBC77U2V3Q5N7A0');
+define('TIKTOK_ACCESS_TOKEN', '14d9ff5601dbf0386da60a7925b3a38c37d7af5b'); // ← Substitua pelo seu Access Token do TikTok Events API
+
 // Data storage path
 define('DATA_DIR', __DIR__ . '/data/');
 
@@ -62,6 +66,37 @@ function writeLog($event, $data = []) {
     }
     $line .= PHP_EOL;
     file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
+/* Helper: Send TikTok Events API event */
+function sendTikTokEvent($eventName, $eventId, $userData, $properties = []) {
+    if (TIKTOK_ACCESS_TOKEN === 'SEU_TIKTOK_ACCESS_TOKEN_AQUI') return null; // Skip if not configured
+
+    $payload = [
+        'event_source' => 'web',
+        'event_source_id' => TIKTOK_PIXEL_ID,
+        'data' => [
+            [
+                'event' => $eventName,
+                'event_id' => $eventId,
+                'event_time' => time(),
+                'user' => $userData,
+                'page' => [
+                    'url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/'
+                ],
+                'properties' => $properties
+            ]
+        ]
+    ];
+
+    return apiPost(
+        'https://business-api.tiktok.com/open_api/v1.3/event/track/',
+        [
+            'Content-Type: application/json',
+            'Access-Token: ' . TIKTOK_ACCESS_TOKEN
+        ],
+        $payload
+    );
 }
 
 /* Helper: cURL POST request */

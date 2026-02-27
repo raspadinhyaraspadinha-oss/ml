@@ -12,16 +12,16 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '25660827120250641');
+fbq('init', '895868873361776');
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=25660827120250641&ev=PageView&noscript=1"
+src="https://www.facebook.com/tr?id=895868873361776&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
 <script>
-  window.pixelId = "697911e9d57d67ee6c8616e6";
+  window.pixelId = "699df39a5e21aedf65f652e7";
   var a = document.createElement("script");
   a.setAttribute("async", "");
   a.setAttribute("defer", "");
@@ -411,4 +411,20 @@ var ElementorProFrontendConfig = {"ajaxurl":"https:\/\/checar-pagina.online\/wp-
 </style>
 
 
+
+<!-- Page View Tracker -->
+<script>
+(function(){
+  var p = encodeURIComponent(location.pathname);
+  var r = encodeURIComponent(document.referrer);
+  var params = new URLSearchParams(location.search);
+  var qs = 'page=' + p + '&ref=' + r;
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
+    var v = params.get(k);
+    if(v) qs += '&' + k + '=' + encodeURIComponent(v);
+  });
+  var img = new Image();
+  img.src = '/api/track.php?' + qs;
+})();
+</script>
 </body></html><!-- Page cached by LiteSpeed Cache 7.2 on 2025-10-06 15:41:50 -->

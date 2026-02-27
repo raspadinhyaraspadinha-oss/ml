@@ -396,19 +396,26 @@
       // Start polling for payment
       startPolling();
 
+      // Event ID for dedup between client-side pixel and server-side CAPI
+      var icEventId = 'ic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
       // Fire FB InitiateCheckout
       if (typeof fbq === 'function') {
         fbq('track', 'InitiateCheckout', {
           value: totalAmount / 100,
           currency: 'BRL',
-          num_items: Cart.getCount()
-        });
+          num_items: Cart.getCount(),
+          content_ids: items.map(function(i) { return i.id; }),
+          content_type: 'product'
+        }, { eventID: icEventId });
       }
 
       // Fire TikTok InitiateCheckout (PIX generated)
       if (typeof ttq !== 'undefined') {
         ttq.track('InitiateCheckout', {
           content_type: 'product',
+          content_id: items.map(function(i) { return i.id; }).join(','),
+          quantity: Cart.getCount(),
           value: totalAmount / 100,
           currency: 'BRL'
         });
@@ -504,21 +511,32 @@
     if (content) content.style.display = 'none';
     if (confirmed) confirmed.style.display = 'block';
 
+    // Event ID for dedup between client-side pixel and server-side CAPI
+    var purchaseEventId = 'pur_' + paymentCode + '_' + Date.now();
+    // Save for potential server-side dedup
+    try { localStorage.setItem('ml_purchase_event_id', purchaseEventId); } catch(e) {}
+
+    var cartItems = Cart.getItems();
+    var purchaseValue = (Cart.getSubtotal() + selectedFrete) / 100;
+
     // Fire FB Purchase event (client-side)
     if (typeof fbq === 'function') {
       fbq('track', 'Purchase', {
-        value: (Cart.getSubtotal() + selectedFrete) / 100,
+        value: purchaseValue,
         currency: 'BRL',
-        content_ids: Cart.getItems().map(function(i) { return i.id; }),
-        content_type: 'product'
-      });
+        content_ids: cartItems.map(function(i) { return i.id; }),
+        content_type: 'product',
+        order_id: paymentCode
+      }, { eventID: purchaseEventId });
     }
 
     // Fire TikTok CompletePayment
     if (typeof ttq !== 'undefined') {
       ttq.track('CompletePayment', {
         content_type: 'product',
-        value: (Cart.getSubtotal() + selectedFrete) / 100,
+        content_id: cartItems.map(function(i) { return i.id; }).join(','),
+        quantity: cartItems.reduce(function(sum, i) { return sum + i.quantity; }, 0),
+        value: purchaseValue,
         currency: 'BRL'
       });
     }

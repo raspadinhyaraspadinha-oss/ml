@@ -133,19 +133,25 @@ apiPost(
 );
 
 // --- Send Facebook CAPI Purchase event ---
+$nameParts = explode(' ', trim($customer['name'] ?? ''));
+$firstName = $nameParts[0] ?? '';
+$lastName = count($nameParts) > 1 ? end($nameParts) : '';
+
 $fbEventData = [
     'data' => [
         [
             'event_name' => 'Purchase',
+            'event_id' => 'pur_' . $paymentCode . '_' . time(),
             'event_time' => time(),
             'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/',
             'action_source' => 'website',
             'user_data' => [
                 'em' => [hash('sha256', strtolower(trim($customer['email'] ?? '')))],
                 'ph' => [hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? ''))],
-                'fn' => [hash('sha256', strtolower(trim(explode(' ', $customer['name'] ?? '')[0] ?? '')))],
-                'ln' => [hash('sha256', strtolower(trim(end(explode(' ', $customer['name'] ?? '')) ?: '')))],
+                'fn' => [hash('sha256', strtolower(trim($firstName)))],
+                'ln' => [hash('sha256', strtolower(trim($lastName)))],
                 'client_ip_address' => $customer['ip'] ?? '0.0.0.0',
+                'client_user_agent' => $payment['user_agent'] ?? '',
                 'fbc' => $tracking['fbc'] ?? null,
                 'fbp' => $tracking['fbp'] ?? null
             ],
@@ -163,7 +169,7 @@ $fbEventData = [
 // Remove null values from user_data
 $fbEventData['data'][0]['user_data'] = array_filter(
     $fbEventData['data'][0]['user_data'],
-    function($v) { return $v !== null; }
+    function($v) { return $v !== null && $v !== ''; }
 );
 
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
@@ -173,6 +179,21 @@ apiPost(
     ['Content-Type: application/json'],
     $fbEventData
 );
+
+// --- Send TikTok Events API - CompletePayment ---
+$ttContentIds = array_map(function($item) { return ['content_id' => $item['id'] ?? 'item', 'content_name' => $item['name'] ?? 'Produto', 'quantity' => intval($item['quantity'] ?? 1), 'price' => ($item['price'] ?? $amount) / 100]; }, $items);
+sendTikTokEvent('CompletePayment', 'tt_cp_' . $paymentCode . '_' . time(), [
+    'email' => hash('sha256', strtolower(trim($customer['email'] ?? ''))),
+    'phone' => hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? '')),
+    'ip' => $customer['ip'] ?? '0.0.0.0',
+    'user_agent' => $payment['user_agent'] ?? ''
+], [
+    'contents' => $ttContentIds,
+    'content_type' => 'product',
+    'currency' => 'BRL',
+    'value' => $amount / 100,
+    'order_id' => $paymentCode
+]);
 
 // Log payment approved
 writeLog('PAGAMENTO_APROVADO', [
