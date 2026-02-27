@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Also fix the "Voltar" button on product pages to use compatible path
-    var voltarBtns = document.querySelectorAll('[onclick*="/recompensas"]');
+    var voltarBtns = document.querySelectorAll('[onclick*="/recompensas"], .nav-back');
     for (var i = 0; i < voltarBtns.length; i++) {
       (function(btn) {
         btn.onclick = null;
