@@ -109,36 +109,42 @@
 
   /* ---- ORDER SUMMARY MINI (Step 3) ---- */
   function renderOrderSummary() {
-    var items = Cart.getItems();
-    var osmItems = document.getElementById('osm-items');
-    var osmCount = document.getElementById('osm-count');
-    var osmSubtotal = document.getElementById('osm-subtotal');
-    var osmFrete = document.getElementById('osm-frete');
-    var osmTotal = document.getElementById('osm-total');
+    try {
+      var items = Cart.getItems();
+      var osmItems = document.getElementById('osm-items');
+      var osmCount = document.getElementById('osm-count');
+      var osmSubtotal = document.getElementById('osm-subtotal');
+      var osmFrete = document.getElementById('osm-frete');
+      var osmTotal = document.getElementById('osm-total');
 
-    var count = Cart.getCount();
-    if (osmCount) osmCount.textContent = count + (count === 1 ? ' item' : ' itens');
+      var count = Cart.getCount();
+      if (osmCount) osmCount.textContent = count + (count === 1 ? ' item' : ' itens');
 
-    if (osmItems) {
-      osmItems.innerHTML = '';
-      items.forEach(function(item) {
-        var div = document.createElement('div');
-        div.className = 'osm-item';
-        div.innerHTML =
-          '<img src="' + escapeHtml(item.image) + '" alt="">' +
-          '<span class="osm-item-name">' + escapeHtml(item.name) + '</span>' +
-          '<span class="osm-item-price">' + formatPrice(item.price * item.quantity) + '</span>';
-        osmItems.appendChild(div);
-      });
+      if (osmItems) {
+        osmItems.innerHTML = '';
+        items.forEach(function(item) {
+          var div = document.createElement('div');
+          div.className = 'osm-item';
+          div.innerHTML =
+            '<img src="' + escapeHtml(item.image || '') + '" alt="">' +
+            '<span class="osm-item-name">' + escapeHtml(item.name || 'Produto') + '</span>' +
+            '<span class="osm-item-price">' + formatPrice((item.price || 0) * (item.quantity || 1)) + '</span>';
+          osmItems.appendChild(div);
+        });
+      }
+
+      var subtotal = Cart.getSubtotal();
+      if (osmSubtotal) osmSubtotal.textContent = formatPrice(subtotal);
+      if (osmFrete) osmFrete.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
+      if (osmTotal) osmTotal.textContent = formatPrice(subtotal + selectedFrete);
+
+      updateSavings();
+    } catch(e) {
+      console.error('renderOrderSummary error:', e);
     }
-
-    var subtotal = Cart.getSubtotal();
-    if (osmSubtotal) osmSubtotal.textContent = formatPrice(subtotal);
-    if (osmFrete) osmFrete.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
-    if (osmTotal) osmTotal.textContent = formatPrice(subtotal + selectedFrete);
-
-    updateSavings();
   }
+  // Expose globally for failsafe calls
+  window.renderOrderSummary = renderOrderSummary;
 
   /* ---- CART TOGGLE ---- */
   window.toggleCart = function() {
@@ -200,24 +206,15 @@
     // If step 3, render order summary and generate PIX
     if (step === 3) {
       renderOrderSummary();
+      // Failsafe: render again after a short delay in case of timing issues
+      setTimeout(renderOrderSummary, 150);
       generatePix();
     }
   };
 
-  /* ---- PROGRESS BAR ---- */
+  /* ---- PROGRESS BAR (removed from HTML, kept as no-op for safety) ---- */
   function updateProgressBar(step) {
-    var fill = document.querySelector('.progress-fill');
-    var pSteps = document.querySelectorAll('.progress-step');
-
-    var widths = { 1: '33%', 2: '66%', 3: '100%' };
-    if (fill) fill.style.width = widths[step] || '33%';
-
-    pSteps.forEach(function(el) {
-      var s = parseInt(el.getAttribute('data-step'));
-      el.classList.remove('active', 'completed');
-      if (s === step) el.classList.add('active');
-      else if (s < step) el.classList.add('completed');
-    });
+    // Progress bar HTML was removed; step indicators handle visual feedback
   }
 
   /* ---- BACK STEP ---- */
@@ -483,6 +480,9 @@
       // Show content
       if (loading) loading.style.display = 'none';
       if (content) content.style.display = 'block';
+
+      // Re-render order summary with confirmed cart data (failsafe)
+      renderOrderSummary();
 
       // Start PIX countdown timer
       startPixCountdown();

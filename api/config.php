@@ -14,7 +14,7 @@ define('MANGOFY_STORE_CODE', '0d4e1ba5d97eba0bb822b05fae41df4b');
 
 // UTMify
 define('UTMIFY_API_URL', 'https://api.utmify.com.br/api-credentials/orders');
-define('UTMIFY_API_TOKEN', 'fKoyOKl8UkZN9Y5r0OMXRaXHEVtcUvps0qdP');
+define('UTMIFY_API_TOKEN', 'Al1mBzGZMJGVLvPMWEYjKofnD9fpWUvxE4Qn');
 
 // Facebook Conversions API
 define('FB_PIXEL_ID', '895868873361776');

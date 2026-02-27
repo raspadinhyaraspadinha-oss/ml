@@ -52,7 +52,7 @@
     <div class="header-inner">
       <img src="../images/logocheckout.png" alt="Mercado Pago" class="logo">
       <div class="security-badge">
-        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
         <span>PAGAMENTO<br><b>100% SEGURO</b></span>
       </div>
     </div>
@@ -71,18 +71,6 @@
 
   <div class="checkout-main">
 
-    <!-- ======== PROGRESS BAR ======== -->
-    <div class="progress-bar-wrap">
-      <div class="progress-bar" id="progress-bar">
-        <div class="progress-fill" style="width: 33%"></div>
-      </div>
-      <div class="progress-steps">
-        <span class="progress-step active" data-step="1">Dados</span>
-        <span class="progress-step" data-step="2">Entrega</span>
-        <span class="progress-step" data-step="3">Pagamento</span>
-      </div>
-    </div>
-
     <!-- ======== CART SUMMARY ======== -->
     <section class="cart-summary">
       <div class="cart-header" onclick="toggleCart()">
@@ -92,7 +80,7 @@
         </div>
         <div class="cart-header-right">
           <span class="cart-count" id="cart-count">0</span>
-          <svg class="cart-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+          <svg class="cart-chevron" width="20" height="20" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
         </div>
       </div>
       <div class="cart-items" id="cart-items"></div>
@@ -114,21 +102,21 @@
     <!-- ======== WARRANTY + TRUST BADGES ======== -->
     <div class="trust-strip">
       <div class="trust-item">
-        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
         <div>
           <strong>1 Ano de Garantia</strong>
           <span>em todos os produtos</span>
         </div>
       </div>
       <div class="trust-item">
-        <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
         <div>
           <strong>Pagamento Seguro</strong>
           <span>criptografia SSL</span>
         </div>
       </div>
       <div class="trust-item">
-        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
         <div>
           <strong>Devolução Grátis</strong>
           <span>7 dias sem burocracia</span>
@@ -188,14 +176,14 @@
 
       <button class="cta-btn" onclick="goToStep(2)">
         <span>CONTINUAR PARA ENTREGA</span>
-        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
       </button>
     </section>
 
     <!-- ======== STEP 2: ENTREGA ======== -->
     <section class="step-content" id="step-2" style="display:none;">
       <a href="#" onclick="goBack(); return false;" class="back-link">
-        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
         Voltar
       </a>
 
@@ -278,14 +266,14 @@
 
       <button class="cta-btn" onclick="goToStep(3)">
         <span>CONTINUAR PARA PAGAMENTO</span>
-        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
       </button>
     </section>
 
     <!-- ======== STEP 3: PAGAMENTO ======== -->
     <section class="step-content" id="step-3" style="display:none;">
       <a href="#" onclick="goBack(); return false;" class="back-link">
-        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
         Voltar
       </a>
 
@@ -395,7 +383,7 @@
         <!-- Payment confirmed -->
         <div id="pix-confirmed" class="payment-confirmed" style="display:none;">
           <div class="confirmed-animation">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <svg width="64" height="64" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
           </div>
           <h3>Pagamento Confirmado!</h3>
           <p>Redirecionando para emissão da nota fiscal...</p>
@@ -482,7 +470,7 @@
       </div>
       <p>&copy; 2026 Compra Segura</p>
       <div class="secure-footer">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
         Ambiente 100% seguro
       </div>
     </footer>
