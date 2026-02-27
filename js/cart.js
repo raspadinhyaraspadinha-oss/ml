@@ -271,14 +271,22 @@ document.addEventListener('DOMContentLoaded', function() {
 /* ============================================
    Fix "Voltar" button on product pages
    Uses capture-phase delegation to override
-   inline onclick="history.back();" reliably
+   inline onclick handlers reliably.
+   Handles BOTH modern (.nav-back) and legacy
+   (.menu-icon with /recompensas onclick) pages.
    ============================================ */
 
 document.addEventListener('click', function(e) {
-  var navBack = e.target.closest ? e.target.closest('.nav-back') : null;
-  if (navBack && document.querySelector('.pergunta-botao')) {
+  if (!document.querySelector('.pergunta-botao')) return; // only on product pages
+  if (!e.target.closest) return; // old browser guard
+
+  var hit = e.target.closest('.nav-back')
+         || e.target.closest('[onclick*="/recompensas"]');
+
+  if (hit) {
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
     window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
   }
 }, true);

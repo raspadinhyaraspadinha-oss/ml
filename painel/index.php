@@ -153,6 +153,14 @@ if ($isAuthenticated) {
     $logLines = loadLog($DATA_DIR, 50);
     $apiEvents = loadApiEvents($DATA_DIR);
 
+    // Gateway config
+    $gwFile = $DATA_DIR . 'gateway_config.json';
+    $activeGateway = 'mangofy';
+    if (file_exists($gwFile)) {
+        $gwCfg = json_decode(file_get_contents($gwFile), true);
+        $activeGateway = $gwCfg['active_gateway'] ?? 'mangofy';
+    }
+
     // Default date range: last 7 days
     $defaultFrom = date('Y-m-d', strtotime('-7 days'));
     $defaultTo = date('Y-m-d');
@@ -240,6 +248,16 @@ if ($isAuthenticated) {
         .btn-danger { background: #7f1d1d; color: #fca5a5; }
         .btn-danger:hover { background: #991b1b; }
         .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.78rem; }
+
+        /* Gateway Switcher */
+        .gw-switch { display: inline-flex; align-items: center; gap: 0.5rem; background: #1a1b23; border: 1px solid #2a2b35; border-radius: 8px; padding: 0.35rem 0.6rem; }
+        .gw-label { font-size: 0.72rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .gw-toggle { display: inline-flex; border-radius: 6px; overflow: hidden; border: 1px solid #3f3f46; }
+        .gw-opt { padding: 0.3rem 0.7rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: #71717a; transition: all 0.2s; font-family: inherit; }
+        .gw-opt.active-mg { background: #059669; color: #fff; }
+        .gw-opt.active-sk { background: #7c3aed; color: #fff; }
+        .gw-opt:hover:not(.active-mg):not(.active-sk) { background: #27272a; color: #e4e4e7; }
+        .gw-status { font-size: 0.72rem; font-weight: 600; }
 
         /* Filter Bar */
         .filter-bar {
@@ -336,6 +354,8 @@ if ($isAuthenticated) {
         }
         .badge-paid { background: #064e3b; color: #34d399; }
         .badge-pending { background: #78350f44; color: #fbbf24; }
+        .badge-mg { background: #05966922; color: #34d399; }
+        .badge-sk { background: #7c3aed22; color: #a78bfa; }
 
         /* Event Log */
         .log-container {
@@ -599,6 +619,13 @@ if ($isAuthenticated) {
         <div class="header">
             <h1>Painel de Controle</h1>
             <div class="header-meta">
+                <div class="gw-switch" id="gwSwitch">
+                    <span class="gw-label">Gateway:</span>
+                    <div class="gw-toggle">
+                        <button class="gw-opt<?php echo $activeGateway === 'mangofy' ? ' active-mg' : ''; ?>" data-gw="mangofy" onclick="switchGateway('mangofy')">Mangofy</button>
+                        <button class="gw-opt<?php echo $activeGateway === 'skalepay' ? ' active-sk' : ''; ?>" data-gw="skalepay" onclick="switchGateway('skalepay')">SkalePay</button>
+                    </div>
+                </div>
                 <span id="lastUpdated">Atualizado: <?php echo date('d/m/Y H:i:s'); ?></span>
                 <button class="btn btn-secondary btn-sm" onclick="location.reload()">Atualizar</button>
                 <a href="?logout=1" class="btn btn-danger btn-sm">Sair</a>
@@ -728,6 +755,7 @@ if ($isAuthenticated) {
                             <th>Produtos</th>
                             <th>Valor</th>
                             <th>Status</th>
+                            <th>Gateway</th>
                             <th>Fonte</th>
                             <th>Campanha</th>
                             <th>Acoes</th>
@@ -1249,7 +1277,7 @@ if ($isAuthenticated) {
 
         const tbody = document.getElementById('salesBody');
         if (!pageData.length) {
-            tbody.innerHTML = '<tr><td colspan="10" class="no-data">Sem vendas no periodo</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="no-data">Sem vendas no periodo</td></tr>';
             document.getElementById('salesPagination').innerHTML = '';
             return;
         }
@@ -1258,6 +1286,9 @@ if ($isAuthenticated) {
             const items = (p.items || []).map(i => esc((i.name || 'Produto') + ' x' + (i.quantity || 1))).join(', ');
             const statusCls = p.status === 'paid' ? 'badge-paid' : 'badge-pending';
             const statusLabel = p.status === 'paid' ? 'Pago' : 'Pendente';
+            const gw = (p.gateway || 'mangofy').toLowerCase();
+            const gwCls = gw === 'skalepay' ? 'badge-sk' : 'badge-mg';
+            const gwLabel = gw === 'skalepay' ? 'SkalePay' : 'Mangofy';
             const t = p.tracking || {};
             const pc = esc(p.payment_code || '');
             return `<tr class="clickable-row" onclick="openSaleDetail('${pc}')">
@@ -1268,6 +1299,7 @@ if ($isAuthenticated) {
                 <td>${items || '-'}</td>
                 <td>${formatBRL(p.amount || 0)}</td>
                 <td><span class="badge ${statusCls}">${statusLabel}</span></td>
+                <td><span class="badge ${gwCls}">${gwLabel}</span></td>
                 <td>${esc(t.utm_source || '-')}</td>
                 <td>${esc(t.utm_campaign || '-')}</td>
                 <td><button class="btn-detail" onclick="event.stopPropagation();openSaleDetail('${pc}')">Ver</button></td>
@@ -1536,6 +1568,7 @@ if ($isAuthenticated) {
                     <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace;font-size:0.78rem">${esc(paymentCode)}</span></div>
                     <div class="detail-row"><span class="label">Valor</span><span class="value">${formatBRL(payment.amount || 0)}</span></div>
                     <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge ${payment.status==='paid'?'badge-paid':'badge-pending'}">${payment.status==='paid'?'Pago':'Pendente'}</span></span></div>
+                    <div class="detail-row"><span class="label">Gateway</span><span class="value"><span class="badge ${(payment.gateway||'mangofy')==='skalepay'?'badge-sk':'badge-mg'}">${(payment.gateway||'mangofy')==='skalepay'?'SkalePay':'Mangofy'}</span></span></div>
                     <div class="detail-row"><span class="label">Criado</span><span class="value">${formatDateBR(payment.created_at)}</span></div>
                     <div class="detail-row"><span class="label">Pago em</span><span class="value">${formatDateBR(payment.paid_at)}</span></div>
                     <div class="detail-row"><span class="label">Produtos</span><span class="value">${itemsStr}</span></div>
@@ -1622,6 +1655,37 @@ if ($isAuthenticated) {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeSaleDetail();
     });
+
+    // ── Gateway Switcher ──
+    function switchGateway(gw) {
+        if (!confirm('Trocar gateway ativo para ' + gw.toUpperCase() + '?')) return;
+        var btns = document.querySelectorAll('.gw-opt');
+        btns.forEach(function(b) { b.classList.remove('active-mg', 'active-sk'); b.disabled = true; });
+
+        fetch('/api/gateway.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gateway: gw })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            btns.forEach(function(b) { b.disabled = false; });
+            if (data.success) {
+                btns.forEach(function(b) {
+                    if (b.dataset.gw === gw) {
+                        b.classList.add(gw === 'mangofy' ? 'active-mg' : 'active-sk');
+                    }
+                });
+            } else {
+                alert('Erro: ' + (data.error || 'falha ao trocar gateway'));
+                location.reload();
+            }
+        })
+        .catch(function() {
+            alert('Erro de rede ao trocar gateway');
+            location.reload();
+        });
+    }
 
     // ── Init ──
     document.addEventListener('DOMContentLoaded', () => {

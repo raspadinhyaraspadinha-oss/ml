@@ -12,6 +12,10 @@ define('MANGOFY_API_URL', 'https://checkout.mangofy.com.br/api/v1');
 define('MANGOFY_AUTHORIZATION', '2d7ec7be4856d113b6dea617d389cb711dlhqysglpgl6h8tiy3jd5lzc6tx2ei');
 define('MANGOFY_STORE_CODE', '0d4e1ba5d97eba0bb822b05fae41df4b');
 
+// SkalePay
+define('SKALEPAY_API_URL', 'https://api.conta.skalepay.com.br/v1');
+define('SKALEPAY_API_KEY', 'sk_live_v2H9kEj5vdo0cTYZivnvDY5GbFQiRu24YFCOZpUv28');
+
 // UTMify
 define('UTMIFY_API_URL', 'https://api.utmify.com.br/api-credentials/orders');
 define('UTMIFY_API_TOKEN', 'Al1mBzGZMJGVLvPMWEYjKofnD9fpWUvxE4Qn');
@@ -127,6 +131,43 @@ function writeApiEvent($paymentCode, $eventName, $api, $url, $httpStatus, $reque
         $events = array_slice($events, -500);
     }
     file_put_contents($file, json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+
+/* Helper: Get/set active gateway */
+function getActiveGateway(): string {
+    $file = DATA_DIR . 'gateway_config.json';
+    if (file_exists($file)) {
+        $cfg = json_decode(file_get_contents($file), true);
+        if (isset($cfg['active_gateway'])) return $cfg['active_gateway'];
+    }
+    return 'mangofy';
+}
+
+function setActiveGateway(string $gw): void {
+    $file = DATA_DIR . 'gateway_config.json';
+    file_put_contents($file, json_encode([
+        'active_gateway' => $gw,
+        'updated_at' => date('Y-m-d H:i:s')
+    ], JSON_PRETTY_PRINT), LOCK_EX);
+}
+
+/* Helper: cURL GET request */
+function apiGet($url, $headers) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+    return [
+        'status' => $httpCode,
+        'body' => json_decode($response, true),
+        'raw' => $response,
+        'error' => $error
+    ];
 }
 
 /* Helper: cURL POST request */
