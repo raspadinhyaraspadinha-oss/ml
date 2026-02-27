@@ -265,16 +265,20 @@ document.addEventListener('DOMContentLoaded', function() {
       window.location.href = resolveUrl('/checkout/index.html') + getUTMQueryString();
     });
 
-    // Also fix the "Voltar" button on product pages to use compatible path
-    var voltarBtns = document.querySelectorAll('[onclick*="/recompensas"], .nav-back');
-    for (var i = 0; i < voltarBtns.length; i++) {
-      (function(btn) {
-        btn.onclick = null;
-        btn.removeAttribute('onclick');
-        btn.addEventListener('click', function() {
-          window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
-        });
-      })(voltarBtns[i]);
-    }
   }
 });
+
+/* ============================================
+   Fix "Voltar" button on product pages
+   Uses capture-phase delegation to override
+   inline onclick="history.back();" reliably
+   ============================================ */
+
+document.addEventListener('click', function(e) {
+  var navBack = e.target.closest ? e.target.closest('.nav-back') : null;
+  if (navBack && document.querySelector('.pergunta-botao')) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
+  }
+}, true);
