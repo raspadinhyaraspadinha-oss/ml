@@ -403,7 +403,7 @@ body{font-family:'GellixRegular',-apple-system,BlinkMacSystemFont,'Segoe UI',san
 <!-- URGENCY -->
 <div class="urgency-strip">
   <span class="material-symbols-outlined">local_fire_department</span>
-  <span><strong>Alta demanda!</strong> Ultimas unidades com esse preco. Nao perca essa oportunidade.</span>
+  <span><strong>Alta demanda!</strong> Ultimas unidades com esse preço. Não perca essa oportunidade.</span>
 </div>
 
 <!-- BUY BUTTON -->
@@ -437,7 +437,7 @@ body{font-family:'GellixRegular',-apple-system,BlinkMacSystemFont,'Segoe UI',san
 <div class="trust-row">
   <div class="trust-item">
     <span class="material-symbols-outlined">undo</span>
-    <span>Devolucao<br>gratis 30 dias</span>
+    <span>Devolução<br>gratis 30 dias</span>
   </div>
   <div class="trust-item">
     <span class="material-symbols-outlined">verified_user</span>
@@ -451,9 +451,9 @@ body{font-family:'GellixRegular',-apple-system,BlinkMacSystemFont,'Segoe UI',san
 
 <!-- REVIEWS -->
 <div class="reviews-section">
-  <h3 class="reviews-title">Opinicoes do produto</h3>
+  <h3 class="reviews-title">Opiniões do produto</h3>
   ${ratingBarHTML}
-  <h4 class="reviews-highlight">Opinicoes em destaque</h4>
+  <h4 class="reviews-highlight">Opiniões em destaque</h4>
   ${reviewsHTML}
 </div>
 
