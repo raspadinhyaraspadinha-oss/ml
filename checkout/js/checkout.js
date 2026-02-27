@@ -1,7 +1,6 @@
 /* ============================================
-   Checkout Page Logic - High Conversion Version
-   Steps, Cart, ViaCEP, Mangofy, Tracking
-   PIX Payment Focus + Conversion Psychology
+   Checkout - Mercado Livre Style
+   Steps, Cart, ViaCEP, PIX Payment, Tracking
    ============================================ */
 
 (function() {
@@ -16,9 +15,12 @@
   var countdownSeconds = 5 * 60 + 30; // 5 min 30 sec initial timer
   var pixCountdownSeconds = 600; // 10 min PIX timer
 
-  /* ---- INIT ---- */
+  /* ═══════════════════════════════════════
+     INIT
+     ═══════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', function() {
-    renderCart();
+    renderCartBar();
+    renderCartExpand();
     initTimer();
     initSocialProof();
     initInputMasks();
@@ -28,18 +30,182 @@
       window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
       return;
     }
-
-    // Expand cart by default
-    var cartItems = document.getElementById('cart-items');
-    var chevron = document.querySelector('.cart-chevron');
-    if (cartItems) cartItems.classList.add('open');
-    if (chevron) chevron.classList.add('open');
-
-    // Calculate and show savings
-    updateSavings();
   });
 
-  /* ---- SAVINGS CALCULATION ---- */
+  /* ═══════════════════════════════════════
+     CART BAR (compact top bar)
+     ═══════════════════════════════════════ */
+  function renderCartBar() {
+    var countEl = document.getElementById('cart-bar-count');
+    var totalEl = document.getElementById('cart-bar-total');
+
+    if (countEl) countEl.textContent = Cart.getCount();
+    if (totalEl) totalEl.textContent = formatPrice(Cart.getSubtotal() + selectedFrete);
+  }
+
+  function renderCartExpand() {
+    var container = document.getElementById('cart-expand-items');
+    if (!container) return;
+
+    var items = Cart.getItems();
+    container.innerHTML = '';
+
+    items.forEach(function(item) {
+      var div = document.createElement('div');
+      div.className = 'cart-expand-item';
+      div.innerHTML =
+        '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '">' +
+        '<div class="cart-expand-item-info">' +
+          '<div class="cart-expand-item-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="cart-expand-item-meta">' + item.quantity + ' un.</div>' +
+        '</div>' +
+        '<span class="cart-expand-item-price">' + formatPrice(item.price * item.quantity) + '</span>' +
+        '<button class="cart-expand-item-remove" data-id="' + escapeHtml(item.id) + '" title="Remover">&times;</button>';
+      container.appendChild(div);
+    });
+
+    // Bind remove buttons
+    container.querySelectorAll('.cart-expand-item-remove').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        Cart.removeItem(this.getAttribute('data-id'));
+        renderCartBar();
+        renderCartExpand();
+        if (Cart.getCount() === 0) {
+          window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
+        }
+      });
+    });
+  }
+
+  window.toggleCartExpand = function() {
+    var expand = document.getElementById('cart-expand');
+    var chevron = document.getElementById('cart-bar-chevron');
+    if (expand) expand.classList.toggle('open');
+    if (chevron) chevron.classList.toggle('open');
+  };
+
+  window.goToRecompensas = function() {
+    window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
+  };
+
+  /* ═══════════════════════════════════════
+     STEP NAVIGATION
+     ═══════════════════════════════════════ */
+  window.goToStep = function(step) {
+    // Validate current step before advancing
+    if (step > currentStep) {
+      if (!validateStep(currentStep)) return;
+    }
+
+    currentStep = step;
+
+    // Update stepper indicators
+    var steps = document.querySelectorAll('.ml-step');
+    var lines = document.querySelectorAll('.ml-step-line');
+
+    steps.forEach(function(el) {
+      var s = parseInt(el.getAttribute('data-step'));
+      el.classList.remove('active', 'completed');
+      if (s === currentStep) el.classList.add('active');
+      else if (s < currentStep) el.classList.add('completed');
+    });
+
+    // Update connecting lines
+    lines.forEach(function(line, idx) {
+      if (idx < currentStep - 1) {
+        line.classList.add('completed');
+      } else {
+        line.classList.remove('completed');
+      }
+    });
+
+    // Show/hide step panels
+    document.querySelectorAll('.step-panel').forEach(function(el) {
+      el.classList.remove('active');
+    });
+    var stepEl = document.getElementById('step-' + step);
+    if (stepEl) {
+      stepEl.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Show/hide cart bar (hide on step 3)
+    var cartBar = document.getElementById('cart-bar');
+    var cartExpand = document.getElementById('cart-expand');
+    if (cartBar) cartBar.style.display = step === 3 ? 'none' : '';
+    if (cartExpand) {
+      cartExpand.classList.remove('open');
+      if (step === 3) cartExpand.style.display = 'none';
+      else cartExpand.style.display = '';
+    }
+    var chevron = document.getElementById('cart-bar-chevron');
+    if (chevron) chevron.classList.remove('open');
+
+    // Save customer data for UP page
+    if (step === 2 || step === 3) {
+      localStorage.setItem('ml_customer_data', JSON.stringify({
+        email: getValue('email'),
+        name: getValue('nome'),
+        document: getValue('cpf'),
+        phone: getValue('telefone')
+      }));
+    }
+
+    // Step 3: render order summary and generate PIX
+    if (step === 3) {
+      renderOrderSummary();
+      setTimeout(renderOrderSummary, 150);
+      generatePix();
+    }
+  };
+
+  window.goBack = function() {
+    if (currentStep > 1) {
+      goToStep(currentStep - 1);
+    }
+  };
+
+  /* ═══════════════════════════════════════
+     ORDER SUMMARY (Step 3)
+     ═══════════════════════════════════════ */
+  function renderOrderSummary() {
+    try {
+      var items = Cart.getItems();
+      var osItems = document.getElementById('os-items');
+      var osSubtotal = document.getElementById('os-subtotal');
+      var osFrete = document.getElementById('os-frete');
+      var osTotal = document.getElementById('os-total');
+
+      if (osItems) {
+        osItems.innerHTML = '';
+        items.forEach(function(item) {
+          var div = document.createElement('div');
+          div.className = 'os-item';
+          div.innerHTML =
+            '<img src="' + escapeHtml(item.image || '') + '" alt="">' +
+            '<span class="os-item-name">' + escapeHtml(item.name || 'Produto') + '</span>' +
+            '<span class="os-item-price">' + formatPrice((item.price || 0) * (item.quantity || 1)) + '</span>';
+          osItems.appendChild(div);
+        });
+      }
+
+      var subtotal = Cart.getSubtotal();
+      if (osSubtotal) osSubtotal.textContent = formatPrice(subtotal);
+      if (osFrete) osFrete.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
+      if (osTotal) osTotal.textContent = formatPrice(subtotal + selectedFrete);
+
+      // Savings
+      updateSavings();
+    } catch(e) {
+      console.error('renderOrderSummary error:', e);
+    }
+  }
+  window.renderOrderSummary = renderOrderSummary;
+
+  /* ═══════════════════════════════════════
+     SAVINGS
+     ═══════════════════════════════════════ */
   function updateSavings() {
     var items = Cart.getItems();
     var totalSavings = 0;
@@ -50,181 +216,16 @@
     });
 
     if (totalSavings > 0) {
-      var savingsRow = document.getElementById('savings-row');
-      var savingsAmount = document.getElementById('savings-amount');
+      var savingsRow = document.getElementById('os-savings-row');
+      var savingsAmount = document.getElementById('os-savings');
       if (savingsRow) savingsRow.style.display = 'flex';
       if (savingsAmount) savingsAmount.textContent = '-' + formatPrice(totalSavings);
-
-      var osmSavingsRow = document.getElementById('osm-savings-row');
-      var osmSavings = document.getElementById('osm-savings');
-      if (osmSavingsRow) osmSavingsRow.style.display = 'flex';
-      if (osmSavings) osmSavings.textContent = '-' + formatPrice(totalSavings);
     }
   }
 
-  /* ---- CART RENDERING ---- */
-  window.renderCart = function() {
-    var items = Cart.getItems();
-    var container = document.getElementById('cart-items');
-    var countEl = document.getElementById('cart-count');
-    var subtotalEl = document.getElementById('subtotal');
-    var freteEl = document.getElementById('frete-display');
-    var totalEl = document.getElementById('total');
-
-    if (countEl) countEl.textContent = Cart.getCount();
-
-    if (container) {
-      container.innerHTML = '';
-      items.forEach(function(item) {
-        var div = document.createElement('div');
-        div.className = 'cart-item';
-        div.innerHTML =
-          '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '">' +
-          '<div class="cart-item-info">' +
-            '<div class="cart-item-name">' + escapeHtml(item.name) + '</div>' +
-            '<div class="cart-item-qty">' + item.quantity + ' un. &middot; ' + formatPrice(item.price * item.quantity) + '</div>' +
-          '</div>' +
-          '<button class="cart-item-remove" data-id="' + escapeHtml(item.id) + '" title="Remover">&times;</button>';
-        container.appendChild(div);
-      });
-
-      // Bind remove buttons
-      container.querySelectorAll('.cart-item-remove').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          Cart.removeItem(this.getAttribute('data-id'));
-          renderCart();
-          updateSavings();
-          if (Cart.getCount() === 0) {
-            window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
-          }
-        });
-      });
-    }
-
-    var subtotal = Cart.getSubtotal();
-    if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
-    if (freteEl) freteEl.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
-    if (totalEl) totalEl.textContent = formatPrice(subtotal + selectedFrete);
-  };
-
-  /* ---- ORDER SUMMARY MINI (Step 3) ---- */
-  function renderOrderSummary() {
-    try {
-      var items = Cart.getItems();
-      var osmItems = document.getElementById('osm-items');
-      var osmCount = document.getElementById('osm-count');
-      var osmSubtotal = document.getElementById('osm-subtotal');
-      var osmFrete = document.getElementById('osm-frete');
-      var osmTotal = document.getElementById('osm-total');
-
-      var count = Cart.getCount();
-      if (osmCount) osmCount.textContent = count + (count === 1 ? ' item' : ' itens');
-
-      if (osmItems) {
-        osmItems.innerHTML = '';
-        items.forEach(function(item) {
-          var div = document.createElement('div');
-          div.className = 'osm-item';
-          div.innerHTML =
-            '<img src="' + escapeHtml(item.image || '') + '" alt="">' +
-            '<span class="osm-item-name">' + escapeHtml(item.name || 'Produto') + '</span>' +
-            '<span class="osm-item-price">' + formatPrice((item.price || 0) * (item.quantity || 1)) + '</span>';
-          osmItems.appendChild(div);
-        });
-      }
-
-      var subtotal = Cart.getSubtotal();
-      if (osmSubtotal) osmSubtotal.textContent = formatPrice(subtotal);
-      if (osmFrete) osmFrete.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
-      if (osmTotal) osmTotal.textContent = formatPrice(subtotal + selectedFrete);
-
-      updateSavings();
-    } catch(e) {
-      console.error('renderOrderSummary error:', e);
-    }
-  }
-  // Expose globally for failsafe calls
-  window.renderOrderSummary = renderOrderSummary;
-
-  /* ---- CART TOGGLE ---- */
-  window.toggleCart = function() {
-    var items = document.getElementById('cart-items');
-    var chevron = document.querySelector('.cart-chevron');
-    if (items) {
-      items.classList.toggle('open');
-    }
-    if (chevron) {
-      chevron.classList.toggle('open');
-    }
-  };
-
-  /* ---- GO TO RECOMPENSAS ---- */
-  window.goToRecompensas = function() {
-    window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
-  };
-
-  /* ---- STEP NAVIGATION ---- */
-  window.goToStep = function(step) {
-    // Validate current step before advancing
-    if (step > currentStep) {
-      if (!validateStep(currentStep)) return;
-    }
-
-    currentStep = step;
-
-    // Update step indicators
-    document.querySelectorAll('.step').forEach(function(el) {
-      var s = parseInt(el.getAttribute('data-step'));
-      el.classList.remove('active', 'completed');
-      if (s === currentStep) el.classList.add('active');
-      else if (s < currentStep) el.classList.add('completed');
-    });
-
-    // Update progress bar
-    updateProgressBar(step);
-
-    // Show/hide step content
-    document.querySelectorAll('.step-content').forEach(function(el) {
-      el.style.display = 'none';
-    });
-    var stepEl = document.getElementById('step-' + step);
-    if (stepEl) {
-      stepEl.style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Save customer data after step 1 for UP page to use later
-    if (step === 2 || step === 3) {
-      localStorage.setItem('ml_customer_data', JSON.stringify({
-        email: getValue('email'),
-        name: getValue('nome'),
-        document: getValue('cpf'),
-        phone: getValue('telefone')
-      }));
-    }
-
-    // If step 3, render order summary and generate PIX
-    if (step === 3) {
-      renderOrderSummary();
-      // Failsafe: render again after a short delay in case of timing issues
-      setTimeout(renderOrderSummary, 150);
-      generatePix();
-    }
-  };
-
-  /* ---- PROGRESS BAR (removed from HTML, kept as no-op for safety) ---- */
-  function updateProgressBar(step) {
-    // Progress bar HTML was removed; step indicators handle visual feedback
-  }
-
-  /* ---- BACK STEP ---- */
-  window.goBack = function() {
-    if (currentStep > 1) {
-      goToStep(currentStep - 1);
-    }
-  };
-
-  /* ---- FORM VALIDATION ---- */
+  /* ═══════════════════════════════════════
+     FORM VALIDATION
+     ═══════════════════════════════════════ */
   function validateStep(step) {
     clearErrors();
 
@@ -255,7 +256,7 @@
     }
 
     if (step === 2) {
-      /* Sem bloqueio rigoroso — aceita qualquer dado para não perder leads */
+      /* No strict blocking — accept any data to not lose leads */
       return true;
     }
 
@@ -271,12 +272,11 @@
     var el = document.getElementById(id);
     if (el) {
       el.classList.add('error');
-      var errEl = el.parentNode.querySelector('.error-msg');
+      var errEl = el.parentNode.querySelector('.field-error');
       if (errEl) {
         errEl.textContent = msg;
         errEl.style.display = 'block';
       }
-      // Focus on first error field
       el.focus();
     }
   }
@@ -285,7 +285,7 @@
     document.querySelectorAll('.error').forEach(function(el) {
       el.classList.remove('error');
     });
-    document.querySelectorAll('.error-msg').forEach(function(el) {
+    document.querySelectorAll('.field-error').forEach(function(el) {
       el.style.display = 'none';
     });
   }
@@ -294,7 +294,9 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  /* ---- INPUT MASKS ---- */
+  /* ═══════════════════════════════════════
+     INPUT MASKS
+     ═══════════════════════════════════════ */
   function initInputMasks() {
     var cpfEl = document.getElementById('cpf');
     if (cpfEl) {
@@ -333,7 +335,9 @@
     }
   }
 
-  /* ---- VIACEP ---- */
+  /* ═══════════════════════════════════════
+     VIACEP
+     ═══════════════════════════════════════ */
   function unlockAddressFields() {
     ['rua', 'bairro', 'cidade', 'uf'].forEach(function(id) {
       var el = document.getElementById(id);
@@ -342,14 +346,13 @@
         el.placeholder = 'Digite aqui';
       }
     });
-    // Show shipping even on error so user can proceed
     var shippingCard = document.getElementById('shipping-card');
     if (shippingCard) shippingCard.style.display = '';
   }
 
   window.buscarCEP = function() {
     var cep = getValue('cep').replace(/\D/g, '');
-    if (cep.length !== 8) return; /* silencioso — sem erro vermelho */
+    if (cep.length !== 8) return;
 
     var cepBtn = document.querySelector('.cep-btn');
     if (cepBtn) cepBtn.textContent = '...';
@@ -358,7 +361,6 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.erro) {
-          /* CEP não encontrado — libera campos para digitação manual */
           unlockAddressFields();
           return;
         }
@@ -367,16 +369,13 @@
         setField('cidade', data.localidade || '');
         setField('uf', data.uf || '');
 
-        // Show shipping options after successful CEP lookup
         var shippingCard = document.getElementById('shipping-card');
         if (shippingCard) shippingCard.style.display = '';
 
-        // Focus on número field
         var numEl = document.getElementById('numero');
         if (numEl) numEl.focus();
       })
       .catch(function() {
-        /* Erro de rede — libera campos para digitação manual, sem vermelho */
         unlockAddressFields();
       })
       .finally(function() {
@@ -388,7 +387,6 @@
     var el = document.getElementById(id);
     if (el) {
       el.value = val;
-      // If ViaCEP returned empty for this field, make it editable
       if (!val && el.hasAttribute('readonly')) {
         el.removeAttribute('readonly');
         el.placeholder = 'Digite aqui';
@@ -396,21 +394,25 @@
     }
   }
 
-  /* ---- SHIPPING SELECTION ---- */
+  /* ═══════════════════════════════════════
+     SHIPPING SELECTION
+     ═══════════════════════════════════════ */
   window.selectFrete = function(value) {
     selectedFrete = parseInt(value);
-    document.querySelectorAll('.shipping-option').forEach(function(el) {
+    document.querySelectorAll('.ship-opt').forEach(function(el) {
       el.classList.remove('selected');
     });
     var radio = document.querySelector('input[name="frete"][value="' + value + '"]');
     if (radio) {
       radio.checked = true;
-      radio.closest('.shipping-option').classList.add('selected');
+      radio.closest('.ship-opt').classList.add('selected');
     }
-    renderCart();
+    renderCartBar();
   };
 
-  /* ---- PIX GENERATION ---- */
+  /* ═══════════════════════════════════════
+     PIX GENERATION
+     ═══════════════════════════════════════ */
   function generatePix() {
     var loading = document.getElementById('pix-loading');
     var content = document.getElementById('pix-content');
@@ -426,8 +428,7 @@
     // Safety: block payment if amount is invalid (minimum R$5,00 = 500 cents)
     if (totalAmount < 500) {
       if (loading) loading.style.display = 'none';
-      alert('Erro: valor do pedido inválido (R$ ' + (totalAmount / 100).toFixed(2).replace('.', ',') + '). Por favor, volte e adicione o produto novamente.');
-      console.error('generatePix blocked: totalAmount=' + totalAmount + ' (below 500 cents minimum)');
+      alert('Erro: valor do pedido inválido (R$ ' + (totalAmount / 100).toFixed(2).replace('.', ',') + '). Volte e adicione produtos novamente.');
       window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
       return;
     }
@@ -479,7 +480,7 @@
         var qr = qrcode(0, 'M');
         qr.addData(data.pix_qrcode_text);
         qr.make();
-        qrContainer.innerHTML = qr.createImgTag(6, 16);
+        qrContainer.innerHTML = qr.createImgTag(5, 12);
       }
 
       // Set copy code
@@ -490,7 +491,7 @@
       if (loading) loading.style.display = 'none';
       if (content) content.style.display = 'block';
 
-      // Re-render order summary with confirmed cart data (failsafe)
+      // Re-render order summary (failsafe)
       renderOrderSummary();
 
       // Start PIX countdown timer
@@ -499,7 +500,7 @@
       // Start polling for payment
       startPolling();
 
-      // Event ID for dedup between client-side pixel and server-side CAPI
+      // Event ID for dedup
       var icEventId = 'ic_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
       // Fire FB InitiateCheckout
@@ -513,7 +514,7 @@
         }, { eventID: icEventId });
       }
 
-      // Fire TikTok InitiateCheckout (PIX generated)
+      // Fire TikTok InitiateCheckout
       if (typeof ttq !== 'undefined') {
         ttq.track('InitiateCheckout', {
           content_type: 'product',
@@ -527,8 +528,8 @@
     .catch(function(err) {
       if (loading) loading.innerHTML =
         '<p style="color:#f23d4f;font-size:14px;margin-bottom:12px;">Erro ao gerar PIX. Tente novamente.</p>' +
-        '<button class="cta-btn" onclick="generatePix()" style="margin:0 auto;max-width:280px;">' +
-          '<span>Tentar novamente</span>' +
+        '<button class="ml-btn-primary" onclick="generatePix()" style="max-width:260px;margin:0 auto;">' +
+          'Tentar novamente' +
         '</button>';
       console.error('PIX Error:', err);
     });
@@ -546,9 +547,11 @@
     }
   }
 
-  /* ---- PIX COUNTDOWN (with color escalation) ---- */
+  /* ═══════════════════════════════════════
+     PIX COUNTDOWN
+     ═══════════════════════════════════════ */
   function startPixCountdown() {
-    pixCountdownSeconds = 600; // Reset to 10 min
+    pixCountdownSeconds = 600;
     if (pixTimerInterval) clearInterval(pixTimerInterval);
 
     updatePixCountdown();
@@ -571,37 +574,36 @@
     var s = pixCountdownSeconds % 60;
     el.textContent = pad(m) + ':' + pad(s);
 
-    // Color escalation
     if (box) {
       box.classList.remove('warning', 'urgent');
       if (pixCountdownSeconds <= 120) {
-        box.classList.add('urgent'); // Red pulsing < 2 min
+        box.classList.add('urgent');
       } else if (pixCountdownSeconds <= 300) {
-        box.classList.add('warning'); // Yellow < 5 min
+        box.classList.add('warning');
       }
     }
   }
 
-  /* ---- COPY PIX CODE ---- */
+  /* ═══════════════════════════════════════
+     COPY PIX CODE
+     ═══════════════════════════════════════ */
   window.copyPixCode = function() {
     var input = document.getElementById('pix-code');
     var btn = document.getElementById('copy-btn');
     if (!input) return;
 
     var copySuccess = function() {
-      // Visual feedback - green button with checkmark
       if (btn) {
         btn.classList.add('copied');
         btn.innerHTML =
-          '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
-          '<span>CÓDIGO COPIADO!</span>';
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
+          ' Código copiado!';
 
-        // Reset after 3 seconds
         setTimeout(function() {
           btn.classList.remove('copied');
           btn.innerHTML =
-            '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
-            '<span>COPIAR CÓDIGO PIX</span>';
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
+            ' Copiar código Pix';
         }, 3000);
       }
       showToast('Código PIX copiado! Cole no app do seu banco.');
@@ -616,10 +618,12 @@
     }
   };
 
-  /* ---- PAYMENT POLLING ---- */
+  /* ═══════════════════════════════════════
+     PAYMENT POLLING
+     ═══════════════════════════════════════ */
   function startPolling() {
     if (pollingInterval) clearInterval(pollingInterval);
-    var maxAttempts = 120; // 10 min at 5s intervals
+    var maxAttempts = 120;
     var attempts = 0;
 
     pollingInterval = setInterval(function() {
@@ -629,8 +633,6 @@
         return;
       }
       checkPaymentStatus();
-
-      // Update status message periodically for reassurance
       updatePollingMessage(attempts);
     }, 5000);
   }
@@ -654,10 +656,10 @@
   }
 
   window.checkPayment = function() {
-    var btn = document.querySelector('.check-payment-btn');
+    var btn = document.querySelector('.ml-btn-secondary');
     if (btn) {
       btn.innerHTML =
-        '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;"></div>' +
+        '<div class="ml-spinner" style="width:16px;height:16px;border-width:2px;margin:0;"></div>' +
         ' Verificando...';
     }
 
@@ -676,17 +678,17 @@
         if (data.status === 'paid') {
           onPaymentConfirmed();
         } else if (manual) {
-          var btn = document.querySelector('.check-payment-btn');
+          var btn = document.querySelector('.ml-btn-secondary');
           if (btn) {
             btn.innerHTML =
-              '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>' +
               ' Ainda não confirmado. Aguarde...';
           }
           setTimeout(function() {
             if (btn) {
               btn.innerHTML =
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
-                ' Já paguei - Verificar pagamento';
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
+                ' Já paguei';
             }
             var statusEl = document.getElementById('payment-status');
             if (statusEl) statusEl.classList.remove('checking');
@@ -695,11 +697,11 @@
       })
       .catch(function() {
         if (manual) {
-          var btn = document.querySelector('.check-payment-btn');
+          var btn = document.querySelector('.ml-btn-secondary');
           if (btn) {
             btn.innerHTML =
-              '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
-              ' Já paguei - Verificar pagamento';
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
+              ' Já paguei';
           }
         }
       });
@@ -715,22 +717,19 @@
     if (content) content.style.display = 'none';
     if (confirmed) confirmed.style.display = 'block';
 
-    // Update status
     var statusEl = document.getElementById('payment-status');
     if (statusEl) {
       statusEl.classList.remove('checking');
       statusEl.classList.add('confirmed');
     }
 
-    // Event ID for dedup between client-side pixel and server-side CAPI
     var purchaseEventId = 'pur_' + paymentCode + '_' + Date.now();
-    // Save for potential server-side dedup
     try { localStorage.setItem('ml_purchase_event_id', purchaseEventId); } catch(e) {}
 
     var cartItems = Cart.getItems();
     var purchaseValue = (Cart.getSubtotal() + selectedFrete) / 100;
 
-    // Fire FB Purchase event (client-side)
+    // Fire FB Purchase
     if (typeof fbq === 'function') {
       fbq('track', 'Purchase', {
         value: purchaseValue,
@@ -755,15 +754,16 @@
     // Clear cart
     Cart.clear();
 
-    // Redirect to UP page after 3 seconds
+    // Redirect to UP page
     setTimeout(function() {
       window.location.href = resolveUrl('/up/index.html') + getUTMQueryString();
     }, 3000);
   }
 
-  /* ---- COUNTDOWN TIMER (STICKY BAR) ---- */
+  /* ═══════════════════════════════════════
+     COUNTDOWN TIMER (STICKY BAR)
+     ═══════════════════════════════════════ */
   function initTimer() {
-    // Try to restore saved timer
     var saved = sessionStorage.getItem('ml_timer');
     if (saved) {
       var elapsed = Math.floor((Date.now() - parseInt(saved)) / 1000);
@@ -796,7 +796,6 @@
     if (mEl) mEl.textContent = pad(m);
     if (sEl) sEl.textContent = pad(s);
 
-    // Make sticky timer urgent when < 2 min
     var stickyTimer = document.getElementById('sticky-timer');
     if (stickyTimer) {
       if (countdownSeconds <= 120) {
@@ -809,7 +808,9 @@
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
-  /* ---- SOCIAL PROOF ---- */
+  /* ═══════════════════════════════════════
+     SOCIAL PROOF
+     ═══════════════════════════════════════ */
   function initSocialProof() {
     var people = [
       { name: 'Carlos H. de São Paulo', img: '../images/carloshenrique.jpeg' },
@@ -836,7 +837,6 @@
       { name: 'Aline R. de Cuiabá', img: '../images/alinerocha.jpeg' }
     ];
 
-    // More PIX-focused actions to reassure users
     var actions = [
       'acabou de finalizar a compra via PIX',
       'resgatou o cupom de desconto',
@@ -857,13 +857,8 @@
     var el = document.getElementById('social-proof');
     if (!el) return;
 
-    // Show first notification after 3 seconds
-    setTimeout(function() { showSocialNotification(); }, 3000);
-
-    // Then every 7 seconds
-    setInterval(function() {
-      showSocialNotification();
-    }, 7000);
+    setTimeout(function() { showSocialNotification(); }, 4000);
+    setInterval(function() { showSocialNotification(); }, 8000);
 
     function showSocialNotification() {
       var person = people[Math.floor(Math.random() * people.length)];
@@ -874,25 +869,18 @@
       var textEl = el.querySelector('p');
       var timeEl = el.querySelector('.sp-time');
 
-      if (imgEl) {
-        imgEl.src = person.img;
-        imgEl.alt = person.name;
-      }
-      if (textEl) {
-        textEl.innerHTML = '<b>' + person.name + '</b> ' + action;
-      }
-      if (timeEl) {
-        timeEl.textContent = time;
-      }
+      if (imgEl) { imgEl.src = person.img; imgEl.alt = person.name; }
+      if (textEl) { textEl.innerHTML = '<b>' + person.name + '</b> ' + action; }
+      if (timeEl) { timeEl.textContent = time; }
 
       el.classList.add('show');
-      setTimeout(function() {
-        el.classList.remove('show');
-      }, 4500);
+      setTimeout(function() { el.classList.remove('show'); }, 4000);
     }
   }
 
-  /* ---- TOAST ---- */
+  /* ═══════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════ */
   function showToast(msg) {
     var toast = document.getElementById('toast');
     if (!toast) {
@@ -903,12 +891,12 @@
     }
     toast.textContent = msg;
     toast.classList.add('show');
-    setTimeout(function() {
-      toast.classList.remove('show');
-    }, 3000);
+    setTimeout(function() { toast.classList.remove('show'); }, 3000);
   }
 
-  /* ---- HELPERS ---- */
+  /* ═══════════════════════════════════════
+     HELPERS
+     ═══════════════════════════════════════ */
   function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

@@ -223,70 +223,120 @@ function tryMangofy($cust, $amount, $items, $externalCode, $clientIp, $metadata)
 $result = null;
 $usedFallback = false;
 
+// SkalePay PIX limit: R$ 200,00 (20000 cents)
+$SKALEPAY_LIMIT = 20000;
+
 if ($activeGateway === 'skalepay') {
-    writeLog('GATEWAY_CHAIN_INICIO', ['gateway' => 'skalepay', 'amount' => $amount, 'customer' => $customer['name'] ?? '']);
+    writeLog('GATEWAY_CHAIN_INICIO', ['gateway' => 'skalepay', 'amount' => $amount, 'limite_skalepay' => $SKALEPAY_LIMIT, 'customer' => $customer['name'] ?? '']);
 
-    // 1) SkalePay com dados reais
-    $result = trySkalepay($customer, $amount, $items, $clientIp);
-
-    if (isset($result['error'])) {
-        writeLog('SKALEPAY_ERRO_TENTATIVA_1', [
-            'motivo' => $result['fail_reason'] ?? 'desconhecido',
-            'http_status' => $result['status'],
-            'customer' => ($customer['name'] ?? '') . ' <' . ($customer['email'] ?? '') . '>',
-            'response_preview' => substr($result['raw'] ?? '', 0, 500)
+    // ── Check SkalePay R$200 PIX limit ──
+    if ($amount > $SKALEPAY_LIMIT) {
+        writeLog('SKALEPAY_SKIP_LIMITE', [
+            'motivo' => 'valor_excede_limite_R200',
+            'amount_cents' => $amount,
+            'amount_brl' => 'R$ ' . number_format($amount / 100, 2, ',', '.'),
+            'limite_cents' => $SKALEPAY_LIMIT,
+            'limite_brl' => 'R$ ' . number_format($SKALEPAY_LIMIT / 100, 2, ',', '.'),
+            'redirecionando' => 'mangofy_direto'
         ]);
 
-        // 2) SkalePay com fallback customer
-        writeLog('SKALEPAY_TENTATIVA_2_FALLBACK', ['usando' => 'fallback_customer']);
-        $result = trySkalepay($FALLBACK_CUSTOMER, $amount, $items, $clientIp);
+        // Skip SkalePay entirely → go to Mangofy directly
+        $result = tryMangofy($customer, $amount, $items, $externalCode, $clientIp, $metadata);
 
-        if (!isset($result['error'])) {
-            $usedFallback = true;
-            writeLog('SKALEPAY_FALLBACK_SUCESSO', [
-                'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
-                'payment_id' => $result['gateway_id'] ?? ''
-            ]);
-        } else {
-            writeLog('SKALEPAY_ERRO_TENTATIVA_2', [
-                'motivo' => $result['fail_reason'] ?? 'desconhecido',
+        if (isset($result['error'])) {
+            writeLog('MANGOFY_APOS_SKIP_SKALEPAY_ERRO_1', [
                 'http_status' => $result['status'],
                 'response_preview' => substr($result['raw'] ?? '', 0, 500)
             ]);
 
-            // 3) Mangofy como ultima tentativa (dados reais)
-            writeLog('MANGOFY_BACKUP_TENTATIVA_1', ['motivo' => 'skalepay_falhou_2x']);
-            $result = tryMangofy($customer, $amount, $items, $externalCode, $clientIp, $metadata);
+            // Mangofy com fallback customer
+            $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+            $result = tryMangofy($FALLBACK_CUSTOMER, $amount, $items, $externalCode, $clientIp, $metadata);
 
-            if (isset($result['error'])) {
-                writeLog('MANGOFY_BACKUP_ERRO_1', [
+            if (!isset($result['error'])) {
+                $usedFallback = true;
+                writeLog('MANGOFY_APOS_SKIP_SKALEPAY_FALLBACK_SUCESSO', [
+                    'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                    'payment_code' => $result['payment_code'] ?? ''
+                ]);
+            } else {
+                writeLog('MANGOFY_APOS_SKIP_SKALEPAY_ERRO_2_FINAL', [
+                    'http_status' => $result['status'],
+                    'response_preview' => substr($result['raw'] ?? '', 0, 500)
+                ]);
+            }
+        } else {
+            writeLog('MANGOFY_APOS_SKIP_SKALEPAY_SUCESSO', [
+                'motivo' => 'skalepay_limite_R200_excedido',
+                'payment_code' => $result['payment_code'] ?? '',
+                'amount' => $amount
+            ]);
+        }
+    } else {
+        // ── Amount within SkalePay limit → try SkalePay normally ──
+
+        // 1) SkalePay com dados reais
+        $result = trySkalepay($customer, $amount, $items, $clientIp);
+
+        if (isset($result['error'])) {
+            writeLog('SKALEPAY_ERRO_TENTATIVA_1', [
+                'motivo' => $result['fail_reason'] ?? 'desconhecido',
+                'http_status' => $result['status'],
+                'customer' => ($customer['name'] ?? '') . ' <' . ($customer['email'] ?? '') . '>',
+                'response_preview' => substr($result['raw'] ?? '', 0, 500)
+            ]);
+
+            // 2) SkalePay com fallback customer
+            writeLog('SKALEPAY_TENTATIVA_2_FALLBACK', ['usando' => 'fallback_customer']);
+            $result = trySkalepay($FALLBACK_CUSTOMER, $amount, $items, $clientIp);
+
+            if (!isset($result['error'])) {
+                $usedFallback = true;
+                writeLog('SKALEPAY_FALLBACK_SUCESSO', [
+                    'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                    'payment_id' => $result['gateway_id'] ?? ''
+                ]);
+            } else {
+                writeLog('SKALEPAY_ERRO_TENTATIVA_2', [
+                    'motivo' => $result['fail_reason'] ?? 'desconhecido',
                     'http_status' => $result['status'],
                     'response_preview' => substr($result['raw'] ?? '', 0, 500)
                 ]);
 
-                // 4) Mangofy com fallback customer
-                $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
-                $result = tryMangofy($FALLBACK_CUSTOMER, $amount, $items, $externalCode, $clientIp, $metadata);
+                // 3) Mangofy como ultima tentativa (dados reais)
+                writeLog('MANGOFY_BACKUP_TENTATIVA_1', ['motivo' => 'skalepay_falhou_2x']);
+                $result = tryMangofy($customer, $amount, $items, $externalCode, $clientIp, $metadata);
 
-                if (!isset($result['error'])) {
-                    $usedFallback = true;
-                    writeLog('MANGOFY_BACKUP_FALLBACK_SUCESSO', [
-                        'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
-                        'payment_code' => $result['payment_code'] ?? ''
-                    ]);
-                } else {
-                    writeLog('MANGOFY_BACKUP_ERRO_2_FINAL', [
+                if (isset($result['error'])) {
+                    writeLog('MANGOFY_BACKUP_ERRO_1', [
                         'http_status' => $result['status'],
                         'response_preview' => substr($result['raw'] ?? '', 0, 500)
                     ]);
+
+                    // 4) Mangofy com fallback customer
+                    $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+                    $result = tryMangofy($FALLBACK_CUSTOMER, $amount, $items, $externalCode, $clientIp, $metadata);
+
+                    if (!isset($result['error'])) {
+                        $usedFallback = true;
+                        writeLog('MANGOFY_BACKUP_FALLBACK_SUCESSO', [
+                            'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                            'payment_code' => $result['payment_code'] ?? ''
+                        ]);
+                    } else {
+                        writeLog('MANGOFY_BACKUP_ERRO_2_FINAL', [
+                            'http_status' => $result['status'],
+                            'response_preview' => substr($result['raw'] ?? '', 0, 500)
+                        ]);
+                    }
                 }
             }
+        } else {
+            writeLog('SKALEPAY_SUCESSO_DIRETO', [
+                'payment_id' => $result['gateway_id'] ?? '',
+                'customer' => ($customer['name'] ?? '')
+            ]);
         }
-    } else {
-        writeLog('SKALEPAY_SUCESSO_DIRETO', [
-            'payment_id' => $result['gateway_id'] ?? '',
-            'customer' => ($customer['name'] ?? '')
-        ]);
     }
 } else {
     // Mangofy primary
