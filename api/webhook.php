@@ -123,13 +123,19 @@ $utmifyPayload = [
     'isTest' => false
 ];
 
-apiPost(
+$utmifyResult = apiPost(
     UTMIFY_API_URL,
     [
         'Content-Type: application/json',
         'x-api-token: ' . UTMIFY_API_TOKEN
     ],
     $utmifyPayload
+);
+writeApiEvent($paymentCode, 'paid', 'utmify', UTMIFY_API_URL, $utmifyResult['status'],
+    ['orderId' => $paymentCode, 'status' => 'paid', 'amount' => $amount / 100],
+    $utmifyResult['body'] ?? $utmifyResult['raw'],
+    $tracking,
+    $utmifyResult['status'] >= 200 && $utmifyResult['status'] < 300
 );
 
 // --- Send Facebook CAPI Purchase event ---
@@ -179,6 +185,12 @@ $fbResult = apiPost(
     ['Content-Type: application/json'],
     $fbEventData
 );
+writeApiEvent($paymentCode, 'Purchase', 'facebook_capi', $fbUrl, $fbResult['status'],
+    ['event_name' => 'Purchase', 'value' => $amount / 100, 'event_id' => $fbEventData['data'][0]['event_id']],
+    $fbResult['body'] ?? $fbResult['raw'],
+    $tracking,
+    $fbResult['status'] === 200
+);
 if ($fbResult['status'] !== 200) {
     writeLog('FB_CAPI_ERRO', [
         'evento' => 'Purchase',
@@ -202,13 +214,21 @@ $ttResult = sendTikTokEvent('CompletePayment', 'tt_cp_' . $paymentCode . '_' . t
     'value' => $amount / 100,
     'order_id' => $paymentCode
 ]);
-if ($ttResult && $ttResult['status'] !== 200) {
-    writeLog('TIKTOK_API_ERRO', [
-        'evento' => 'CompletePayment',
-        'payment_code' => $paymentCode,
-        'http_status' => $ttResult['status'],
-        'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')
-    ]);
+if ($ttResult) {
+    writeApiEvent($paymentCode, 'CompletePayment', 'tiktok_events', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', $ttResult['status'],
+        ['event' => 'CompletePayment', 'value' => $amount / 100, 'event_id' => 'tt_cp_' . $paymentCode],
+        $ttResult['body'] ?? $ttResult['raw'],
+        $tracking,
+        $ttResult['status'] === 200
+    );
+    if ($ttResult['status'] !== 200) {
+        writeLog('TIKTOK_API_ERRO', [
+            'evento' => 'CompletePayment',
+            'payment_code' => $paymentCode,
+            'http_status' => $ttResult['status'],
+            'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')
+        ]);
+    }
 }
 
 // Log payment approved

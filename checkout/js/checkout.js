@@ -1,6 +1,7 @@
 /* ============================================
-   Checkout Page Logic
+   Checkout Page Logic - High Conversion Version
    Steps, Cart, ViaCEP, Mangofy, Tracking
+   PIX Payment Focus + Conversion Psychology
    ============================================ */
 
 (function() {
@@ -11,7 +12,9 @@
   var paymentCode = null;
   var pollingInterval = null;
   var timerInterval = null;
+  var pixTimerInterval = null;
   var countdownSeconds = 5 * 60 + 30; // 5 min 30 sec initial timer
+  var pixCountdownSeconds = 600; // 10 min PIX timer
 
   /* ---- INIT ---- */
   document.addEventListener('DOMContentLoaded', function() {
@@ -31,7 +34,33 @@
     var chevron = document.querySelector('.cart-chevron');
     if (cartItems) cartItems.classList.add('open');
     if (chevron) chevron.classList.add('open');
+
+    // Calculate and show savings
+    updateSavings();
   });
+
+  /* ---- SAVINGS CALCULATION ---- */
+  function updateSavings() {
+    var items = Cart.getItems();
+    var totalSavings = 0;
+    items.forEach(function(item) {
+      if (item.oldPrice && item.oldPrice > item.price) {
+        totalSavings += (item.oldPrice - item.price) * item.quantity;
+      }
+    });
+
+    if (totalSavings > 0) {
+      var savingsRow = document.getElementById('savings-row');
+      var savingsAmount = document.getElementById('savings-amount');
+      if (savingsRow) savingsRow.style.display = 'flex';
+      if (savingsAmount) savingsAmount.textContent = '-' + formatPrice(totalSavings);
+
+      var osmSavingsRow = document.getElementById('osm-savings-row');
+      var osmSavings = document.getElementById('osm-savings');
+      if (osmSavingsRow) osmSavingsRow.style.display = 'flex';
+      if (osmSavings) osmSavings.textContent = '-' + formatPrice(totalSavings);
+    }
+  }
 
   /* ---- CART RENDERING ---- */
   window.renderCart = function() {
@@ -53,7 +82,7 @@
           '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '">' +
           '<div class="cart-item-info">' +
             '<div class="cart-item-name">' + escapeHtml(item.name) + '</div>' +
-            '<div class="cart-item-qty">' + item.quantity + ' un.</div>' +
+            '<div class="cart-item-qty">' + item.quantity + ' un. &middot; ' + formatPrice(item.price * item.quantity) + '</div>' +
           '</div>' +
           '<button class="cart-item-remove" data-id="' + escapeHtml(item.id) + '" title="Remover">&times;</button>';
         container.appendChild(div);
@@ -64,6 +93,7 @@
         btn.addEventListener('click', function() {
           Cart.removeItem(this.getAttribute('data-id'));
           renderCart();
+          updateSavings();
           if (Cart.getCount() === 0) {
             window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
           }
@@ -73,9 +103,42 @@
 
     var subtotal = Cart.getSubtotal();
     if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
-    if (freteEl) freteEl.textContent = selectedFrete === 0 ? '-' : formatPrice(selectedFrete);
+    if (freteEl) freteEl.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
     if (totalEl) totalEl.textContent = formatPrice(subtotal + selectedFrete);
   };
+
+  /* ---- ORDER SUMMARY MINI (Step 3) ---- */
+  function renderOrderSummary() {
+    var items = Cart.getItems();
+    var osmItems = document.getElementById('osm-items');
+    var osmCount = document.getElementById('osm-count');
+    var osmSubtotal = document.getElementById('osm-subtotal');
+    var osmFrete = document.getElementById('osm-frete');
+    var osmTotal = document.getElementById('osm-total');
+
+    var count = Cart.getCount();
+    if (osmCount) osmCount.textContent = count + (count === 1 ? ' item' : ' itens');
+
+    if (osmItems) {
+      osmItems.innerHTML = '';
+      items.forEach(function(item) {
+        var div = document.createElement('div');
+        div.className = 'osm-item';
+        div.innerHTML =
+          '<img src="' + escapeHtml(item.image) + '" alt="">' +
+          '<span class="osm-item-name">' + escapeHtml(item.name) + '</span>' +
+          '<span class="osm-item-price">' + formatPrice(item.price * item.quantity) + '</span>';
+        osmItems.appendChild(div);
+      });
+    }
+
+    var subtotal = Cart.getSubtotal();
+    if (osmSubtotal) osmSubtotal.textContent = formatPrice(subtotal);
+    if (osmFrete) osmFrete.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
+    if (osmTotal) osmTotal.textContent = formatPrice(subtotal + selectedFrete);
+
+    updateSavings();
+  }
 
   /* ---- CART TOGGLE ---- */
   window.toggleCart = function() {
@@ -111,6 +174,9 @@
       else if (s < currentStep) el.classList.add('completed');
     });
 
+    // Update progress bar
+    updateProgressBar(step);
+
     // Show/hide step content
     document.querySelectorAll('.step-content').forEach(function(el) {
       el.style.display = 'none';
@@ -131,11 +197,28 @@
       }));
     }
 
-    // If step 3, generate PIX
+    // If step 3, render order summary and generate PIX
     if (step === 3) {
+      renderOrderSummary();
       generatePix();
     }
   };
+
+  /* ---- PROGRESS BAR ---- */
+  function updateProgressBar(step) {
+    var fill = document.querySelector('.progress-fill');
+    var pSteps = document.querySelectorAll('.progress-step');
+
+    var widths = { 1: '33%', 2: '66%', 3: '100%' };
+    if (fill) fill.style.width = widths[step] || '33%';
+
+    pSteps.forEach(function(el) {
+      var s = parseInt(el.getAttribute('data-step'));
+      el.classList.remove('active', 'completed');
+      if (s === step) el.classList.add('active');
+      else if (s < step) el.classList.add('completed');
+    });
+  }
 
   /* ---- BACK STEP ---- */
   window.goBack = function() {
@@ -196,6 +279,8 @@
         errEl.textContent = msg;
         errEl.style.display = 'block';
       }
+      // Focus on first error field
+      el.focus();
     }
   }
 
@@ -388,7 +473,7 @@
         var qr = qrcode(0, 'M');
         qr.addData(data.pix_qrcode_text);
         qr.make();
-        qrContainer.innerHTML = qr.createImgTag(5, 16);
+        qrContainer.innerHTML = qr.createImgTag(6, 16);
       }
 
       // Set copy code
@@ -398,6 +483,9 @@
       // Show content
       if (loading) loading.style.display = 'none';
       if (content) content.style.display = 'block';
+
+      // Start PIX countdown timer
+      startPixCountdown();
 
       // Start polling for payment
       startPolling();
@@ -428,8 +516,11 @@
       }
     })
     .catch(function(err) {
-      if (loading) loading.innerHTML = '<p style="color:#f23d4f;">Erro ao gerar PIX. Tente novamente.</p>' +
-        '<button class="cta-btn" onclick="generatePix()" style="margin-top:12px;">Tentar novamente</button>';
+      if (loading) loading.innerHTML =
+        '<p style="color:#f23d4f;font-size:14px;margin-bottom:12px;">Erro ao gerar PIX. Tente novamente.</p>' +
+        '<button class="cta-btn" onclick="generatePix()" style="margin:0 auto;max-width:280px;">' +
+          '<span>Tentar novamente</span>' +
+        '</button>';
       console.error('PIX Error:', err);
     });
   }
@@ -446,19 +537,73 @@
     }
   }
 
+  /* ---- PIX COUNTDOWN (with color escalation) ---- */
+  function startPixCountdown() {
+    pixCountdownSeconds = 600; // Reset to 10 min
+    if (pixTimerInterval) clearInterval(pixTimerInterval);
+
+    updatePixCountdown();
+    pixTimerInterval = setInterval(function() {
+      pixCountdownSeconds--;
+      if (pixCountdownSeconds <= 0) {
+        pixCountdownSeconds = 0;
+        clearInterval(pixTimerInterval);
+      }
+      updatePixCountdown();
+    }, 1000);
+  }
+
+  function updatePixCountdown() {
+    var el = document.getElementById('pix-countdown');
+    var box = document.getElementById('pix-timer-box');
+    if (!el) return;
+
+    var m = Math.floor(pixCountdownSeconds / 60);
+    var s = pixCountdownSeconds % 60;
+    el.textContent = pad(m) + ':' + pad(s);
+
+    // Color escalation
+    if (box) {
+      box.classList.remove('warning', 'urgent');
+      if (pixCountdownSeconds <= 120) {
+        box.classList.add('urgent'); // Red pulsing < 2 min
+      } else if (pixCountdownSeconds <= 300) {
+        box.classList.add('warning'); // Yellow < 5 min
+      }
+    }
+  }
+
   /* ---- COPY PIX CODE ---- */
   window.copyPixCode = function() {
     var input = document.getElementById('pix-code');
+    var btn = document.getElementById('copy-btn');
     if (!input) return;
 
+    var copySuccess = function() {
+      // Visual feedback - green button with checkmark
+      if (btn) {
+        btn.classList.add('copied');
+        btn.innerHTML =
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
+          '<span>CÓDIGO COPIADO!</span>';
+
+        // Reset after 3 seconds
+        setTimeout(function() {
+          btn.classList.remove('copied');
+          btn.innerHTML =
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
+            '<span>COPIAR CÓDIGO PIX</span>';
+        }, 3000);
+      }
+      showToast('Código PIX copiado! Cole no app do seu banco.');
+    };
+
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(input.value).then(function() {
-        showToast('Código PIX copiado!');
-      });
+      navigator.clipboard.writeText(input.value).then(copySuccess);
     } else {
       input.select();
       document.execCommand('copy');
-      showToast('Código PIX copiado!');
+      copySuccess();
     }
   };
 
@@ -475,12 +620,41 @@
         return;
       }
       checkPaymentStatus();
+
+      // Update status message periodically for reassurance
+      updatePollingMessage(attempts);
     }, 5000);
+  }
+
+  function updatePollingMessage(attempts) {
+    var statusEl = document.getElementById('payment-status');
+    if (!statusEl) return;
+    var span = statusEl.querySelector('span');
+    if (!span) return;
+
+    var messages = [
+      'Aguardando pagamento...',
+      'Aguardando confirmação do banco...',
+      'Verificando pagamento...',
+      'Ainda aguardando...',
+      'O banco pode levar alguns segundos...'
+    ];
+
+    var idx = Math.floor(attempts / 3) % messages.length;
+    span.textContent = messages[idx];
   }
 
   window.checkPayment = function() {
     var btn = document.querySelector('.check-payment-btn');
-    if (btn) btn.textContent = 'Verificando...';
+    if (btn) {
+      btn.innerHTML =
+        '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;"></div>' +
+        ' Verificando...';
+    }
+
+    var statusEl = document.getElementById('payment-status');
+    if (statusEl) statusEl.classList.add('checking');
+
     checkPaymentStatus(true);
   };
 
@@ -494,28 +668,50 @@
           onPaymentConfirmed();
         } else if (manual) {
           var btn = document.querySelector('.check-payment-btn');
-          if (btn) btn.textContent = 'Ainda não confirmado. Tente novamente.';
+          if (btn) {
+            btn.innerHTML =
+              '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>' +
+              ' Ainda não confirmado. Aguarde...';
+          }
           setTimeout(function() {
-            if (btn) btn.textContent = 'Já paguei - Verificar';
+            if (btn) {
+              btn.innerHTML =
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
+                ' Já paguei - Verificar pagamento';
+            }
+            var statusEl = document.getElementById('payment-status');
+            if (statusEl) statusEl.classList.remove('checking');
           }, 3000);
         }
       })
       .catch(function() {
         if (manual) {
           var btn = document.querySelector('.check-payment-btn');
-          if (btn) btn.textContent = 'Erro. Tente novamente.';
+          if (btn) {
+            btn.innerHTML =
+              '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
+              ' Já paguei - Verificar pagamento';
+          }
         }
       });
   }
 
   function onPaymentConfirmed() {
     if (pollingInterval) clearInterval(pollingInterval);
+    if (pixTimerInterval) clearInterval(pixTimerInterval);
 
     var content = document.getElementById('pix-content');
     var confirmed = document.getElementById('pix-confirmed');
 
     if (content) content.style.display = 'none';
     if (confirmed) confirmed.style.display = 'block';
+
+    // Update status
+    var statusEl = document.getElementById('payment-status');
+    if (statusEl) {
+      statusEl.classList.remove('checking');
+      statusEl.classList.add('confirmed');
+    }
 
     // Event ID for dedup between client-side pixel and server-side CAPI
     var purchaseEventId = 'pur_' + paymentCode + '_' + Date.now();
@@ -556,7 +752,7 @@
     }, 3000);
   }
 
-  /* ---- COUNTDOWN TIMER ---- */
+  /* ---- COUNTDOWN TIMER (STICKY BAR) ---- */
   function initTimer() {
     // Try to restore saved timer
     var saved = sessionStorage.getItem('ml_timer');
@@ -590,6 +786,16 @@
     if (hEl) hEl.textContent = pad(h);
     if (mEl) mEl.textContent = pad(m);
     if (sEl) sEl.textContent = pad(s);
+
+    // Make sticky timer urgent when < 2 min
+    var stickyTimer = document.getElementById('sticky-timer');
+    if (stickyTimer) {
+      if (countdownSeconds <= 120) {
+        stickyTimer.classList.add('urgent');
+      } else {
+        stickyTimer.classList.remove('urgent');
+      }
+    }
   }
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -616,26 +822,49 @@
       { name: 'Mariana T. de Santos', img: '../images/marianatorres.jpg' },
       { name: 'Larissa A. de Joinville', img: '../images/larissaaparecida.jpeg' },
       { name: 'Renata L. de Ribeirão Preto', img: '../images/renatalima.jpeg' },
-      { name: 'Patrícia S. de Aracaju', img: '../images/patriciasilva.jpeg' },
+      { name: 'Patrícia S. de Maceió', img: '../images/patriciasilva.jpeg' },
       { name: 'Camila F. de Maceió', img: '../images/camilafernandes.jpeg' },
       { name: 'Aline R. de Cuiabá', img: '../images/alinerocha.jpeg' }
     ];
 
+    // More PIX-focused actions to reassure users
     var actions = [
-      'acabou de finalizar a compra',
+      'acabou de finalizar a compra via PIX',
       'resgatou o cupom de desconto',
-      'adicionou itens ao carrinho',
-      'acabou de pagar via PIX'
+      'acabou de pagar via PIX',
+      'confirmou o pagamento PIX',
+      'concluiu a compra agora',
+      'adicionou itens ao carrinho'
+    ];
+
+    var timeAgo = [
+      'agora mesmo',
+      'há 1 minuto',
+      'há 2 minutos',
+      'há poucos segundos',
+      'agora mesmo'
     ];
 
     var el = document.getElementById('social-proof');
     if (!el) return;
 
+    // Show first notification after 3 seconds
+    setTimeout(function() { showSocialNotification(); }, 3000);
+
+    // Then every 7 seconds
     setInterval(function() {
+      showSocialNotification();
+    }, 7000);
+
+    function showSocialNotification() {
       var person = people[Math.floor(Math.random() * people.length)];
       var action = actions[Math.floor(Math.random() * actions.length)];
+      var time = timeAgo[Math.floor(Math.random() * timeAgo.length)];
+
       var imgEl = el.querySelector('img');
       var textEl = el.querySelector('p');
+      var timeEl = el.querySelector('.sp-time');
+
       if (imgEl) {
         imgEl.src = person.img;
         imgEl.alt = person.name;
@@ -643,11 +872,15 @@
       if (textEl) {
         textEl.innerHTML = '<b>' + person.name + '</b> ' + action;
       }
+      if (timeEl) {
+        timeEl.textContent = time;
+      }
+
       el.classList.add('show');
       setTimeout(function() {
         el.classList.remove('show');
-      }, 4000);
-    }, 8000);
+      }, 4500);
+    }
   }
 
   /* ---- TOAST ---- */
@@ -663,7 +896,7 @@
     toast.classList.add('show');
     setTimeout(function() {
       toast.classList.remove('show');
-    }, 2500);
+    }, 3000);
   }
 
   /* ---- HELPERS ---- */

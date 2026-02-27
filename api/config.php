@@ -4,6 +4,9 @@
    IMPORTANT: Update these values with your real credentials
    ============================================ */
 
+// Timezone: São Paulo BRT (UTC-3)
+date_default_timezone_set('America/Sao_Paulo');
+
 // Mangofy
 define('MANGOFY_API_URL', 'https://checkout.mangofy.com.br/api/v1');
 define('MANGOFY_AUTHORIZATION', '2d7ec7be4856d113b6dea617d389cb711dlhqysglpgl6h8tiy3jd5lzc6tx2ei');
@@ -97,6 +100,33 @@ function sendTikTokEvent($eventName, $eventId, $userData, $properties = []) {
         ],
         $payload
     );
+}
+
+/* Helper: Log API event for dashboard debugging */
+function writeApiEvent($paymentCode, $eventName, $api, $url, $httpStatus, $requestSummary, $response, $utms = [], $success = true) {
+    $file = DATA_DIR . 'api_events.json';
+    $events = [];
+    if (file_exists($file)) {
+        $events = json_decode(file_get_contents($file), true);
+        if (!is_array($events)) $events = [];
+    }
+    $events[] = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'payment_code' => $paymentCode,
+        'event' => $eventName,
+        'api' => $api,
+        'url' => $url,
+        'http_status' => $httpStatus,
+        'request' => $requestSummary,
+        'response' => $response,
+        'utms' => $utms,
+        'success' => $success
+    ];
+    // Keep last 500 events
+    if (count($events) > 500) {
+        $events = array_slice($events, -500);
+    }
+    file_put_contents($file, json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
 /* Helper: cURL POST request */

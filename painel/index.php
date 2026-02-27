@@ -63,6 +63,13 @@ function loadLog(string $dir, int $limit = 50): array {
     return array_slice($lines, 0, $limit);
 }
 
+function loadApiEvents(string $dir): array {
+    $file = $dir . 'api_events.json';
+    if (!file_exists($file)) return [];
+    $data = json_decode(file_get_contents($file), true);
+    return is_array($data) ? $data : [];
+}
+
 function formatBRL(int $cents): string {
     return 'R$ ' . number_format($cents / 100, 2, ',', '.');
 }
@@ -144,6 +151,7 @@ if ($isAuthenticated) {
     $payments = loadPayments($DATA_DIR);
     $pageviews = loadPageviews($DATA_DIR);
     $logLines = loadLog($DATA_DIR, 50);
+    $apiEvents = loadApiEvents($DATA_DIR);
 
     // Default date range: last 7 days
     $defaultFrom = date('Y-m-d', strtotime('-7 days'));
@@ -418,6 +426,156 @@ if ($isAuthenticated) {
 
         /* No data */
         .no-data { text-align: center; padding: 3rem; color: #71717a; font-size: 0.9rem; }
+
+        /* Log Filters */
+        .log-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .log-filter-btn {
+            padding: 0.3rem 0.75rem; border-radius: 20px;
+            border: 1px solid #3f3f46; background: transparent;
+            color: #a1a1aa; font-family: inherit; font-size: 0.75rem;
+            font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .log-filter-btn:hover { border-color: #60a5fa; color: #60a5fa; }
+        .log-filter-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+        /* API Badges */
+        .api-badge {
+            display: inline-block; padding: 0.15rem 0.5rem;
+            border-radius: 4px; font-size: 0.7rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .api-badge.utmify { background: #1e3a5f; color: #60a5fa; }
+        .api-badge.facebook { background: #2e1065; color: #a78bfa; }
+        .api-badge.tiktok { background: #4a044e; color: #f0abfc; }
+        .api-badge.mangofy { background: #365314; color: #a3e635; }
+        .status-dot {
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 0.3rem; vertical-align: middle;
+        }
+        .status-dot.success { background: #34d399; }
+        .status-dot.error { background: #f87171; }
+
+        /* Clickable row */
+        .clickable-row { cursor: pointer; }
+        .clickable-row:hover { background: #252630 !important; }
+
+        /* Detail Button */
+        .btn-detail {
+            padding: 0.25rem 0.6rem; border-radius: 4px;
+            border: 1px solid #3f3f46; background: #1a1b23;
+            color: #60a5fa; font-size: 0.72rem; cursor: pointer;
+            font-family: inherit; transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-detail:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75); z-index: 1000;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 2rem; overflow-y: auto;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: #1a1b23; border: 1px solid #2a2b35;
+            border-radius: 12px; width: 100%; max-width: 840px;
+            margin-top: 1rem; margin-bottom: 2rem;
+            animation: modalIn 0.25s ease-out;
+        }
+        @keyframes modalIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.25rem 1.5rem; border-bottom: 1px solid #2a2b35;
+        }
+        .modal-header h2 { font-size: 1.1rem; font-weight: 600; color: #fff; }
+        .modal-close {
+            background: none; border: none; color: #71717a;
+            font-size: 1.5rem; cursor: pointer; padding: 0.25rem 0.5rem;
+            line-height: 1; transition: color 0.2s; border-radius: 4px;
+        }
+        .modal-close:hover { color: #fff; background: #3f3f46; }
+        .modal-body { padding: 1.5rem; }
+
+        /* Detail Cards */
+        .detail-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        @media (max-width: 600px) { .detail-grid { grid-template-columns: 1fr; } }
+        .detail-card {
+            background: #0f1117; border: 1px solid #2a2b35;
+            border-radius: 8px; padding: 1rem;
+        }
+        .detail-card h4 {
+            font-size: 0.78rem; font-weight: 600; color: #71717a;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            margin-bottom: 0.75rem;
+        }
+        .detail-row {
+            display: flex; justify-content: space-between; gap: 1rem;
+            padding: 0.3rem 0; font-size: 0.85rem;
+        }
+        .detail-row .label { color: #a1a1aa; white-space: nowrap; }
+        .detail-row .value { color: #fff; font-weight: 500; text-align: right; word-break: break-all; }
+
+        /* API Trail */
+        .api-trail-title {
+            font-size: 0.95rem; font-weight: 600; color: #fff;
+            margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .api-trail-item {
+            background: #0f1117; border: 1px solid #2a2b35;
+            border-radius: 8px; margin-bottom: 0.75rem; overflow: hidden;
+        }
+        .api-trail-header {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem; cursor: pointer;
+            transition: background 0.15s; flex-wrap: wrap;
+        }
+        .api-trail-header:hover { background: #15161d; }
+        .api-trail-header .time { font-size: 0.75rem; color: #71717a; min-width: 110px; }
+        .api-trail-header .event-name { font-weight: 600; color: #e4e4e7; font-size: 0.85rem; }
+        .api-trail-header .http-status {
+            margin-left: auto; padding: 0.15rem 0.5rem;
+            border-radius: 4px; font-size: 0.72rem; font-weight: 600;
+        }
+        .api-trail-header .expand-icon { color: #52525b; font-size: 0.75rem; transition: transform 0.2s; }
+        .http-ok { background: #064e3b; color: #34d399; }
+        .http-err { background: #7f1d1d; color: #fca5a5; }
+        .api-trail-body {
+            display: none; padding: 0.75rem 1rem;
+            border-top: 1px solid #2a2b35; font-size: 0.8rem;
+        }
+        .api-trail-body.open { display: block; }
+        .response-box {
+            background: #0a0b10; border: 1px solid #1e1f2a;
+            border-radius: 6px; padding: 0.75rem; margin-top: 0.25rem;
+            font-family: 'Courier New', monospace; font-size: 0.73rem;
+            color: #a1a1aa; max-height: 200px; overflow-y: auto;
+            white-space: pre-wrap; word-break: break-all; line-height: 1.4;
+        }
+        .response-label {
+            font-size: 0.72rem; font-weight: 600; color: #52525b;
+            text-transform: uppercase; margin-top: 0.75rem; margin-bottom: 0.2rem;
+            letter-spacing: 0.03em;
+        }
+        .no-api-events { text-align: center; padding: 2rem; color: #52525b; font-size: 0.85rem; }
+
+        /* API filter tabs */
+        .api-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .api-filter-btn {
+            padding: 0.3rem 0.75rem; border-radius: 20px;
+            border: 1px solid #3f3f46; background: transparent;
+            color: #a1a1aa; font-family: inherit; font-size: 0.75rem;
+            font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .api-filter-btn:hover { border-color: #60a5fa; color: #60a5fa; }
+        .api-filter-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
     </style>
 </head>
 <body>
@@ -572,6 +730,7 @@ if ($isAuthenticated) {
                             <th>Status</th>
                             <th>Fonte</th>
                             <th>Campanha</th>
+                            <th>Acoes</th>
                         </tr>
                     </thead>
                     <tbody id="salesBody"></tbody>
@@ -585,13 +744,23 @@ if ($isAuthenticated) {
         <div class="log-container">
             <div class="log-header">
                 <h3>Ultimos 50 eventos</h3>
-                <label class="toggle-label">
-                    <span>Auto-refresh log</span>
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="toggleLogRefresh">
-                        <span class="toggle-slider"></span>
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+                    <div class="log-filters">
+                        <button class="log-filter-btn active" data-log-filter="all" onclick="filterLog('all')">Todos</button>
+                        <button class="log-filter-btn" data-log-filter="pix" onclick="filterLog('pix')">PIX</button>
+                        <button class="log-filter-btn" data-log-filter="webhook" onclick="filterLog('webhook')">Webhook</button>
+                        <button class="log-filter-btn" data-log-filter="aprovado" onclick="filterLog('aprovado')">Aprovados</button>
+                        <button class="log-filter-btn" data-log-filter="erro" onclick="filterLog('erro')">Erros</button>
+                        <button class="log-filter-btn" data-log-filter="api" onclick="filterLog('api')">API</button>
                     </div>
-                </label>
+                    <label class="toggle-label">
+                        <span>Auto-refresh</span>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="toggleLogRefresh">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>
+                </div>
             </div>
             <div class="log-body" id="logBody">
                 <?php foreach ($logLines as $line): ?>
@@ -606,6 +775,47 @@ if ($isAuthenticated) {
                 <?php if (empty($logLines)): ?>
                     <div class="no-data">Nenhum evento registrado</div>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- API Events / Rastreamento -->
+        <div class="section-title"><span class="dot" style="background:#a78bfa"></span> Rastreamento API</div>
+        <div class="table-wrap">
+            <div class="table-header">
+                <h3>Chamadas de API (UTMify, FB CAPI, TikTok)</h3>
+                <div class="api-filters">
+                    <button class="api-filter-btn active" data-api-filter="all" onclick="filterApiEvents('all')">Todas</button>
+                    <button class="api-filter-btn" data-api-filter="utmify" onclick="filterApiEvents('utmify')">UTMify</button>
+                    <button class="api-filter-btn" data-api-filter="facebook_capi" onclick="filterApiEvents('facebook_capi')">Facebook</button>
+                    <button class="api-filter-btn" data-api-filter="tiktok_events" onclick="filterApiEvents('tiktok_events')">TikTok</button>
+                </div>
+            </div>
+            <div class="table-scroll">
+                <table id="apiEventsTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Payment Code</th>
+                            <th>Evento</th>
+                            <th>API</th>
+                            <th>HTTP</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="apiEventsBody"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="apiEventsPagination"></div>
+        </div>
+
+        <!-- Sale Detail Modal -->
+        <div class="modal-overlay" id="saleDetailModal" onclick="if(event.target===this)closeSaleDetail()">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detalhes da Venda</h2>
+                    <button class="modal-close" onclick="closeSaleDetail()">&times;</button>
+                </div>
+                <div class="modal-body" id="saleDetailBody"></div>
             </div>
         </div>
 
@@ -628,6 +838,7 @@ if ($isAuthenticated) {
     // Transfer PHP data to JS
     const RAW_PAYMENTS = <?php echo json_encode(array_values($payments), JSON_UNESCAPED_UNICODE); ?>;
     const RAW_PAGEVIEWS = <?php echo json_encode($pageviews, JSON_UNESCAPED_UNICODE); ?>;
+    const RAW_API_EVENTS = <?php echo json_encode($apiEvents ?? [], JSON_UNESCAPED_UNICODE); ?>;
     const ITEMS_PER_PAGE = <?php echo $ITEMS_PER_PAGE; ?>;
 
     // ── State ──
@@ -1038,7 +1249,7 @@ if ($isAuthenticated) {
 
         const tbody = document.getElementById('salesBody');
         if (!pageData.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="no-data">Sem vendas no periodo</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="no-data">Sem vendas no periodo</td></tr>';
             document.getElementById('salesPagination').innerHTML = '';
             return;
         }
@@ -1048,7 +1259,8 @@ if ($isAuthenticated) {
             const statusCls = p.status === 'paid' ? 'badge-paid' : 'badge-pending';
             const statusLabel = p.status === 'paid' ? 'Pago' : 'Pendente';
             const t = p.tracking || {};
-            return `<tr>
+            const pc = esc(p.payment_code || '');
+            return `<tr class="clickable-row" onclick="openSaleDetail('${pc}')">
                 <td>${formatDateBR(p.created_at)}</td>
                 <td>${esc(p.customer?.name || '-')}</td>
                 <td>${esc(p.customer?.email || '-')}</td>
@@ -1058,6 +1270,7 @@ if ($isAuthenticated) {
                 <td><span class="badge ${statusCls}">${statusLabel}</span></td>
                 <td>${esc(t.utm_source || '-')}</td>
                 <td>${esc(t.utm_campaign || '-')}</td>
+                <td><button class="btn-detail" onclick="event.stopPropagation();openSaleDetail('${pc}')">Ver</button></td>
             </tr>`;
         }).join('');
 
@@ -1098,6 +1311,7 @@ if ($isAuthenticated) {
         renderTrafficTable();
         renderProductsTable();
         renderSalesTable();
+        renderApiEvents();
     }
 
     // ── Table Sorting ──
@@ -1185,6 +1399,228 @@ if ($isAuthenticated) {
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(renderCharts, 200);
+    });
+
+    // ── Log Filtering ──
+    let activeLogFilter = 'all';
+    function filterLog(type) {
+        activeLogFilter = type;
+        document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`[data-log-filter="${type}"]`);
+        if (btn) btn.classList.add('active');
+
+        const lines = document.querySelectorAll('#logBody .log-line');
+        let visible = 0;
+        lines.forEach(line => {
+            const text = line.textContent;
+            let show = false;
+            if (type === 'all') show = true;
+            else if (type === 'pix' && text.indexOf('PIX_GERADO') !== -1) show = true;
+            else if (type === 'webhook' && text.indexOf('WEBHOOK_RECEBIDO') !== -1) show = true;
+            else if (type === 'aprovado' && text.indexOf('PAGAMENTO_APROVADO') !== -1) show = true;
+            else if (type === 'erro' && (text.indexOf('ERRO') !== -1 || text.indexOf('erro') !== -1)) show = true;
+            else if (type === 'api' && (text.indexOf('UTMIFY') !== -1 || text.indexOf('FB_CAPI') !== -1 || text.indexOf('TIKTOK') !== -1 || text.indexOf('MANGOFY') !== -1)) show = true;
+            line.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        // Show "no results" if none visible
+        const noResult = document.getElementById('logNoResult');
+        if (noResult) noResult.style.display = visible === 0 ? '' : 'none';
+    }
+
+    // ── API Events Table ──
+    let apiEventsPage = 1;
+    let apiFilterType = 'all';
+
+    function filterApiEvents(type) {
+        apiFilterType = type;
+        apiEventsPage = 1;
+        document.querySelectorAll('.api-filter-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`[data-api-filter="${type}"]`);
+        if (btn) btn.classList.add('active');
+        renderApiEvents();
+    }
+
+    function renderApiEvents() {
+        const tbody = document.getElementById('apiEventsBody');
+        if (!tbody) return;
+
+        let data = [...RAW_API_EVENTS].reverse();
+
+        if (apiFilterType !== 'all') {
+            data = data.filter(e => e.api === apiFilterType);
+        }
+
+        // Apply date filters
+        const from = document.getElementById('dateFrom').value;
+        const to = document.getElementById('dateTo').value;
+        if (from) data = data.filter(e => (e.timestamp || '').substring(0, 10) >= from);
+        if (to) data = data.filter(e => (e.timestamp || '').substring(0, 10) <= to);
+
+        const perPage = 15;
+        const totalPages = Math.max(1, Math.ceil(data.length / perPage));
+        if (apiEventsPage > totalPages) apiEventsPage = totalPages;
+        const start = (apiEventsPage - 1) * perPage;
+        const pageData = data.slice(start, start + perPage);
+
+        if (!pageData.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="no-data">Nenhum evento de API registrado</td></tr>';
+            document.getElementById('apiEventsPagination').innerHTML = '';
+            return;
+        }
+
+        tbody.innerHTML = pageData.map(e => {
+            const statusCls = e.success ? 'http-ok' : 'http-err';
+            const dotCls = e.success ? 'success' : 'error';
+            let apiBadgeCls = 'utmify';
+            if (e.api === 'facebook_capi') apiBadgeCls = 'facebook';
+            else if (e.api === 'tiktok_events') apiBadgeCls = 'tiktok';
+            else if (e.api === 'mangofy') apiBadgeCls = 'mangofy';
+            const pc = esc(e.payment_code || '');
+
+            return `<tr class="clickable-row" onclick="openSaleDetail('${pc}')">
+                <td>${formatDateBR(e.timestamp)}</td>
+                <td style="font-family:monospace;font-size:0.78rem">${pc || '-'}</td>
+                <td>${esc(e.event || '-')}</td>
+                <td><span class="api-badge ${apiBadgeCls}">${esc(e.api || '-')}</span></td>
+                <td><span class="${statusCls}" style="padding:0.15rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:600">${e.http_status || '-'}</span></td>
+                <td><span class="status-dot ${dotCls}"></span>${e.success ? 'OK' : 'Erro'}</td>
+            </tr>`;
+        }).join('');
+
+        // Pagination
+        const pagDiv = document.getElementById('apiEventsPagination');
+        if (totalPages <= 1) { pagDiv.innerHTML = ''; return; }
+        let html = '';
+        html += `<button ${apiEventsPage<=1?'disabled':''} onclick="apiEventsPage=1;renderApiEvents()">\u00AB</button>`;
+        html += `<button ${apiEventsPage<=1?'disabled':''} onclick="apiEventsPage--;renderApiEvents()">\u2039</button>`;
+        const maxB = 7;
+        let sP = Math.max(1, apiEventsPage - Math.floor(maxB/2));
+        let eP = Math.min(totalPages, sP + maxB - 1);
+        if (eP - sP < maxB - 1) sP = Math.max(1, eP - maxB + 1);
+        for (let i = sP; i <= eP; i++) {
+            html += `<button class="${i===apiEventsPage?'active':''}" onclick="apiEventsPage=${i};renderApiEvents()">${i}</button>`;
+        }
+        html += `<button ${apiEventsPage>=totalPages?'disabled':''} onclick="apiEventsPage++;renderApiEvents()">\u203A</button>`;
+        html += `<button ${apiEventsPage>=totalPages?'disabled':''} onclick="apiEventsPage=${totalPages};renderApiEvents()">\u00BB</button>`;
+        pagDiv.innerHTML = html;
+    }
+
+    // ── Sale Detail Modal ──
+    function openSaleDetail(paymentCode) {
+        if (!paymentCode) return;
+
+        const payment = RAW_PAYMENTS.find(p => p.payment_code === paymentCode);
+        const events = RAW_API_EVENTS.filter(e => e.payment_code === paymentCode)
+            .sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+
+        const modal = document.getElementById('saleDetailModal');
+        const body = document.getElementById('saleDetailBody');
+        let html = '';
+
+        if (payment) {
+            const c = payment.customer || {};
+            const t = payment.tracking || {};
+            const itemsStr = (payment.items || []).map(i => esc((i.name || 'Produto') + ' x' + (i.quantity || 1))).join(', ') || '-';
+
+            html += `<div class="detail-grid">
+                <div class="detail-card">
+                    <h4>Cliente</h4>
+                    <div class="detail-row"><span class="label">Nome</span><span class="value">${esc(c.name || '-')}</span></div>
+                    <div class="detail-row"><span class="label">Email</span><span class="value">${esc(c.email || '-')}</span></div>
+                    <div class="detail-row"><span class="label">Telefone</span><span class="value">${esc(c.phone || '-')}</span></div>
+                    <div class="detail-row"><span class="label">Documento</span><span class="value">${esc(c.document || '-')}</span></div>
+                </div>
+                <div class="detail-card">
+                    <h4>Pagamento</h4>
+                    <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace;font-size:0.78rem">${esc(paymentCode)}</span></div>
+                    <div class="detail-row"><span class="label">Valor</span><span class="value">${formatBRL(payment.amount || 0)}</span></div>
+                    <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge ${payment.status==='paid'?'badge-paid':'badge-pending'}">${payment.status==='paid'?'Pago':'Pendente'}</span></span></div>
+                    <div class="detail-row"><span class="label">Criado</span><span class="value">${formatDateBR(payment.created_at)}</span></div>
+                    <div class="detail-row"><span class="label">Pago em</span><span class="value">${formatDateBR(payment.paid_at)}</span></div>
+                    <div class="detail-row"><span class="label">Produtos</span><span class="value">${itemsStr}</span></div>
+                </div>
+            </div>`;
+
+            // UTMs card
+            const hasUtms = t.utm_source || t.utm_campaign || t.utm_medium || t.utm_content || t.utm_term || t.fbclid || t.src || t.sck;
+            if (hasUtms) {
+                html += `<div class="detail-card" style="margin-bottom:1.5rem">
+                    <h4>UTMs &amp; Rastreamento</h4>
+                    ${t.utm_source ? `<div class="detail-row"><span class="label">Source</span><span class="value">${esc(t.utm_source)}</span></div>` : ''}
+                    ${t.utm_campaign ? `<div class="detail-row"><span class="label">Campaign</span><span class="value">${esc(t.utm_campaign)}</span></div>` : ''}
+                    ${t.utm_medium ? `<div class="detail-row"><span class="label">Medium</span><span class="value">${esc(t.utm_medium)}</span></div>` : ''}
+                    ${t.utm_content ? `<div class="detail-row"><span class="label">Content</span><span class="value">${esc(t.utm_content)}</span></div>` : ''}
+                    ${t.utm_term ? `<div class="detail-row"><span class="label">Term</span><span class="value">${esc(t.utm_term)}</span></div>` : ''}
+                    ${t.src ? `<div class="detail-row"><span class="label">src</span><span class="value">${esc(t.src)}</span></div>` : ''}
+                    ${t.sck ? `<div class="detail-row"><span class="label">sck</span><span class="value">${esc(t.sck)}</span></div>` : ''}
+                    ${t.fbclid ? `<div class="detail-row"><span class="label">fbclid</span><span class="value" style="font-family:monospace;font-size:0.73rem;word-break:break-all">${esc(t.fbclid)}</span></div>` : ''}
+                    ${t.fbp ? `<div class="detail-row"><span class="label">fbp</span><span class="value" style="font-family:monospace;font-size:0.73rem">${esc(t.fbp)}</span></div>` : ''}
+                </div>`;
+            }
+        } else {
+            html += `<div class="detail-card" style="margin-bottom:1.5rem">
+                <h4>Pagamento</h4>
+                <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace">${esc(paymentCode)}</span></div>
+                <p style="color:#71717a;font-size:0.85rem;margin-top:0.5rem">Dados do pagamento nao encontrados localmente.</p>
+            </div>`;
+        }
+
+        // API Call Trail
+        html += `<div class="api-trail-title"><span style="color:#a78bfa">&#9679;</span> Trail de Chamadas API (${events.length})</div>`;
+
+        if (events.length === 0) {
+            html += `<div class="no-api-events">Nenhuma chamada de API registrada para este pagamento</div>`;
+        } else {
+            events.forEach((e, idx) => {
+                const statusCls = e.success ? 'http-ok' : 'http-err';
+                let apiBadgeCls = 'utmify';
+                if (e.api === 'facebook_capi') apiBadgeCls = 'facebook';
+                else if (e.api === 'tiktok_events') apiBadgeCls = 'tiktok';
+                else if (e.api === 'mangofy') apiBadgeCls = 'mangofy';
+
+                let reqStr = '-';
+                try { reqStr = e.request ? JSON.stringify(e.request, null, 2) : '-'; } catch(x) { reqStr = String(e.request); }
+                let resStr = '-';
+                try { resStr = e.response ? (typeof e.response === 'string' ? e.response : JSON.stringify(e.response, null, 2)) : '-'; } catch(x) { resStr = String(e.response); }
+
+                const utmStr = (e.utms && typeof e.utms === 'object' && Object.keys(e.utms).filter(k => e.utms[k]).length > 0)
+                    ? JSON.stringify(e.utms, null, 2) : null;
+
+                html += `<div class="api-trail-item">
+                    <div class="api-trail-header" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.expand-icon').textContent=this.nextElementSibling.classList.contains('open')?'\\u25B2':'\\u25BC'">
+                        <span class="time">${formatDateBR(e.timestamp)}</span>
+                        <span class="api-badge ${apiBadgeCls}">${esc(e.api || '-')}</span>
+                        <span class="event-name">${esc(e.event || '-')}</span>
+                        <span class="http-status ${statusCls}">${e.http_status || '-'}</span>
+                        <span class="expand-icon">\u25BC</span>
+                    </div>
+                    <div class="api-trail-body">
+                        <div class="response-label">URL</div>
+                        <div class="response-box" style="max-height:60px">${esc(e.url || '-')}</div>
+                        <div class="response-label">Request Enviado</div>
+                        <div class="response-box">${esc(reqStr)}</div>
+                        <div class="response-label">Response Recebido</div>
+                        <div class="response-box">${esc(resStr)}</div>
+                        ${utmStr ? `<div class="response-label">UTMs Enviados</div><div class="response-box">${esc(utmStr)}</div>` : ''}
+                    </div>
+                </div>`;
+            });
+        }
+
+        body.innerHTML = html;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSaleDetail() {
+        document.getElementById('saleDetailModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeSaleDetail();
     });
 
     // ── Init ──

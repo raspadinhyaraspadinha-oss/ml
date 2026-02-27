@@ -232,13 +232,19 @@ $utmifyPayload = [
     'isTest' => false
 ];
 
-apiPost(
+$utmifyResult = apiPost(
     UTMIFY_API_URL,
     [
         'Content-Type: application/json',
         'x-api-token: ' . UTMIFY_API_TOKEN
     ],
     $utmifyPayload
+);
+writeApiEvent($paymentCode, 'waiting_payment', 'utmify', UTMIFY_API_URL, $utmifyResult['status'],
+    ['orderId' => $paymentCode, 'status' => 'waiting_payment', 'amount' => $amount / 100],
+    $utmifyResult['body'] ?? $utmifyResult['raw'],
+    $trackingParams,
+    $utmifyResult['status'] >= 200 && $utmifyResult['status'] < 300
 );
 
 // Send Facebook CAPI AddToCart event (server-side)
@@ -277,6 +283,12 @@ $fbAddToCart = [
 
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
 $fbResult = apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
+writeApiEvent($paymentCode, 'AddToCart', 'facebook_capi', $fbUrl, $fbResult['status'],
+    ['event_name' => 'AddToCart', 'value' => $amount / 100, 'event_id' => $fbAddToCart['data'][0]['event_id']],
+    $fbResult['body'] ?? $fbResult['raw'],
+    $trackingParams,
+    $fbResult['status'] === 200
+);
 if ($fbResult['status'] !== 200) {
     writeLog('FB_CAPI_ERRO', [
         'evento' => 'AddToCart',
@@ -299,13 +311,21 @@ $ttResult = sendTikTokEvent('InitiateCheckout', 'tt_ic_' . $paymentCode . '_' . 
     'currency' => 'BRL',
     'value' => $amount / 100
 ]);
-if ($ttResult && $ttResult['status'] !== 200) {
-    writeLog('TIKTOK_API_ERRO', [
-        'evento' => 'InitiateCheckout',
-        'payment_code' => $paymentCode,
-        'http_status' => $ttResult['status'],
-        'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')
-    ]);
+if ($ttResult) {
+    writeApiEvent($paymentCode, 'InitiateCheckout', 'tiktok_events', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', $ttResult['status'],
+        ['event' => 'InitiateCheckout', 'value' => $amount / 100, 'event_id' => 'tt_ic_' . $paymentCode],
+        $ttResult['body'] ?? $ttResult['raw'],
+        $trackingParams,
+        $ttResult['status'] === 200
+    );
+    if ($ttResult['status'] !== 200) {
+        writeLog('TIKTOK_API_ERRO', [
+            'evento' => 'InitiateCheckout',
+            'payment_code' => $paymentCode,
+            'http_status' => $ttResult['status'],
+            'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')
+        ]);
+    }
 }
 
 // Log PIX generated
