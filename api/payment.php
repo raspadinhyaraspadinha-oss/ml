@@ -28,6 +28,13 @@ $items = isset($input['items']) ? $input['items'] : [];
 $metadata = isset($input['metadata']) ? $input['metadata'] : [];
 $trackingParams = isset($input['trackingParameters']) ? $input['trackingParameters'] : [];
 
+// Safety: reject payments below R$5,00 (500 cents) - Mangofy minimum
+if ($amount < 500) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Valor do pedido inválido. Mínimo R$ 5,00.', 'amount_received' => $amount]);
+    exit;
+}
+
 // Dados padrão para fallback caso Mangofy rejeite os dados do lead
 $FALLBACK_CUSTOMER = [
     'email' => 'cidinha_lira10@hotmail.com',

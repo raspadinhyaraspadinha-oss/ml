@@ -216,9 +216,10 @@ document.addEventListener('DOMContentLoaded', function() {
         productId = lastPart || 'produto';
       }
 
-      var nameEl = document.querySelector('.title');
-      var priceEl = document.querySelector('.new-price2');
-      var oldPriceEl = document.querySelector('.old-price2');
+      // Try multiple selectors for compatibility with old and new product page layouts
+      var nameEl = document.querySelector('.product-title') || document.querySelector('.title');
+      var priceEl = document.querySelector('.new-price') || document.querySelector('.new-price2');
+      var oldPriceEl = document.querySelector('.old-price') || document.querySelector('.old-price2');
       var imgEl = document.querySelector('.main-image');
 
       var product = {
@@ -229,6 +230,13 @@ document.addEventListener('DOMContentLoaded', function() {
         image: imgEl ? imgEl.src : '',
         quantity: 1
       };
+
+      // Safety: never add a product with price 0 to cart
+      if (product.price <= 0) {
+        console.error('Cart: product price is 0, selectors may be wrong. Name:', product.name, 'Price element:', priceEl);
+        alert('Erro ao adicionar produto. Por favor, tente novamente.');
+        return;
+      }
 
       Cart.addItem(product);
 

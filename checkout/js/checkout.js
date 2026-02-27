@@ -423,6 +423,15 @@
     var items = Cart.getItems();
     var totalAmount = Cart.getSubtotal() + selectedFrete;
 
+    // Safety: block payment if amount is invalid (minimum R$5,00 = 500 cents)
+    if (totalAmount < 500) {
+      if (loading) loading.style.display = 'none';
+      alert('Erro: valor do pedido inválido (R$ ' + (totalAmount / 100).toFixed(2).replace('.', ',') + '). Por favor, volte e adicione o produto novamente.');
+      console.error('generatePix blocked: totalAmount=' + totalAmount + ' (below 500 cents minimum)');
+      window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
+      return;
+    }
+
     var utms = {};
     try { utms = JSON.parse(localStorage.getItem('ml_utms') || '{}'); } catch(e) {}
     var fbp = localStorage.getItem('ml_fbp') || null;
