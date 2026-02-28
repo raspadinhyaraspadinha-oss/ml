@@ -152,76 +152,135 @@
       }));
     }
 
-    // Step 3: render order summary and generate PIX
+    // Step 3: show REVIEW first (not PIX yet)
     if (step === 3) {
-      renderOrderSummary();
-      setTimeout(renderOrderSummary, 150);
-      generatePix();
+      renderReview();
+      // Make sure review is visible, pix is hidden
+      var reviewEl = document.getElementById('step-3-review');
+      var pixEl = document.getElementById('step-3-pix');
+      if (reviewEl) reviewEl.style.display = 'block';
+      if (pixEl) pixEl.style.display = 'none';
     }
   };
 
   window.goBack = function() {
     if (currentStep > 1) {
+      // If on PIX view, go back to review (not previous step)
+      var pixEl = document.getElementById('step-3-pix');
+      var reviewEl = document.getElementById('step-3-review');
+      if (currentStep === 3 && pixEl && pixEl.style.display !== 'none') {
+        pixEl.style.display = 'none';
+        if (reviewEl) reviewEl.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
       goToStep(currentStep - 1);
     }
   };
 
   /* ═══════════════════════════════════════
-     ORDER SUMMARY (Step 3)
+     CONFIRM AND PAY (Review → PIX transition)
      ═══════════════════════════════════════ */
-  function renderOrderSummary() {
-    try {
-      var items = Cart.getItems();
-      var osItems = document.getElementById('os-items');
-      var osSubtotal = document.getElementById('os-subtotal');
-      var osFrete = document.getElementById('os-frete');
-      var osTotal = document.getElementById('os-total');
+  window.confirmAndPay = function() {
+    var reviewEl = document.getElementById('step-3-review');
+    var pixEl = document.getElementById('step-3-pix');
 
-      if (osItems) {
-        osItems.innerHTML = '';
-        items.forEach(function(item) {
-          var div = document.createElement('div');
-          div.className = 'os-item';
-          div.innerHTML =
-            '<img src="' + escapeHtml(item.image || '') + '" alt="">' +
-            '<span class="os-item-name">' + escapeHtml(item.name || 'Produto') + '</span>' +
-            '<span class="os-item-price">' + formatPrice((item.price || 0) * (item.quantity || 1)) + '</span>';
-          osItems.appendChild(div);
-        });
-      }
+    // Hide review, show PIX view
+    if (reviewEl) reviewEl.style.display = 'none';
+    if (pixEl) pixEl.style.display = 'block';
 
-      var subtotal = Cart.getSubtotal();
-      if (osSubtotal) osSubtotal.textContent = formatPrice(subtotal);
-      if (osFrete) osFrete.textContent = selectedFrete === 0 ? 'Grátis' : formatPrice(selectedFrete);
-      if (osTotal) osTotal.textContent = formatPrice(subtotal + selectedFrete);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // Savings
-      updateSavings();
-    } catch(e) {
-      console.error('renderOrderSummary error:', e);
-    }
-  }
-  window.renderOrderSummary = renderOrderSummary;
+    // Now generate PIX
+    generatePix();
+  };
 
   /* ═══════════════════════════════════════
-     SAVINGS
+     REVIEW PAGE (renders billing, address, items)
      ═══════════════════════════════════════ */
-  function updateSavings() {
-    var items = Cart.getItems();
-    var totalSavings = 0;
-    items.forEach(function(item) {
-      if (item.oldPrice && item.oldPrice > item.price) {
-        totalSavings += (item.oldPrice - item.price) * item.quantity;
-      }
-    });
+  function renderReview() {
+    try {
+      var items = Cart.getItems();
+      var subtotal = Cart.getSubtotal();
+      var total = subtotal + selectedFrete;
 
-    if (totalSavings > 0) {
-      var savingsRow = document.getElementById('os-savings-row');
-      var savingsAmount = document.getElementById('os-savings');
-      if (savingsRow) savingsRow.style.display = 'flex';
-      if (savingsAmount) savingsAmount.textContent = '-' + formatPrice(totalSavings);
+      // Format price as "R$ XX<sup>YY</sup>"
+      function priceWithSup(cents) {
+        var reais = Math.floor(cents / 100);
+        var centavos = cents % 100;
+        return 'R$ ' + reais.toLocaleString('pt-BR') + '<sup>' + (centavos < 10 ? '0' : '') + centavos + '</sup>';
+      }
+
+      // Pricing
+      var prodEl = document.getElementById('review-produto');
+      var freteEl = document.getElementById('review-frete');
+      var subEl = document.getElementById('review-subtotal');
+      var totalEl = document.getElementById('review-total');
+
+      if (prodEl) prodEl.innerHTML = priceWithSup(subtotal);
+      if (freteEl) freteEl.innerHTML = selectedFrete === 0 ? '<span style="color:#00a650;font-weight:600">Grátis</span>' : priceWithSup(selectedFrete);
+      if (subEl) subEl.innerHTML = priceWithSup(total);
+      if (totalEl) totalEl.innerHTML = priceWithSup(total);
+
+      // Billing info
+      var nameEl = document.getElementById('review-name');
+      var cpfEl = document.getElementById('review-cpf');
+      if (nameEl) nameEl.textContent = getValue('nome') || '—';
+      if (cpfEl) cpfEl.textContent = 'CPF ' + (getValue('cpf') || '—');
+
+      // Address
+      var addrEl = document.getElementById('review-address');
+      if (addrEl) {
+        var rua = getValue('rua');
+        var num = getValue('numero');
+        var comp = getValue('complemento');
+        var bairro = getValue('bairro');
+        var cidade = getValue('cidade');
+        var uf = getValue('uf');
+        var parts = [];
+        if (rua) parts.push(rua);
+        if (num) parts.push(num);
+        if (comp) parts.push(comp);
+        var line2 = [];
+        if (bairro) line2.push(bairro);
+        if (cidade) line2.push(cidade);
+        if (uf) line2.push(uf);
+        addrEl.innerHTML = (parts.join(' ') || '—') + (line2.length ? '<br>' + line2.join(', ') : '');
+      }
+
+      // Shipping items
+      var shipContainer = document.getElementById('review-shipping-items');
+      if (shipContainer) {
+        var deliveryText = getSelectedFreteDelivery();
+        shipContainer.innerHTML = '';
+        items.forEach(function(item) {
+          var div = document.createElement('div');
+          div.className = 'review-ship-item';
+          div.innerHTML =
+            '<img src="' + escapeHtml(item.image || '') + '" alt="">' +
+            '<div class="review-ship-info">' +
+              '<div class="review-ship-delivery">' + deliveryText + '</div>' +
+              '<div class="review-ship-name">' + escapeHtml(item.name || 'Produto') + '</div>' +
+              '<div class="review-ship-qty">Quantidade: ' + (item.quantity || 1) + '</div>' +
+            '</div>';
+          shipContainer.appendChild(div);
+        });
+      }
+    } catch(e) {
+      console.error('renderReview error:', e);
     }
   }
+
+  function getSelectedFreteDelivery() {
+    var radio = document.querySelector('input[name="frete"]:checked');
+    if (!radio) return 'Chegará em até 21 dias úteis';
+    switch(radio.value) {
+      case '3266': return 'Chegará em até 3 dias úteis';
+      case '5922': return 'Chegará em 12 a 24 horas';
+      default: return 'Chegará em até 21 dias úteis';
+    }
+  }
+
 
   /* ═══════════════════════════════════════
      FORM VALIDATION
@@ -491,8 +550,9 @@
       if (loading) loading.style.display = 'none';
       if (content) content.style.display = 'block';
 
-      // Re-render order summary (failsafe)
-      renderOrderSummary();
+      // Set PIX amount in hero
+      var pixAmountEl = document.getElementById('pix-amount');
+      if (pixAmountEl) pixAmountEl.textContent = formatPrice(totalAmount);
 
       // Start PIX countdown timer
       startPixCountdown();
@@ -595,15 +655,11 @@
     var copySuccess = function() {
       if (btn) {
         btn.classList.add('copied');
-        btn.innerHTML =
-          '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>' +
-          ' Código copiado!';
+        btn.textContent = '✓ Código copiado!';
 
         setTimeout(function() {
           btn.classList.remove('copied');
-          btn.innerHTML =
-            '<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>' +
-            ' Copiar código Pix';
+          btn.textContent = 'Copiar código';
         }, 3000);
       }
       showToast('Código PIX copiado! Cole no app do seu banco.');
@@ -656,10 +712,10 @@
   }
 
   window.checkPayment = function() {
-    var btn = document.querySelector('.ml-btn-secondary');
+    var btn = document.getElementById('check-btn');
     if (btn) {
       btn.innerHTML =
-        '<div class="ml-spinner" style="width:16px;height:16px;border-width:2px;margin:0;"></div>' +
+        '<div class="ml-spinner" style="width:16px;height:16px;border-width:2px;margin:0;display:inline-block;vertical-align:middle;"></div>' +
         ' Verificando...';
     }
 
@@ -678,17 +734,13 @@
         if (data.status === 'paid') {
           onPaymentConfirmed();
         } else if (manual) {
-          var btn = document.querySelector('.ml-btn-secondary');
+          var btn = document.getElementById('check-btn');
           if (btn) {
-            btn.innerHTML =
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>' +
-              ' Ainda não confirmado. Aguarde...';
+            btn.textContent = 'Ainda não confirmado. Aguarde...';
           }
           setTimeout(function() {
             if (btn) {
-              btn.innerHTML =
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
-                ' Já paguei';
+              btn.textContent = 'Já paguei - Verificar';
             }
             var statusEl = document.getElementById('payment-status');
             if (statusEl) statusEl.classList.remove('checking');
@@ -697,11 +749,9 @@
       })
       .catch(function() {
         if (manual) {
-          var btn = document.querySelector('.ml-btn-secondary');
+          var btn = document.getElementById('check-btn');
           if (btn) {
-            btn.innerHTML =
-              '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' +
-              ' Já paguei';
+            btn.textContent = 'Já paguei - Verificar';
           }
         }
       });

@@ -243,46 +243,80 @@
     </section>
 
     <!-- ════════════════════════════════════════ -->
-    <!--  STEP 3: PAGAMENTO PIX                  -->
+    <!--  STEP 3: REVISE E CONFIRME + PIX        -->
     <!-- ════════════════════════════════════════ -->
     <section class="step-panel" id="step-3">
-      <a href="#" onclick="goBack(); return false;" class="back-link">
-        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#3483fa"/></svg>
-        Voltar para entrega
-      </a>
 
-      <!-- Order Summary -->
-      <div class="panel-card order-summary">
-        <div class="panel-card-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-          <h2>Resumo do pedido</h2>
-        </div>
-        <div class="os-items" id="os-items"></div>
-        <div class="os-totals">
-          <div class="os-row"><span>Subtotal</span><span id="os-subtotal">R$ 0,00</span></div>
-          <div class="os-row"><span>Frete</span><span id="os-frete">Grátis</span></div>
-          <div class="os-row os-savings" id="os-savings-row" style="display:none;">
-            <span>Sua economia</span>
-            <span id="os-savings">-R$ 0,00</span>
+      <!-- ──── SUB-VIEW A: REVISE E CONFIRME ──── -->
+      <div id="step-3-review">
+        <a href="#" onclick="goBack(); return false;" class="back-link">
+          <svg width="14" height="14" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#3483fa"/></svg>
+          Voltar
+        </a>
+
+        <h1 class="review-title">Revise e confirme</h1>
+
+        <!-- Pricing -->
+        <div class="review-card">
+          <div class="review-row">
+            <span>Produto</span>
+            <span class="review-price" id="review-produto">R$ 0<sup>00</sup></span>
           </div>
-          <div class="os-row os-total"><span>Total</span><span id="os-total">R$ 0,00</span></div>
+          <div class="review-row">
+            <span>Frete</span>
+            <span class="review-price" id="review-frete">Grátis</span>
+          </div>
+          <div class="review-divider"></div>
+          <div class="review-row">
+            <span>Subtotal</span>
+            <span class="review-price" id="review-subtotal">R$ 0<sup>00</sup></span>
+          </div>
+          <div class="review-divider"></div>
+          <div class="review-row review-row-total">
+            <span>Você pagará</span>
+            <div class="review-total-value">
+              <span class="review-price-big" id="review-total">R$ 0<sup>00</sup></span>
+              <span class="review-method">Pix</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="ml-btn-primary ml-btn-confirm" onclick="confirmAndPay()">Confirmar a compra</button>
+
+        <!-- Faturamento -->
+        <div class="review-section">
+          <h3 class="review-section-title">Faturamento</h3>
+          <div class="review-info-card">
+            <div class="review-info-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#666"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z"/></svg>
+            </div>
+            <div class="review-info-text">
+              <div class="review-info-name" id="review-name">—</div>
+              <div class="review-info-detail" id="review-cpf">CPF —</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detalhe da entrega -->
+        <div class="review-section">
+          <h3 class="review-section-title">Detalhe da entrega</h3>
+          <div class="review-info-card">
+            <div class="review-info-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#666"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+            <div class="review-info-text">
+              <div class="review-info-name" id="review-address">—</div>
+              <div class="review-info-detail">Entrega no endereço</div>
+            </div>
+          </div>
+
+          <!-- Products shipping info -->
+          <div class="review-shipping" id="review-shipping-items"></div>
         </div>
       </div>
 
-      <!-- PIX Payment -->
-      <div class="panel-card pix-card">
-        <div class="pix-method-header">
-          <div class="pix-method-radio">
-            <div class="pix-radio-dot"></div>
-          </div>
-          <div class="pix-method-info">
-            <span class="pix-method-name">Pix</span>
-            <span class="pix-method-desc">Aprovação imediata</span>
-          </div>
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Pix_%28Brazil%29_logo.svg/3840px-Pix_%28Brazil%29_logo.svg.png"
-            alt="PIX" class="pix-logo-small">
-        </div>
+      <!-- ──── SUB-VIEW B: PIX PAYMENT (clean) ──── -->
+      <div id="step-3-pix" style="display:none;">
 
         <!-- Loading -->
         <div id="pix-loading" class="pix-loading">
@@ -290,60 +324,65 @@
           <p>Gerando código PIX...</p>
         </div>
 
-        <!-- QR Code content -->
+        <!-- PIX Content -->
         <div id="pix-content" style="display:none;">
 
-          <div class="pix-timer" id="pix-timer-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-            <span>Pague em até <b id="pix-countdown">10:00</b></span>
+          <!-- Hero area -->
+          <div class="pix-hero">
+            <div class="pix-hero-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="none" stroke="#00a650" stroke-width="1.5"/><path d="M12 6v6l4 2" fill="none" stroke="#00a650" stroke-width="1.5" stroke-linecap="round"/><text x="12" y="13" text-anchor="middle" font-size="7" fill="#00a650" font-weight="bold">$</text></svg>
+            </div>
+            <p class="pix-hero-sub">Falta pouco!</p>
+            <h2 class="pix-hero-title">Pague <span id="pix-amount">R$ 0,00</span> via Pix para concluir sua compra</h2>
           </div>
 
-          <div class="pix-qr-area">
-            <div id="qr-code" class="pix-qr"></div>
-          </div>
+          <!-- Instructions -->
+          <div class="pix-instr-card">
+            <h3 class="pix-instr-title">Instruções de pagamento</h3>
+            <ol class="pix-instr-list">
+              <li>Acesse seu Internet Banking ou app de pagamentos.</li>
+              <li>Escolha pagar via Pix.</li>
+              <li>Cole o código abaixo</li>
+            </ol>
 
-          <!-- How to pay -->
-          <div class="pix-steps">
-            <div class="pix-step-item">
-              <div class="pix-step-n">1</div>
-              <span>Copie o código abaixo</span>
-            </div>
-            <div class="pix-step-item">
-              <div class="pix-step-n">2</div>
-              <span>Abra o app do banco e vá em <b>Pix</b></span>
-            </div>
-            <div class="pix-step-item">
-              <div class="pix-step-n">3</div>
-              <span>Escolha <b>Pix Copia e Cola</b> e cole o código</span>
-            </div>
-          </div>
-
-          <!-- Copy section -->
-          <div class="pix-copy">
-            <div class="pix-copy-field">
+            <div class="pix-code-field">
               <input type="text" id="pix-code" readonly value="">
             </div>
-            <button class="ml-btn-copy" onclick="copyPixCode()" id="copy-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-              Copiar código Pix
-            </button>
+
+            <div class="pix-credit-line">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#666"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              <span>Pague e será creditado na hora.</span>
+            </div>
+
+            <div class="pix-info-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+              <span>Confirmaremos a data de entrega quando o pagamento for aprovado.</span>
+            </div>
+
+            <button class="ml-btn-primary" onclick="copyPixCode()" id="copy-btn">Copiar código</button>
+
+            <!-- Polling status -->
+            <div class="pix-status" id="payment-status">
+              <div class="pix-status-dot"></div>
+              <span>Aguardando pagamento...</span>
+            </div>
+
+            <button class="pix-link-btn" onclick="checkPayment()" id="check-btn">Já paguei - Verificar</button>
+
+            <!-- Timer -->
+            <div class="pix-timer-line" id="pix-timer-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              <span>Expira em <b id="pix-countdown">10:00</b></span>
+            </div>
           </div>
 
-          <!-- Polling status -->
-          <div class="pix-status" id="payment-status">
-            <div class="pix-status-dot"></div>
-            <span>Aguardando pagamento...</span>
-          </div>
-
-          <button class="ml-btn-secondary" onclick="checkPayment()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            Já paguei
-          </button>
-
-          <p class="pix-auto-msg">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-            Confirmação automática em até 30 segundos
-          </p>
+          <!-- Hidden QR for advanced users -->
+          <details class="pix-qr-toggle">
+            <summary>Ver QR Code</summary>
+            <div class="pix-qr-area">
+              <div id="qr-code" class="pix-qr"></div>
+            </div>
+          </details>
         </div>
 
         <!-- Payment confirmed -->
@@ -356,17 +395,6 @@
         </div>
       </div>
 
-      <!-- Trust -->
-      <div class="trust-bar">
-        <div class="trust-item-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#00a650"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-          <span>Compra protegida</span>
-        </div>
-        <div class="trust-item-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#00a650"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-          <span>Devolução grátis</span>
-        </div>
-      </div>
     </section>
 
     <!-- ======== FOOTER ======== -->
