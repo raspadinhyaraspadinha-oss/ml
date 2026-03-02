@@ -1126,6 +1126,18 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+<script src="../js/feature-flags.js"></script>
+<script src="../js/ab-engine.js"></script>
 <script src="../js/ml-analytics.js"></script>
+<script>
+// FASE 1: Track product selection clicks
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('a[href*="produtos/"], .product-card, .reward-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      if (typeof MLA !== 'undefined') MLA.track('recompensas_product_click', { target: (this.href || this.textContent || '').substring(0, 100) });
+    });
+  });
+});
+</script>
 </body>
 </html>

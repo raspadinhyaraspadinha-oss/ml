@@ -37,6 +37,29 @@ if (!is_dir(DATA_DIR)) {
     mkdir(DATA_DIR, 0755, true);
 }
 
+/* Helper: Read feature flags */
+function getFeatureFlags() {
+    static $flags = null;
+    if ($flags !== null) return $flags;
+
+    $file = DATA_DIR . 'feature_flags.json';
+    if (!file_exists($file)) {
+        $flags = ['global_killswitch' => false, 'flags' => []];
+        return $flags;
+    }
+    $data = json_decode(file_get_contents($file), true);
+    $flags = is_array($data) ? $data : ['global_killswitch' => false, 'flags' => []];
+    return $flags;
+}
+
+/* Helper: Check if a specific feature flag is enabled */
+function isFeatureEnabled(string $flagName): bool {
+    $flags = getFeatureFlags();
+    if ($flags['global_killswitch'] === true) return false;
+    if (!isset($flags['flags'][$flagName])) return true; // Unknown flag: enabled by default
+    return $flags['flags'][$flagName]['enabled'] !== false;
+}
+
 // CORS headers for frontend requests
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');

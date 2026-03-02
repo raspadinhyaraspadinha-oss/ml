@@ -48,6 +48,46 @@ $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
 $clientIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 $activeGateway = getActiveGateway();
 
+// ═══ FASE 3A: PIX Idempotency (server-side) ═══
+// If a session_id is provided, check for existing pending payment with same amount
+if (isFeatureEnabled('pix_idempotency')) {
+    $sessionId = $metadata['session_id'] ?? '';
+    if ($sessionId !== '') {
+        $existingPayments = getPayments();
+        foreach ($existingPayments as $pCode => $pData) {
+            if (($pData['status'] ?? '') !== 'pending') continue;
+            if (($pData['session_id'] ?? '') !== $sessionId) continue;
+            if (($pData['amount'] ?? 0) !== $amount) continue;
+
+            // Check age: reuse only if < 30 minutes old
+            $createdTime = strtotime($pData['created_at'] ?? '');
+            if ($createdTime && (time() - $createdTime) < 1800) {
+                // Found existing pending payment — return it without hitting gateway
+                $existingQrcode = $pData['pix_qrcode_text'] ?? '';
+                if ($existingQrcode !== '') {
+                    writeLog('PIX_IDEMPOTENT_REUSE', [
+                        'payment_code' => $pCode,
+                        'session_id' => $sessionId,
+                        'amount' => $amount,
+                        'age_seconds' => time() - $createdTime
+                    ]);
+
+                    echo json_encode([
+                        'success' => true,
+                        'payment_code' => $pCode,
+                        'external_code' => $pData['external_code'] ?? $pCode,
+                        'pix_qrcode_text' => $existingQrcode,
+                        'amount' => $amount,
+                        'gateway' => $pData['gateway'] ?? 'unknown',
+                        'reused' => true
+                    ]);
+                    exit;
+                }
+            }
+        }
+    }
+}
+
 // ═══════════════════════════════════════════
 //  GATEWAY FUNCTIONS
 // ═══════════════════════════════════════════
@@ -407,6 +447,10 @@ $payments[$paymentCode] = [
     'tracking' => $trackingParams,
     'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
     'client_ip' => $clientIp,
+    'session_id' => $metadata['session_id'] ?? '',
+    'experiment_id' => $metadata['experiment_id'] ?? '',
+    'variant_id' => $metadata['variant_id'] ?? '',
+    'pix_qrcode_text' => $pixQrcodeText,
     'address' => [
         'cep' => $input['metadata']['cep'] ?? '',
         'cidade' => $input['metadata']['cidade'] ?? '',

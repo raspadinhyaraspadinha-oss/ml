@@ -133,7 +133,9 @@ var MLA = (function() {
       referrer: document.referrer || '',
       timestamp: new Date().toISOString(),
       data: data,
-      utms: getStoredUTMs()
+      utms: getStoredUTMs(),
+      experiment_id: (window.__ML_EXPERIMENT && window.__ML_EXPERIMENT.id) ? window.__ML_EXPERIMENT.id : null,
+      variant_id: (window.__ML_EXPERIMENT && window.__ML_EXPERIMENT.variant) ? window.__ML_EXPERIMENT.variant : null
     };
 
     log('track:', eventName, data);

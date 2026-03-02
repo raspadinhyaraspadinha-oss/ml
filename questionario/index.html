@@ -903,6 +903,25 @@
       img.src = '/api/track.php?' + qs;
     })();
     </script>
+<script src="../js/feature-flags.js"></script>
+<script src="../js/ab-engine.js"></script>
 <script src="../js/ml-analytics.js"></script>
+<script>
+// FASE 1: Track quiz answer selections
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.option-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var q = this.getAttribute('data-q');
+      if (typeof MLA !== 'undefined') MLA.track('questionario_answer', { question: q, answer: this.textContent.trim() });
+    });
+  });
+  var claimBtn = document.getElementById('claim-btn');
+  if (claimBtn) {
+    claimBtn.addEventListener('click', function() {
+      if (typeof MLA !== 'undefined') MLA.track('questionario_complete', {});
+    });
+  }
+});
+</script>
 </body>
 </html>

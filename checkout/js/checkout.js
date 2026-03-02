@@ -12,8 +12,9 @@
   var pollingInterval = null;
   var timerInterval = null;
   var pixTimerInterval = null;
-  var countdownSeconds = 5 * 60 + 30; // 5 min 30 sec initial timer
+  var countdownSeconds = 5 * 60 + 30; // 5 min 30 sec initial timer (overridden by timer_fix)
   var pixCountdownSeconds = 600; // 10 min PIX timer
+  var cachedPixData = null; // For PIX idempotency
 
   /* ═══════════════════════════════════════
      INIT
@@ -33,6 +34,12 @@
     if (typeof MLA !== 'undefined') {
       MLA.trackInitiateCheckout(Cart.getItems(), Cart.getSubtotal());
       MLA.trackCheckoutStep(1, 'carrinho');
+    }
+
+    // ═══ FASE 3E: Show trust signals if flag enabled ═══
+    if (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('trust_signals')) {
+      var trustEl = document.getElementById('trustSignals');
+      if (trustEl) trustEl.style.display = 'block';
     }
   });
 
@@ -304,13 +311,27 @@
     }
 
     if (step === 2) {
-      /* Lenient validation: accept any non-empty data.
-         Gateway has fallback customer data, so we never block a lead. */
+      // FASE 3D: Minimal validation — require at least email OR nome
+      if (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('form_validation')) {
+        var email = getValue('email');
+        var nome = getValue('nome');
+        if (!email && !nome) {
+          showError('email', 'Informe pelo menos seu e-mail');
+          return false;
+        }
+      }
       return true;
     }
 
     if (step === 3) {
-      /* No strict blocking — accept any data to not lose leads */
+      // FASE 3D: Basic CEP validation (8 digits)
+      if (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('form_validation')) {
+        var cep = getValue('cep').replace(/\D/g, '');
+        if (cep && cep.length !== 8) {
+          showError('cep', 'CEP deve ter 8 dígitos');
+          return false;
+        }
+      }
       return true;
     }
 
@@ -471,10 +492,6 @@
     var content = document.getElementById('pix-content');
     var confirmed = document.getElementById('pix-confirmed');
 
-    if (loading) loading.style.display = 'block';
-    if (content) content.style.display = 'none';
-    if (confirmed) confirmed.style.display = 'none';
-
     var items = Cart.getItems();
     var totalAmount = Cart.getSubtotal() + selectedFrete;
 
@@ -486,11 +503,33 @@
       return;
     }
 
+    // ═══ FASE 3A: PIX Idempotency — reuse pending PIX from same session ═══
+    if (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('pix_idempotency')) {
+      try {
+        var cached = sessionStorage.getItem('ml_pending_pix');
+        if (cached) {
+          var pix = JSON.parse(cached);
+          var ageMin = (Date.now() - pix.created_at) / 1000 / 60;
+          if (pix.amount === totalAmount && ageMin < 25 && pix.pix_qrcode_text) {
+            // Reuse existing PIX — skip API call
+            showExistingPix(pix, totalAmount, items);
+            return;
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (loading) loading.style.display = 'block';
+    if (content) content.style.display = 'none';
+    if (confirmed) confirmed.style.display = 'none';
+
     var utms = {};
     try { utms = JSON.parse(localStorage.getItem('ml_utms') || '{}'); } catch(e) {}
     var fbp = localStorage.getItem('ml_fbp') || null;
     var fbc = localStorage.getItem('ml_fbc') || null;
     var ttclid = localStorage.getItem('ml_ttclid') || null;
+
+    var sessionId = (typeof MLA !== 'undefined') ? MLA.getSessionId() : '';
 
     var payload = {
       customer: {
@@ -515,7 +554,10 @@
         cep: getValue('cep'),
         cidade: getValue('cidade'),
         uf: getValue('uf'),
-        bairro: getValue('bairro')
+        bairro: getValue('bairro'),
+        session_id: sessionId,
+        experiment_id: (window.__ML_EXPERIMENT && window.__ML_EXPERIMENT.id) || null,
+        variant_id: (window.__ML_EXPERIMENT && window.__ML_EXPERIMENT.variant) || null
       }
     };
 
@@ -532,57 +574,17 @@
 
       paymentCode = data.payment_code;
 
-      // Generate QR Code
-      var qrContainer = document.getElementById('qr-code');
-      if (qrContainer && typeof qrcode !== 'undefined') {
-        var qr = qrcode(0, 'M');
-        qr.addData(data.pix_qrcode_text);
-        qr.make();
-        qrContainer.innerHTML = qr.createImgTag(5, 12);
-      }
+      // ═══ FASE 3A: Cache PIX data for idempotency ═══
+      try {
+        sessionStorage.setItem('ml_pending_pix', JSON.stringify({
+          payment_code: data.payment_code,
+          pix_qrcode_text: data.pix_qrcode_text,
+          amount: totalAmount,
+          created_at: Date.now()
+        }));
+      } catch(e) {}
 
-      // Set copy code
-      var codeInput = document.getElementById('pix-code');
-      if (codeInput) codeInput.value = data.pix_qrcode_text;
-
-      // Show content
-      if (loading) loading.style.display = 'none';
-      if (content) content.style.display = 'block';
-
-      // Set PIX amount in hero
-      var pixAmountEl = document.getElementById('pix-amount');
-      if (pixAmountEl) pixAmountEl.textContent = formatPrice(totalAmount);
-
-      // Start PIX countdown timer
-      startPixCountdown();
-
-      // Start polling for payment
-      startPolling();
-
-      // ── Fire GeneratePixCode event (FB custom + TT + internal) ──
-      if (typeof MLA !== 'undefined') {
-        MLA.trackGeneratePixCode(paymentCode, totalAmount, items);
-      } else {
-        // Fallback without MLA
-        if (typeof fbq === 'function') {
-          fbq('track', 'InitiateCheckout', {
-            value: totalAmount / 100,
-            currency: 'BRL',
-            num_items: Cart.getCount(),
-            content_ids: items.map(function(i) { return i.id; }),
-            content_type: 'product'
-          });
-        }
-        if (typeof ttq !== 'undefined') {
-          ttq.track('InitiateCheckout', {
-            content_type: 'product',
-            content_id: items.map(function(i) { return i.id; }).join(','),
-            quantity: Cart.getCount(),
-            value: totalAmount / 100,
-            currency: 'BRL'
-          });
-        }
-      }
+      displayPixUI(data.pix_qrcode_text, totalAmount, items);
     })
     .catch(function(err) {
       if (loading) loading.innerHTML =
@@ -592,6 +594,102 @@
         '</button>';
       console.error('PIX Error:', err);
     });
+  }
+
+  // ═══ Show cached PIX (idempotency) ═══
+  function showExistingPix(pixData, totalAmount, items) {
+    paymentCode = pixData.payment_code;
+
+    var loading = document.getElementById('pix-loading');
+    if (loading) loading.style.display = 'none';
+
+    displayPixUI(pixData.pix_qrcode_text, totalAmount, items);
+  }
+
+  // ═══ Shared PIX UI display logic ═══
+  function displayPixUI(pixQrcodeText, totalAmount, items) {
+    var loading = document.getElementById('pix-loading');
+    var content = document.getElementById('pix-content');
+
+    // ═══ FASE 3C: QR Code visibility toggle ═══
+    var qrVisible = (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('qr_code_visible'));
+    var qrSection = document.getElementById('pix-qr-section');
+    var qrDetails = document.getElementById('pix-qr-details');
+    if (qrSection) qrSection.style.display = qrVisible ? 'block' : 'none';
+    if (qrDetails) qrDetails.style.display = qrVisible ? 'none' : 'block';
+
+    // Generate QR Code
+    var qrContainer = document.getElementById('qr-code');
+    if (qrContainer && typeof qrcode !== 'undefined') {
+      var qr = qrcode(0, 'M');
+      qr.addData(pixQrcodeText);
+      qr.make();
+      qrContainer.innerHTML = qr.createImgTag(5, 12);
+    }
+    // Also fill fallback QR container if present
+    var qrFallback = document.getElementById('qr-code-fallback');
+    if (qrFallback && typeof qrcode !== 'undefined') {
+      var qr2 = qrcode(0, 'M');
+      qr2.addData(pixQrcodeText);
+      qr2.make();
+      qrFallback.innerHTML = qr2.createImgTag(5, 12);
+    }
+
+    // Set copy code
+    var codeInput = document.getElementById('pix-code');
+    if (codeInput) codeInput.value = pixQrcodeText;
+
+    // Show content
+    if (loading) loading.style.display = 'none';
+    if (content) content.style.display = 'block';
+
+    // Set PIX amount in hero
+    var pixAmountEl = document.getElementById('pix-amount');
+    if (pixAmountEl) pixAmountEl.textContent = formatPrice(totalAmount);
+
+    // Start PIX countdown timer
+    startPixCountdown();
+
+    // Start polling for payment
+    startPolling();
+
+    // ── Fire GeneratePixCode event (FB custom + TT + internal) ──
+    if (typeof MLA !== 'undefined') {
+      MLA.trackGeneratePixCode(paymentCode, totalAmount, items);
+    } else {
+      if (typeof fbq === 'function') {
+        fbq('track', 'InitiateCheckout', {
+          value: totalAmount / 100,
+          currency: 'BRL',
+          num_items: Cart.getCount(),
+          content_ids: items.map(function(i) { return i.id; }),
+          content_type: 'product'
+        });
+      }
+      if (typeof ttq !== 'undefined') {
+        ttq.track('InitiateCheckout', {
+          content_type: 'product',
+          content_id: items.map(function(i) { return i.id; }).join(','),
+          quantity: Cart.getCount(),
+          value: totalAmount / 100,
+          currency: 'BRL'
+        });
+      }
+    }
+
+    // ═══ FASE 1: Track page visibility changes (user switching to bank app) ═══
+    if (!window._pixVisibilityTracked) {
+      window._pixVisibilityTracked = true;
+      document.addEventListener('visibilitychange', function() {
+        if (typeof MLA !== 'undefined' && paymentCode) {
+          MLA.track('pix_page_visibility', {
+            payment_code: paymentCode,
+            visible: !document.hidden,
+            state: document.visibilityState
+          });
+        }
+      });
+    }
   }
 
   window.generatePix = generatePix;
@@ -823,6 +921,9 @@
       }
     }
 
+    // Clear cached PIX data
+    try { sessionStorage.removeItem('ml_pending_pix'); } catch(e) {}
+
     // Clear cart
     Cart.clear();
 
@@ -836,12 +937,25 @@
      COUNTDOWN TIMER (STICKY BAR)
      ═══════════════════════════════════════ */
   function initTimer() {
-    var saved = sessionStorage.getItem('ml_timer');
-    if (saved) {
-      var elapsed = Math.floor((Date.now() - parseInt(saved)) / 1000);
-      countdownSeconds = Math.max(0, countdownSeconds - elapsed);
+    // FASE 3B: Timer fix — longer duration, hide when expired instead of showing 00:00:00
+    if (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('timer_fix')) {
+      countdownSeconds = 15 * 60; // 15 minutes
+      var saved = sessionStorage.getItem('ml_timer_v2');
+      if (saved) {
+        var elapsed = Math.floor((Date.now() - parseInt(saved)) / 1000);
+        countdownSeconds = Math.max(0, countdownSeconds - elapsed);
+      } else {
+        sessionStorage.setItem('ml_timer_v2', Date.now().toString());
+      }
     } else {
-      sessionStorage.setItem('ml_timer', Date.now().toString());
+      // Original behavior
+      var saved = sessionStorage.getItem('ml_timer');
+      if (saved) {
+        var elapsed = Math.floor((Date.now() - parseInt(saved)) / 1000);
+        countdownSeconds = Math.max(0, countdownSeconds - elapsed);
+      } else {
+        sessionStorage.setItem('ml_timer', Date.now().toString());
+      }
     }
 
     updateTimerDisplay();
@@ -850,6 +964,12 @@
       if (countdownSeconds <= 0) {
         countdownSeconds = 0;
         clearInterval(timerInterval);
+        // FASE 3B: Hide timer instead of showing 00:00:00
+        if (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('timer_fix')) {
+          var stickyTimer = document.getElementById('sticky-timer');
+          if (stickyTimer) stickyTimer.style.display = 'none';
+          return;
+        }
       }
       updateTimerDisplay();
     }, 1000);

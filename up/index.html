@@ -384,7 +384,25 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f0f2f5;color:#333;
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="../js/cart.js"></script>
+<script src="../js/feature-flags.js"></script>
+<script src="../js/ab-engine.js"></script>
 <script src="../js/ml-analytics.js"></script>
+<script>
+// FASE 1: Track upsell interactions
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof MLA !== 'undefined') MLA.track('upsell_view', {});
+  document.querySelectorAll('a, button').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var txt = (this.textContent || '').toLowerCase().trim();
+      if (txt.indexOf('sim') !== -1 || txt.indexOf('quero') !== -1 || txt.indexOf('aceito') !== -1 || txt.indexOf('adicionar') !== -1) {
+        if (typeof MLA !== 'undefined') MLA.track('upsell_accept', { label: txt.substring(0, 50) });
+      } else if (txt.indexOf('não') !== -1 || txt.indexOf('pular') !== -1 || txt.indexOf('recusar') !== -1) {
+        if (typeof MLA !== 'undefined') MLA.track('upsell_decline', { label: txt.substring(0, 50) });
+      }
+    });
+  });
+});
+</script>
 
 <script>
 /* ============================================

@@ -1,0 +1,94 @@
+{
+    "experiments": {
+        "exp_pix_timer_duration": {
+            "id": "exp_pix_timer_duration",
+            "name": "PIX Timer Duration",
+            "description": "Testar se mais tempo para pagar PIX aumenta taxa de pagamento",
+            "status": "draft",
+            "pages": ["checkout"],
+            "metric": "pix_paid_rate",
+            "variants": {
+                "control": { "weight": 34, "config": { "pix_timer_seconds": 600 } },
+                "variant_a": { "weight": 33, "config": { "pix_timer_seconds": 900 } },
+                "variant_b": { "weight": 33, "config": { "pix_timer_seconds": 1200 } }
+            },
+            "min_sample": 200,
+            "created_at": "2026-03-02T00:00:00Z",
+            "started_at": null,
+            "ended_at": null,
+            "winner": null
+        },
+        "exp_checkout_steps": {
+            "id": "exp_checkout_steps",
+            "name": "Checkout Steps Reduction",
+            "description": "Testar se combinar dados pessoais + endereço em 1 step reduz abandono",
+            "status": "draft",
+            "pages": ["checkout"],
+            "metric": "checkout_completion_rate",
+            "variants": {
+                "control": { "weight": 50, "config": { "checkout_steps": 5 } },
+                "variant_a": { "weight": 50, "config": { "checkout_steps": 4, "combine_dados_endereco": true } }
+            },
+            "min_sample": 300,
+            "created_at": "2026-03-02T00:00:00Z",
+            "started_at": null,
+            "ended_at": null,
+            "winner": null
+        },
+        "exp_qr_prominence": {
+            "id": "exp_qr_prominence",
+            "name": "QR Code Prominence",
+            "description": "Testar posicionamento e layout do QR Code para facilitar pagamento mobile",
+            "status": "draft",
+            "pages": ["checkout"],
+            "metric": "pix_paid_rate",
+            "variants": {
+                "control": { "weight": 34, "config": { "qr_layout": "hidden" } },
+                "variant_a": { "weight": 33, "config": { "qr_layout": "above_code" } },
+                "variant_b": { "weight": 33, "config": { "qr_layout": "side_by_side" } }
+            },
+            "min_sample": 200,
+            "created_at": "2026-03-02T00:00:00Z",
+            "started_at": null,
+            "ended_at": null,
+            "winner": null
+        },
+        "exp_social_proof": {
+            "id": "exp_social_proof",
+            "name": "Social Proof no Checkout",
+            "description": "Testar se prova social (número de compras) aumenta confiança e conversão",
+            "status": "draft",
+            "pages": ["checkout"],
+            "metric": "initiate_to_pix_rate",
+            "variants": {
+                "control": { "weight": 34, "config": { "social_proof": "none" } },
+                "variant_a": { "weight": 33, "config": { "social_proof": "static_badge", "badge_text": "4.247 compras realizadas" } },
+                "variant_b": { "weight": 33, "config": { "social_proof": "animated_toast", "toast_interval": 15000 } }
+            },
+            "min_sample": 300,
+            "created_at": "2026-03-02T00:00:00Z",
+            "started_at": null,
+            "ended_at": null,
+            "winner": null
+        },
+        "exp_pricing_display": {
+            "id": "exp_pricing_display",
+            "name": "Pricing Display Format",
+            "description": "Testar diferentes formas de exibir desconto para maximizar add-to-cart",
+            "status": "draft",
+            "pages": ["produtos"],
+            "metric": "add_to_cart_rate",
+            "variants": {
+                "control": { "weight": 34, "config": { "pricing_format": "percentage_off", "label": "95% OFF" } },
+                "variant_a": { "weight": 33, "config": { "pricing_format": "savings_amount", "label": "Economize R$X" } },
+                "variant_b": { "weight": 33, "config": { "pricing_format": "competitor_compare", "label": "Mais barato que concorrência" } }
+            },
+            "min_sample": 500,
+            "created_at": "2026-03-02T00:00:00Z",
+            "started_at": null,
+            "ended_at": null,
+            "winner": null
+        }
+    },
+    "updated_at": "2026-03-02T00:00:00Z"
+}

@@ -895,6 +895,9 @@ if ($isAuthenticated) {
             <button class="dash-tab active" data-tab="vendas" onclick="switchDashTab('vendas')">Vendas</button>
             <button class="dash-tab" data-tab="tiktok" onclick="switchDashTab('tiktok')">TikTok</button>
             <button class="dash-tab" data-tab="analytics" onclick="switchDashTab('analytics')">Analytics / Funil</button>
+            <button class="dash-tab" data-tab="cro" onclick="switchDashTab('cro')">CRO / Audit</button>
+            <button class="dash-tab" data-tab="experiments" onclick="switchDashTab('experiments')">Experimentos</button>
+            <button class="dash-tab" data-tab="flags" onclick="switchDashTab('flags')">⚙ Flags</button>
         </div>
 
         <!-- ═══════════════════════════════════════
@@ -1412,6 +1415,121 @@ if ($isAuthenticated) {
                 <div class="pagination" id="analyticsPagination"></div>
             </div>
         </div><!-- end tab-analytics -->
+
+        <!-- ═══════════════════════════════════════
+             TAB: CRO / AUDIT
+             ═══════════════════════════════════════ -->
+        <div class="dash-tab-panel" id="tab-cro">
+            <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Auditoria CRO - Funil de Conversão</div>
+
+            <!-- Funnel Waterfall -->
+            <div class="kpi-grid" id="croWaterfall"></div>
+
+            <!-- PIX Health -->
+            <div class="section-title" style="margin-top:1.5rem"><span class="dot" style="background:#10b981"></span> Saúde PIX</div>
+            <div class="kpi-grid" id="croPixHealth"></div>
+
+            <!-- Repeat Customers -->
+            <div class="section-title" style="margin-top:1.5rem"><span class="dot" style="background:#ef4444"></span> Clientes Repetidos (>3 pedidos)</div>
+            <div class="table-wrap">
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>Email</th><th>Nome</th><th>Pedidos</th><th>Pagos</th><th>Pendentes</th><th>Total Pendente</th></tr></thead>
+                        <tbody id="croRepeatTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Checkout Drop-off Analysis -->
+            <div class="section-title" style="margin-top:1.5rem"><span class="dot" style="background:#8b5cf6"></span> Drop-off por Step do Checkout</div>
+            <div class="kpi-grid" id="croCheckoutDrops"></div>
+        </div><!-- end tab-cro -->
+
+        <!-- ═══════════════════════════════════════
+             TAB: EXPERIMENTS (A/B Testing)
+             ═══════════════════════════════════════ -->
+        <div class="dash-tab-panel" id="tab-experiments">
+            <div class="section-title"><span class="dot" style="background:#a78bfa"></span> Motor de Testes A/B</div>
+
+            <!-- Create Experiment Form -->
+            <div style="background:#18181b;border:1px solid #27272a;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem">
+                <h3 style="color:#fff;font-size:1rem;margin-bottom:1rem">Criar Experimento</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+                    <div>
+                        <label style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.3rem;display:block">Nome</label>
+                        <input type="text" id="expName" placeholder="ex: PIX Timer 15min" style="width:100%;padding:0.5rem 0.75rem;background:#09090b;border:1px solid #3f3f46;border-radius:8px;color:#fff;font-family:inherit;font-size:0.85rem">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.3rem;display:block">Páginas Alvo</label>
+                        <input type="text" id="expPages" placeholder="checkout, produto" style="width:100%;padding:0.5rem 0.75rem;background:#09090b;border:1px solid #3f3f46;border-radius:8px;color:#fff;font-family:inherit;font-size:0.85rem">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+                    <div>
+                        <label style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.3rem;display:block">Variante A (peso)</label>
+                        <input type="number" id="expWeightA" value="50" min="1" max="100" style="width:100%;padding:0.5rem 0.75rem;background:#09090b;border:1px solid #3f3f46;border-radius:8px;color:#fff;font-family:inherit;font-size:0.85rem">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.3rem;display:block">Variante B (peso)</label>
+                        <input type="number" id="expWeightB" value="50" min="0" max="100" style="width:100%;padding:0.5rem 0.75rem;background:#09090b;border:1px solid #3f3f46;border-radius:8px;color:#fff;font-family:inherit;font-size:0.85rem">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;color:#a1a1aa;margin-bottom:0.3rem;display:block">Métrica Primária</label>
+                        <select id="expMetric" style="width:100%;padding:0.5rem 0.75rem;background:#09090b;border:1px solid #3f3f46;border-radius:8px;color:#fff;font-family:inherit;font-size:0.85rem">
+                            <option value="pix_paid_rate">PIX Paid Rate</option>
+                            <option value="checkout_completion">Checkout Completion</option>
+                            <option value="add_to_cart_rate">Add to Cart Rate</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="createExperiment()">Criar Experimento (Draft)</button>
+            </div>
+
+            <!-- Experiment List -->
+            <div class="table-wrap">
+                <div class="table-header">
+                    <h3>Experimentos</h3>
+                    <button class="btn btn-sm btn-secondary" onclick="loadExperiments()">↻ Atualizar</button>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead><tr><th>ID</th><th>Nome</th><th>Status</th><th>Variantes</th><th>Métrica</th><th>Amostras</th><th>Ações</th></tr></thead>
+                        <tbody id="experimentsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Experiment Results -->
+            <div id="experimentResults" style="margin-top:1.5rem"></div>
+        </div><!-- end tab-experiments -->
+
+        <!-- ═══════════════════════════════════════
+             TAB: FEATURE FLAGS
+             ═══════════════════════════════════════ -->
+        <div class="dash-tab-panel" id="tab-flags">
+            <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Feature Flags & Killswitch</div>
+
+            <!-- Global Killswitch -->
+            <div style="background:#450a0a44;border:2px solid #7f1d1d;border-radius:14px;padding:1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between">
+                <div>
+                    <div style="color:#fca5a5;font-weight:700;font-size:1.1rem">🔴 Killswitch Global</div>
+                    <div style="color:#a1a1aa;font-size:0.82rem;margin-top:0.3rem">Desativa TODAS as mudanças novas. Reverte ao código original (control).</div>
+                </div>
+                <label class="toggle-label" style="margin:0">
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="flagKillswitch" onchange="toggleKillswitch(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Individual Flags -->
+            <div id="flagsList" style="display:grid;gap:0.75rem"></div>
+
+            <div style="margin-top:1.5rem;padding:1rem;background:#18181b;border:1px solid #27272a;border-radius:12px">
+                <div style="font-size:0.78rem;color:#52525b">Última atualização: <span id="flagsUpdatedAt">—</span></div>
+            </div>
+        </div><!-- end tab-flags -->
 
         <!-- Sale Detail Modal -->
         <div class="modal-overlay" id="saleDetailModal" onclick="if(event.target===this)closeSaleDetail()">
@@ -2335,6 +2453,10 @@ if ($isAuthenticated) {
     // ════════════════════════════════════════════
     let analyticsRendered = false;
 
+    let croRendered = false;
+    let flagsRendered = false;
+    let experimentsRendered = false;
+
     function switchDashTab(tabId) {
         document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.dash-tab-panel').forEach(p => p.classList.remove('active'));
@@ -2351,6 +2473,18 @@ if ($isAuthenticated) {
         if (tabId === 'tiktok' && !ttRendered) {
             renderTikTok();
             ttRendered = true;
+        }
+        if (tabId === 'cro' && !croRendered) {
+            renderCRO();
+            croRendered = true;
+        }
+        if (tabId === 'flags') {
+            loadFeatureFlags();
+            flagsRendered = true;
+        }
+        if (tabId === 'experiments') {
+            loadExperiments();
+            experimentsRendered = true;
         }
     }
 
@@ -3283,6 +3417,475 @@ if ($isAuthenticated) {
             } else {
                 const errMsg = data.results?.[0]?.response?.message || 'Falha no retry';
                 showToast('Erro: ' + errMsg, 'error');
+            }
+        })
+        .catch(() => showToast('Erro de rede', 'error'));
+    }
+
+    // ════════════════════════════════════════════
+    //  FEATURE FLAGS TAB
+    // ════════════════════════════════════════════
+    function loadFeatureFlags() {
+        fetch('../api/feature-flags.php')
+        .then(r => r.json())
+        .then(data => {
+            // Killswitch
+            const ks = document.getElementById('flagKillswitch');
+            if (ks) ks.checked = data.global_killswitch === true;
+
+            // Updated at
+            const updEl = document.getElementById('flagsUpdatedAt');
+            if (updEl) updEl.textContent = data.updated_at || 'Nunca';
+
+            // Render flags
+            const container = document.getElementById('flagsList');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const flags = data.flags || {};
+            for (const [name, flag] of Object.entries(flags)) {
+                const card = document.createElement('div');
+                card.style.cssText = 'background:#18181b;border:1px solid #27272a;border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between';
+                card.innerHTML = `
+                    <div>
+                        <div style="color:#fff;font-weight:600;font-size:0.95rem">${esc(name)}</div>
+                        <div style="color:#71717a;font-size:0.8rem;margin-top:0.2rem">${esc(flag.description || '')}</div>
+                    </div>
+                    <label class="toggle-label" style="margin:0">
+                        <div class="toggle-switch">
+                            <input type="checkbox" ${flag.enabled ? 'checked' : ''} onchange="toggleFlag('${esc(name)}', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </div>
+                    </label>`;
+                container.appendChild(card);
+            }
+        })
+        .catch(() => showToast('Erro ao carregar flags', 'error'));
+    }
+
+    function toggleFlag(name, enabled) {
+        fetch('../api/feature-flags.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '<?php echo $DASHBOARD_PASSWORD; ?>', flag: name, enabled: enabled })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Flag "${name}" ${enabled ? 'ativada' : 'desativada'}`);
+                const updEl = document.getElementById('flagsUpdatedAt');
+                if (updEl) updEl.textContent = data.flags?.updated_at || 'Agora';
+            } else {
+                showToast('Erro: ' + (data.error || 'falha'), 'error');
+            }
+        })
+        .catch(() => showToast('Erro de rede', 'error'));
+    }
+
+    function toggleKillswitch(enabled) {
+        fetch('../api/feature-flags.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '<?php echo $DASHBOARD_PASSWORD; ?>', global_killswitch: enabled })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(enabled ? '🔴 KILLSWITCH ATIVADO - Todas as mudanças desativadas' : '🟢 Killswitch desativado', enabled ? 'error' : 'success');
+            } else {
+                showToast('Erro: ' + (data.error || 'falha'), 'error');
+            }
+        })
+        .catch(() => showToast('Erro de rede', 'error'));
+    }
+
+    // ════════════════════════════════════════════
+    //  CRO AUDIT TAB
+    // ════════════════════════════════════════════
+    function renderCRO() {
+        // Funnel waterfall from analytics events
+        const events = RAW_ANALYTICS;
+        const sessions = {};
+        events.forEach(e => {
+            const sid = e.session_id || '';
+            if (!sessions[sid]) sessions[sid] = { pages: new Set(), events: [] };
+            sessions[sid].pages.add(e.page || '');
+            sessions[sid].events.push(e);
+        });
+
+        // Count sessions by funnel stage
+        const funnelStages = [
+            { key: 'prevsl', label: 'Pre-Sell', color: '#3b82f6' },
+            { key: 'questionario', label: 'Questionário', color: '#8b5cf6' },
+            { key: 'roleta', label: 'Roleta', color: '#06b6d4' },
+            { key: 'recompensas', label: 'Recompensas', color: '#10b981' },
+            { key: 'produto:', label: 'Produto', color: '#f59e0b' },
+            { key: 'checkout', label: 'Checkout', color: '#ef4444' }
+        ];
+
+        const stageCounts = funnelStages.map(stage => {
+            let count = 0;
+            Object.values(sessions).forEach(s => {
+                const pages = Array.from(s.pages);
+                if (pages.some(p => p.indexOf(stage.key) !== -1)) count++;
+            });
+            return { ...stage, count };
+        });
+
+        const waterfallEl = document.getElementById('croWaterfall');
+        if (waterfallEl) {
+            waterfallEl.innerHTML = stageCounts.map((s, i) => {
+                const prev = i > 0 ? stageCounts[i-1].count : s.count;
+                const drop = prev > 0 ? ((prev - s.count) / prev * 100).toFixed(1) : 0;
+                const dropColor = drop > 40 ? '#ef4444' : drop > 20 ? '#f59e0b' : '#10b981';
+                return `<div class="kpi-card">
+                    <div class="kpi-label">${esc(s.label)}</div>
+                    <div class="kpi-value" style="color:${s.color}">${s.count}</div>
+                    ${i > 0 ? `<div style="font-size:0.75rem;color:${dropColor};margin-top:0.3rem">↓ ${drop}% drop</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        // PIX Health Metrics
+        const totalPayments = RAW_PAYMENTS.length;
+        const paidPayments = RAW_PAYMENTS.filter(p => p.status === 'paid');
+        const failedPayments = RAW_PAYMENTS.filter(p => p.status === 'failed');
+        const pendingPayments = RAW_PAYMENTS.filter(p => p.status === 'pending');
+
+        const skPayments = RAW_PAYMENTS.filter(p => (p.gateway || '') === 'skalepay');
+        const mgPayments = RAW_PAYMENTS.filter(p => (p.gateway || '') !== 'skalepay');
+        const skPaid = skPayments.filter(p => p.status === 'paid').length;
+        const mgPaid = mgPayments.filter(p => p.status === 'paid').length;
+        const skRate = skPayments.length > 0 ? (skPaid / skPayments.length * 100).toFixed(1) : '0.0';
+        const mgRate = mgPayments.length > 0 ? (mgPaid / mgPayments.length * 100).toFixed(1) : '0.0';
+
+        // Average time to payment
+        const times = paidPayments.map(p => {
+            const c = new Date(p.created_at);
+            const pa = new Date(p.paid_at);
+            return (pa - c) / 1000 / 60; // minutes
+        }).filter(t => t > 0 && t < 120);
+        const avgTime = times.length > 0 ? (times.reduce((a,b) => a+b, 0) / times.length).toFixed(1) : '—';
+
+        const pixHealthEl = document.getElementById('croPixHealth');
+        if (pixHealthEl) {
+            pixHealthEl.innerHTML = `
+                <div class="kpi-card"><div class="kpi-label">PIX Gerados</div><div class="kpi-value">${totalPayments}</div></div>
+                <div class="kpi-card"><div class="kpi-label">Taxa Pagamento</div><div class="kpi-value green">${totalPayments > 0 ? (paidPayments.length / totalPayments * 100).toFixed(1) : 0}%</div></div>
+                <div class="kpi-card"><div class="kpi-label">SkalePay Rate</div><div class="kpi-value" style="color:#a78bfa">${skRate}% <span style="font-size:0.7rem;color:#71717a">(${skPayments.length})</span></div></div>
+                <div class="kpi-card"><div class="kpi-label">Mangofy Rate</div><div class="kpi-value" style="color:#34d399">${mgRate}% <span style="font-size:0.7rem;color:#71717a">(${mgPayments.length})</span></div></div>
+                <div class="kpi-card"><div class="kpi-label">Tempo Médio (min)</div><div class="kpi-value">${avgTime}</div></div>
+                <div class="kpi-card"><div class="kpi-label">Falhas Gateway</div><div class="kpi-value" style="color:#f87171">${failedPayments.length}</div></div>
+                <div class="kpi-card"><div class="kpi-label">Pendentes</div><div class="kpi-value" style="color:#fbbf24">${pendingPayments.length}</div></div>
+                <div class="kpi-card"><div class="kpi-label">R$ Pendente</div><div class="kpi-value" style="color:#fbbf24">${formatBRL(pendingPayments.reduce((s,p) => s + (p.amount||0), 0))}</div></div>
+            `;
+        }
+
+        // Repeat customers
+        const emailCount = {};
+        RAW_PAYMENTS.forEach(p => {
+            const email = (p.customer?.email || '').toLowerCase();
+            if (!email) return;
+            if (!emailCount[email]) emailCount[email] = { name: p.customer?.name || '', total: 0, paid: 0, pending: 0, pendingAmount: 0 };
+            emailCount[email].total++;
+            if (p.status === 'paid') emailCount[email].paid++;
+            else if (p.status === 'pending') {
+                emailCount[email].pending++;
+                emailCount[email].pendingAmount += (p.amount || 0);
+            }
+        });
+
+        const repeats = Object.entries(emailCount)
+            .filter(([_, d]) => d.total > 3)
+            .sort((a, b) => b[1].total - a[1].total);
+
+        const repeatEl = document.getElementById('croRepeatTable');
+        if (repeatEl) {
+            repeatEl.innerHTML = repeats.length === 0
+                ? '<tr><td colspan="6" style="text-align:center;color:#71717a;padding:1rem">Nenhum cliente com >3 pedidos</td></tr>'
+                : repeats.map(([email, d]) => `<tr>
+                    <td>${esc(email)}</td><td>${esc(d.name)}</td>
+                    <td>${d.total}</td><td style="color:#10b981">${d.paid}</td>
+                    <td style="color:#fbbf24">${d.pending}</td>
+                    <td style="color:#fbbf24">${formatBRL(d.pendingAmount)}</td>
+                </tr>`).join('');
+        }
+
+        // Checkout step drops
+        const stepEvents = events.filter(e => e.event === 'checkout_step');
+        const stepCounts = {};
+        stepEvents.forEach(e => {
+            const step = e.data?.step || 0;
+            const sid = e.session_id;
+            if (!stepCounts[step]) stepCounts[step] = new Set();
+            stepCounts[step].add(sid);
+        });
+
+        const stepNames = { 1: 'Carrinho', 2: 'Dados', 3: 'Endereço', 4: 'Envio', 5: 'Pagamento' };
+        const dropsEl = document.getElementById('croCheckoutDrops');
+        if (dropsEl) {
+            let html = '';
+            for (let s = 1; s <= 5; s++) {
+                const count = stepCounts[s] ? stepCounts[s].size : 0;
+                const prev = s > 1 ? (stepCounts[s-1] ? stepCounts[s-1].size : 0) : count;
+                const drop = prev > 0 ? ((prev - count) / prev * 100).toFixed(1) : 0;
+                const dropColor = drop > 40 ? '#ef4444' : drop > 20 ? '#f59e0b' : '#10b981';
+                html += `<div class="kpi-card">
+                    <div class="kpi-label">Step ${s}: ${stepNames[s]}</div>
+                    <div class="kpi-value">${count}</div>
+                    ${s > 1 ? `<div style="font-size:0.75rem;color:${dropColor};margin-top:0.3rem">↓ ${drop}% drop</div>` : ''}
+                </div>`;
+            }
+            dropsEl.innerHTML = html;
+        }
+    }
+
+    // ════════════════════════════════════════════
+    //  EXPERIMENTS TAB
+    // ════════════════════════════════════════════
+    let experimentsData = {};
+
+    function loadExperiments() {
+        fetch('../api/experiments.php')
+        .then(r => r.json())
+        .then(data => {
+            experimentsData = data.experiments || {};
+            renderExperimentsTable();
+        })
+        .catch(() => {
+            // experiments.php may not exist yet
+            document.getElementById('experimentsTable').innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:#71717a;padding:1rem">Nenhum experimento configurado</td></tr>';
+        });
+    }
+
+    function renderExperimentsTable() {
+        const tbody = document.getElementById('experimentsTable');
+        if (!tbody) return;
+
+        const exps = Object.entries(experimentsData);
+        if (exps.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#71717a;padding:1rem">Nenhum experimento configurado</td></tr>';
+            document.getElementById('experimentResults').innerHTML = '';
+            return;
+        }
+
+        tbody.innerHTML = exps.map(([id, exp]) => {
+            const variants = Object.keys(exp.variants || {}).join(', ');
+            const statusColors = { draft: '#71717a', running: '#10b981', paused: '#f59e0b', completed: '#3b82f6' };
+            const statusColor = statusColors[exp.status] || '#71717a';
+            const samples = Object.values(exp.current_sample || {}).reduce((a,b) => a+b, 0);
+
+            let actions = '';
+            if (exp.status === 'draft') {
+                actions = `<button class="btn btn-sm btn-primary" onclick="updateExpStatus('${esc(id)}','running')">▶ Iniciar</button>`;
+            } else if (exp.status === 'running') {
+                actions = `<button class="btn btn-sm btn-secondary" onclick="updateExpStatus('${esc(id)}','paused')">⏸ Pausar</button>
+                           <button class="btn btn-sm btn-danger" onclick="updateExpStatus('${esc(id)}','completed')">⏹ Encerrar</button>`;
+            } else if (exp.status === 'paused') {
+                actions = `<button class="btn btn-sm btn-primary" onclick="updateExpStatus('${esc(id)}','running')">▶ Retomar</button>`;
+            }
+
+            return `<tr style="cursor:pointer" onclick="renderExperimentResults('${esc(id)}')">
+                <td style="font-family:monospace;font-size:0.75rem">${esc(id)}</td>
+                <td>${esc(exp.name || '')}</td>
+                <td><span style="color:${statusColor};font-weight:600">${esc(exp.status || 'draft')}</span></td>
+                <td style="font-size:0.8rem">${esc(variants)}</td>
+                <td style="font-size:0.8rem">${esc(exp.metric || exp.metric_primary || '')}</td>
+                <td>${samples}</td>
+                <td>${actions}</td>
+            </tr>`;
+        }).join('');
+
+        // Auto-show results for running experiments
+        const running = exps.filter(([_, e]) => e.status === 'running');
+        if (running.length > 0) {
+            renderExperimentResults(running[0][0]);
+        } else if (exps.length > 0) {
+            renderExperimentResults(exps[0][0]);
+        }
+    }
+
+    // ── Z-Test for proportions (two-tailed) ──
+    function zTestProportions(n1, c1, n2, c2) {
+        if (n1 === 0 || n2 === 0) return { z: 0, p: 1, significant: false };
+        const p1 = c1 / n1;
+        const p2 = c2 / n2;
+        const pPool = (c1 + c2) / (n1 + n2);
+        const se = Math.sqrt(pPool * (1 - pPool) * (1/n1 + 1/n2));
+        if (se === 0) return { z: 0, p: 1, significant: false };
+        const z = (p1 - p2) / se;
+        // Approximate p-value from z-score (two-tailed)
+        const pVal = 2 * (1 - normalCDF(Math.abs(z)));
+        return { z: z, p: pVal, significant: pVal < 0.05, p1, p2, lift: p2 !== 0 ? ((p1 - p2) / p2 * 100) : 0 };
+    }
+
+    // Standard normal CDF approximation (Abramowitz and Stegun)
+    function normalCDF(x) {
+        const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+        const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+        const sign = x < 0 ? -1 : 1;
+        x = Math.abs(x) / Math.sqrt(2);
+        const t = 1.0 / (1.0 + p * x);
+        const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-x*x);
+        return 0.5 * (1.0 + sign * y);
+    }
+
+    function renderExperimentResults(expId) {
+        const container = document.getElementById('experimentResults');
+        if (!container) return;
+
+        const exp = experimentsData[expId];
+        if (!exp) { container.innerHTML = ''; return; }
+
+        const variantNames = Object.keys(exp.variants || {});
+        if (variantNames.length === 0) { container.innerHTML = '<div style="color:#71717a;padding:1rem">Sem variantes definidas</div>'; return; }
+
+        // Compute per-variant metrics from payments data
+        const variantData = {};
+        variantNames.forEach(v => { variantData[v] = { sessions: 0, pixGenerated: 0, pixPaid: 0, revenue: 0 }; });
+
+        // Count events/payments by variant
+        RAW_PAYMENTS.forEach(p => {
+            const vid = p.variant_id || p.metadata?.variant_id || '';
+            const eid = p.experiment_id || p.metadata?.experiment_id || '';
+            if (eid !== expId) return;
+            if (!variantData[vid]) return;
+
+            variantData[vid].pixGenerated++;
+            if (p.status === 'paid') {
+                variantData[vid].pixPaid++;
+                variantData[vid].revenue += (p.amount || 0);
+            }
+        });
+
+        // Build results table
+        let html = `<div class="card">
+            <div class="card-header"><h3>${esc(exp.name || expId)}</h3>
+            <span style="font-size:0.8rem;color:#71717a">Métrica: ${esc(exp.metric || exp.metric_primary || 'pix_paid_rate')}</span></div>
+            <div class="table-scroll"><table>
+                <thead><tr>
+                    <th>Variante</th><th>Peso</th><th>PIX Gerado</th><th>PIX Pago</th>
+                    <th>Taxa Pgto</th><th>Receita</th><th>Lift vs Control</th><th>Significância</th>
+                </tr></thead><tbody>`;
+
+        const controlData = variantData['control'] || variantData[variantNames[0]];
+        const controlN = controlData.pixGenerated;
+        const controlC = controlData.pixPaid;
+
+        variantNames.forEach(v => {
+            const d = variantData[v];
+            const weight = exp.variants[v]?.weight || 0;
+            const rate = d.pixGenerated > 0 ? (d.pixPaid / d.pixGenerated * 100).toFixed(1) : '—';
+            const rateColor = d.pixGenerated > 0 ? (d.pixPaid / d.pixGenerated > (controlC / Math.max(controlN, 1)) ? '#10b981' : '#ef4444') : '#71717a';
+
+            let liftHtml = '—';
+            let sigHtml = '<span style="color:#71717a">—</span>';
+
+            if (v !== 'control' && v !== variantNames[0] && d.pixGenerated >= 10 && controlN >= 10) {
+                const test = zTestProportions(d.pixGenerated, d.pixPaid, controlN, controlC);
+                const liftDir = test.lift > 0 ? '+' : '';
+                const liftColor = test.lift > 0 ? '#10b981' : '#ef4444';
+                liftHtml = `<span style="color:${liftColor};font-weight:600">${liftDir}${test.lift.toFixed(1)}%</span>`;
+
+                if (test.significant) {
+                    const winner = test.p1 > test.p2;
+                    sigHtml = `<span style="color:${winner ? '#10b981' : '#ef4444'};font-weight:700">
+                        ${winner ? '🏆 Winner' : '📉 Losing'} (p=${test.p.toFixed(4)})</span>`;
+                } else {
+                    const confidence = ((1 - test.p) * 100).toFixed(0);
+                    sigHtml = `<span style="color:#f59e0b">${confidence}% conf. (precisa mais dados)</span>`;
+                }
+            } else if (v === 'control' || v === variantNames[0]) {
+                liftHtml = '<span style="color:#71717a">baseline</span>';
+                sigHtml = '<span style="color:#71717a">baseline</span>';
+            }
+
+            html += `<tr>
+                <td><span style="font-weight:600">${esc(v)}</span></td>
+                <td>${weight}%</td>
+                <td>${d.pixGenerated}</td>
+                <td style="color:#10b981;font-weight:600">${d.pixPaid}</td>
+                <td style="color:${rateColor};font-weight:600">${rate}%</td>
+                <td>${formatBRL(d.revenue)}</td>
+                <td>${liftHtml}</td>
+                <td>${sigHtml}</td>
+            </tr>`;
+        });
+
+        const totalSamples = variantNames.reduce((s, v) => s + variantData[v].pixGenerated, 0);
+        const minSample = exp.min_sample || exp.min_sample_size || 200;
+        const progress = Math.min(100, Math.round(totalSamples / (minSample * variantNames.length) * 100));
+
+        html += `</tbody></table></div>
+            <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem">
+                <div style="flex:1;background:#27272a;border-radius:8px;height:8px;overflow:hidden">
+                    <div style="width:${progress}%;height:100%;background:${progress >= 100 ? '#10b981' : '#3b82f6'};transition:width 0.3s"></div>
+                </div>
+                <span style="font-size:0.8rem;color:#a1a1aa">${totalSamples} / ${minSample * variantNames.length} amostras (${progress}%)</span>
+            </div>
+        </div>`;
+
+        container.innerHTML = html;
+    }
+
+    function createExperiment() {
+        const name = document.getElementById('expName')?.value?.trim();
+        if (!name) { showToast('Informe o nome do experimento', 'error'); return; }
+
+        const pages = (document.getElementById('expPages')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+        const weightA = parseInt(document.getElementById('expWeightA')?.value) || 50;
+        const weightB = parseInt(document.getElementById('expWeightB')?.value) || 50;
+        const metric = document.getElementById('expMetric')?.value || 'pix_paid_rate';
+
+        const expId = 'exp_' + name.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 30) + '_' + Date.now().toString(36);
+
+        const experiment = {
+            id: expId,
+            name: name,
+            status: 'draft',
+            created_at: new Date().toISOString().substring(0, 10),
+            target_pages: pages,
+            variants: {
+                control: { weight: weightA, config: {} },
+                variant_a: { weight: weightB, config: {} }
+            },
+            metric_primary: metric,
+            min_sample_size: 200,
+            current_sample: { control: 0, variant_a: 0 }
+        };
+
+        fetch('../api/experiments.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '<?php echo $DASHBOARD_PASSWORD; ?>', action: 'create', experiment: experiment })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Experimento criado: ' + name);
+                document.getElementById('expName').value = '';
+                loadExperiments();
+            } else {
+                showToast('Erro: ' + (data.error || 'falha'), 'error');
+            }
+        })
+        .catch(() => showToast('Erro de rede', 'error'));
+    }
+
+    function updateExpStatus(expId, status) {
+        fetch('../api/experiments.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: '<?php echo $DASHBOARD_PASSWORD; ?>', action: 'update_status', id: expId, status: status })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Experimento ${status}`);
+                loadExperiments();
+            } else {
+                showToast('Erro: ' + (data.error || 'falha'), 'error');
             }
         })
         .catch(() => showToast('Erro de rede', 'error'));

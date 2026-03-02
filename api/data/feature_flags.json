@@ -1,0 +1,31 @@
+{
+    "version": "1.0.0",
+    "global_killswitch": false,
+    "flags": {
+        "pix_idempotency": {
+            "enabled": true,
+            "description": "Reutilizar PIX pendente da mesma sessão ao invés de criar novo"
+        },
+        "timer_fix": {
+            "enabled": true,
+            "description": "Timer de 15min com reset, esconde ao invés de mostrar 00:00:00"
+        },
+        "form_validation": {
+            "enabled": true,
+            "description": "Validação mínima nos steps 2/3 (email OU nome obrigatório)"
+        },
+        "qr_code_visible": {
+            "enabled": true,
+            "description": "QR Code visível por padrão (não colapsado em details)"
+        },
+        "trust_signals": {
+            "enabled": true,
+            "description": "Sinais de confiança reforçados no checkout"
+        },
+        "ab_engine": {
+            "enabled": true,
+            "description": "Motor de testes A/B ativo"
+        }
+    },
+    "updated_at": null
+}
