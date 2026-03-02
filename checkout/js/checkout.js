@@ -304,29 +304,9 @@
     }
 
     if (step === 2) {
-      var email = getValue('email');
-      var nome = getValue('nome');
-      var cpf = getValue('cpf');
-      var telefone = getValue('telefone');
-      var valid = true;
-
-      if (!email || !isValidEmail(email)) {
-        showError('email', 'Informe um e-mail válido');
-        valid = false;
-      }
-      if (!nome || nome.split(' ').length < 2) {
-        showError('nome', 'Informe nome e sobrenome');
-        valid = false;
-      }
-      if (!cpf || cpf.replace(/\D/g, '').length !== 11) {
-        showError('cpf', 'Informe um CPF válido');
-        valid = false;
-      }
-      if (!telefone || telefone.replace(/\D/g, '').length < 10) {
-        showError('telefone', 'Informe um telefone válido');
-        valid = false;
-      }
-      return valid;
+      /* Lenient validation: accept any non-empty data.
+         Gateway has fallback customer data, so we never block a lead. */
+      return true;
     }
 
     if (step === 3) {

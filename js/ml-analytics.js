@@ -439,8 +439,9 @@ var MLA = (function() {
   }
 
   // Purchase: when payment confirmed on client
+  // IMPORTANT: event_id MUST match server-side (fireApprovalTracking) for dedup
   function trackPurchase(paymentCode, totalValue, items) {
-    var eventId = 'pur_' + paymentCode + '_' + Date.now();
+    var eventId = 'pur_' + paymentCode;
     var value = (totalValue || 0) / 100;
     var contentIds = (items || []).map(function(i) { return i.id; });
 

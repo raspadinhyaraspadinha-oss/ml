@@ -892,6 +892,7 @@ if ($isAuthenticated) {
              ═══════════════════════════════════════ -->
         <div class="dash-tabs">
             <button class="dash-tab active" data-tab="vendas" onclick="switchDashTab('vendas')">Vendas</button>
+            <button class="dash-tab" data-tab="tiktok" onclick="switchDashTab('tiktok')">TikTok</button>
             <button class="dash-tab" data-tab="analytics" onclick="switchDashTab('analytics')">Analytics / Funil</button>
         </div>
 
@@ -1105,11 +1106,14 @@ if ($isAuthenticated) {
         <div class="table-wrap">
             <div class="table-header">
                 <h3>Chamadas de API (UTMify, FB CAPI, TikTok)</h3>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+                <button class="btn btn-sm" style="background:#4a044e;color:#f0abfc;border:1px solid #86198f" onclick="retryFailedTikTok()" id="retryTTBtn">&#x21BB; Retry TikTok com erro</button>
                 <div class="api-filters">
                     <button class="api-filter-btn active" data-api-filter="all" onclick="filterApiEvents('all')">Todas</button>
                     <button class="api-filter-btn" data-api-filter="utmify" onclick="filterApiEvents('utmify')">UTMify</button>
                     <button class="api-filter-btn" data-api-filter="facebook_capi" onclick="filterApiEvents('facebook_capi')">Facebook</button>
                     <button class="api-filter-btn" data-api-filter="tiktok_events" onclick="filterApiEvents('tiktok_events')">TikTok</button>
+                </div>
                 </div>
             </div>
             <div class="table-scroll">
@@ -1131,6 +1135,139 @@ if ($isAuthenticated) {
         </div>
 
         </div><!-- end tab-vendas -->
+
+        <!-- ═══════════════════════════════════════
+             TAB: TIKTOK DASHBOARD
+             ═══════════════════════════════════════ -->
+        <div class="dash-tab-panel" id="tab-tiktok">
+            <!-- TikTok Header -->
+            <div class="gw-card" style="border-top:2px solid #f0abfc;margin-bottom:1.5rem">
+                <div class="gw-info">
+                    <div class="gw-icon" style="background:#4a044e22;color:#f0abfc;font-size:1rem;font-weight:800">TT</div>
+                    <div>
+                        <div class="gw-text-label">TikTok Performance Dashboard</div>
+                        <div class="gw-text-name" style="font-size:1rem">
+                            <span class="gw-live-dot" style="background:#f0abfc;box-shadow:0 0 8px #f0abfc66"></span>
+                            <span id="ttHeaderStats">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                    <button class="btn btn-sm" style="background:#4a044e;color:#f0abfc;border:1px solid #86198f" onclick="retryFailedTikTok()" id="retryTTBtn2">&#x21BB; Retry Eventos com Erro</button>
+                </div>
+            </div>
+
+            <!-- TikTok KPIs -->
+            <div class="kpi-grid" id="ttKpis"></div>
+
+            <!-- TikTok Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Vendas TikTok por Dia</h3>
+                    <canvas id="chartTTSales"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Receita TikTok por Dia (R$)</h3>
+                    <canvas id="chartTTRevenue"></canvas>
+                </div>
+            </div>
+
+            <!-- TikTok Campaigns Table -->
+            <div class="section-title"><span class="dot" style="background:#f0abfc"></span> Campanhas TikTok</div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <h3>Performance por Campanha / Conjunto / Anuncio</h3>
+                </div>
+                <div class="table-scroll">
+                    <table id="ttCampaignTable">
+                        <thead>
+                            <tr>
+                                <th data-col="campaign" data-type="string">Campanha</th>
+                                <th data-col="medium" data-type="string">Conjunto</th>
+                                <th data-col="content" data-type="string">Anuncio</th>
+                                <th data-col="pix" data-type="number">PIX Gerados</th>
+                                <th data-col="sales" data-type="number">Vendas</th>
+                                <th data-col="revenue" data-type="number">Receita</th>
+                                <th data-col="cvr" data-type="number">CVR%</th>
+                                <th data-col="ticket" data-type="number">Ticket</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ttCampaignBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="ttCampaignPagination"></div>
+            </div>
+
+            <!-- TikTok API Events Status -->
+            <div class="section-title"><span class="dot" style="background:#f0abfc"></span> Status dos Eventos TikTok API</div>
+            <div class="analytics-grid">
+                <!-- Event delivery stats -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#10b981"></span> Delivery de Eventos</h3>
+                    <div id="ttEventDelivery"></div>
+                </div>
+                <!-- Event types breakdown -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#f0abfc"></span> Eventos por Tipo</h3>
+                    <div id="ttEventTypes"></div>
+                </div>
+            </div>
+
+            <!-- TikTok Sales Table -->
+            <div class="section-title"><span class="dot" style="background:#f0abfc"></span> Vendas via TikTok</div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <h3>Transacoes com origem TikTok</h3>
+                    <div class="api-filters">
+                        <button class="api-filter-btn active" data-tt-filter="all" onclick="filterTTSales('all')">Todas</button>
+                        <button class="api-filter-btn" data-tt-filter="paid" onclick="filterTTSales('paid')">Pagas</button>
+                        <button class="api-filter-btn" data-tt-filter="pending" onclick="filterTTSales('pending')">Pendentes</button>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table id="ttSalesTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Nome</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Campanha</th>
+                                <th>Conjunto</th>
+                                <th>ttclid</th>
+                                <th>Acoes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ttSalesBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="ttSalesPagination"></div>
+            </div>
+
+            <!-- Failed TikTok Events -->
+            <div class="section-title"><span class="dot" style="background:#f87171"></span> Eventos TikTok com Erro</div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <h3>Eventos que falharam (para retry)</h3>
+                    <button class="btn btn-sm" style="background:#4a044e;color:#f0abfc;border:1px solid #86198f" onclick="retryFailedTikTok()">&#x21BB; Retry Todos</button>
+                </div>
+                <div class="table-scroll">
+                    <table id="ttFailedTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Payment Code</th>
+                                <th>Evento</th>
+                                <th>HTTP</th>
+                                <th>Erro</th>
+                                <th>Acao</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ttFailedBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div><!-- end tab-tiktok -->
 
         <!-- ═══════════════════════════════════════
              TAB: ANALYTICS / FUNIL
@@ -2139,6 +2276,10 @@ if ($isAuthenticated) {
             renderAnalytics();
             analyticsRendered = true;
         }
+        if (tabId === 'tiktok' && !ttRendered) {
+            renderTikTok();
+            ttRendered = true;
+        }
     }
 
     // ════════════════════════════════════════════
@@ -2517,6 +2658,383 @@ if ($isAuthenticated) {
         const btn = document.querySelector(`[data-analytics-filter="${filter}"]`);
         if (btn) btn.classList.add('active');
         renderAnalyticsTable();
+    }
+
+    // ════════════════════════════════════════════
+    //  TIKTOK TAB
+    // ════════════════════════════════════════════
+    let ttRendered = false;
+    let ttSalesPage = 1;
+    let ttCampaignPage = 1;
+    let ttSalesFilter = 'all';
+
+    function isTikTokPayment(p) {
+        const t = p.tracking || {};
+        return !!(t.ttclid || (t.utm_source && t.utm_source.toLowerCase().indexOf('tiktok') !== -1) ||
+                  (t.src && t.src.toLowerCase().indexOf('tiktok') !== -1));
+    }
+
+    function getTikTokPayments() {
+        return filteredPayments.filter(isTikTokPayment);
+    }
+
+    function renderTikTok() {
+        renderTTKpis();
+        renderTTCharts();
+        renderTTCampaigns();
+        renderTTEventDelivery();
+        renderTTEventTypes();
+        renderTTSales();
+        renderTTFailedEvents();
+    }
+
+    function renderTTKpis() {
+        const container = document.getElementById('ttKpis');
+        if (!container) return;
+
+        const ttPayments = getTikTokPayments();
+        const allPayments = filteredPayments;
+        const ttPix = ttPayments.length;
+        const ttPaid = ttPayments.filter(p => p.status === 'paid');
+        const ttRevenue = ttPaid.reduce((s, p) => s + (p.amount || 0), 0);
+        const ttCvr = ttPix > 0 ? ((ttPaid.length / ttPix) * 100).toFixed(1) : '0.0';
+        const ttTicket = ttPaid.length > 0 ? Math.round(ttRevenue / ttPaid.length) : 0;
+        const ttShare = allPayments.length > 0 ? ((ttPix / allPayments.length) * 100).toFixed(1) : '0.0';
+
+        // Count ttclid presence
+        const withTTClid = ttPayments.filter(p => p.tracking?.ttclid).length;
+        const ttclidRate = ttPix > 0 ? ((withTTClid / ttPix) * 100).toFixed(0) : '0';
+
+        // API success rate
+        const ttApiEvents = RAW_API_EVENTS.filter(e => e.api === 'tiktok_events');
+        const ttApiSuccess = ttApiEvents.filter(e => e.success).length;
+        const ttApiRate = ttApiEvents.length > 0 ? ((ttApiSuccess / ttApiEvents.length) * 100).toFixed(0) : '0';
+
+        // Update header
+        const header = document.getElementById('ttHeaderStats');
+        if (header) header.textContent = `${ttPaid.length} vendas | ${formatBRL(ttRevenue)} receita | ${ttShare}% do trafego`;
+
+        container.innerHTML = `
+            <div class="kpi-card" style="border-top:2px solid #f0abfc"><div class="kpi-label">PIX TikTok</div><div class="kpi-value" style="color:#f0abfc">${ttPix}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #10b981"><div class="kpi-label">Vendas TikTok</div><div class="kpi-value green">${ttPaid.length}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #34d399"><div class="kpi-label">Receita TikTok</div><div class="kpi-value green">${formatBRL(ttRevenue)}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #a78bfa"><div class="kpi-label">CVR TikTok</div><div class="kpi-value purple">${ttCvr}%</div></div>
+            <div class="kpi-card" style="border-top:2px solid #fbbf24"><div class="kpi-label">Ticket Medio</div><div class="kpi-value yellow">${formatBRL(ttTicket)}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #60a5fa"><div class="kpi-label">% do Total</div><div class="kpi-value blue">${ttShare}%</div></div>
+            <div class="kpi-card" style="border-top:2px solid #06b6d4"><div class="kpi-label">Com ttclid</div><div class="kpi-value" style="color:#06b6d4">${ttclidRate}% (${withTTClid})</div></div>
+            <div class="kpi-card" style="border-top:2px solid ${parseInt(ttApiRate) >= 90 ? '#10b981' : '#f87171'}"><div class="kpi-label">API Success</div><div class="kpi-value" style="color:${parseInt(ttApiRate) >= 90 ? '#34d399' : '#f87171'}">${ttApiRate}%</div></div>
+        `;
+    }
+
+    function renderTTCharts() {
+        const ttPayments = getTikTokPayments();
+        const salesByDay = {};
+        const revenueByDay = {};
+
+        ttPayments.forEach(p => {
+            const d = getDateStr(p.created_at);
+            if (!d) return;
+            if (!salesByDay[d]) { salesByDay[d] = 0; revenueByDay[d] = 0; }
+            if (p.status === 'paid') {
+                salesByDay[d]++;
+                revenueByDay[d] += (p.amount || 0);
+            }
+        });
+
+        const from = document.getElementById('dateFrom').value;
+        const to = document.getElementById('dateTo').value || new Date().toISOString().substring(0, 10);
+        if (from) {
+            let cur = new Date(from + 'T00:00:00');
+            const end = new Date(to + 'T00:00:00');
+            while (cur <= end) {
+                const ds = cur.toISOString().substring(0, 10);
+                if (!salesByDay[ds]) salesByDay[ds] = 0;
+                if (!revenueByDay[ds]) revenueByDay[ds] = 0;
+                cur.setDate(cur.getDate() + 1);
+            }
+        }
+
+        const days = Object.keys(salesByDay).sort();
+        const salesData = days.map(d => ({ label: d, value: salesByDay[d] }));
+        const revenueData = days.map(d => ({ label: d, value: revenueByDay[d] / 100 }));
+
+        drawBarChart('chartTTSales', salesData, '#f0abfc', v => Math.round(v).toString());
+        drawBarChart('chartTTRevenue', revenueData, '#c084fc', v => 'R$ ' + Math.round(v).toLocaleString('pt-BR'));
+    }
+
+    function renderTTCampaigns() {
+        const ttPayments = getTikTokPayments();
+        const map = {};
+
+        ttPayments.forEach(p => {
+            const t = p.tracking || {};
+            const campaign = t.utm_campaign || '(sem campanha)';
+            const medium = t.utm_medium || '-';
+            const content = t.utm_content || '-';
+            const key = [campaign, medium, content].join('||');
+
+            if (!map[key]) map[key] = { campaign, medium, content, pix: 0, sales: 0, revenue: 0 };
+            map[key].pix++;
+            if (p.status === 'paid') {
+                map[key].sales++;
+                map[key].revenue += (p.amount || 0);
+            }
+        });
+
+        const data = Object.values(map).sort((a, b) => b.revenue - a.revenue);
+        const tbody = document.getElementById('ttCampaignBody');
+        if (!tbody) return;
+
+        const perPage = 15;
+        const totalPages = Math.max(1, Math.ceil(data.length / perPage));
+        if (ttCampaignPage > totalPages) ttCampaignPage = totalPages;
+        const start = (ttCampaignPage - 1) * perPage;
+        const pageData = data.slice(start, start + perPage);
+
+        if (!pageData.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Sem dados TikTok</td></tr>';
+            document.getElementById('ttCampaignPagination').innerHTML = '';
+            return;
+        }
+
+        tbody.innerHTML = pageData.map(r => {
+            const cvr = r.pix > 0 ? ((r.sales / r.pix) * 100).toFixed(1) : '0.0';
+            const ticket = r.sales > 0 ? Math.round(r.revenue / r.sales) : 0;
+            return `<tr>
+                <td>${esc(r.campaign)}</td>
+                <td>${esc(r.medium)}</td>
+                <td>${esc(r.content)}</td>
+                <td>${r.pix}</td>
+                <td>${r.sales}</td>
+                <td>${formatBRL(r.revenue)}</td>
+                <td>${cvr}%</td>
+                <td>${formatBRL(ticket)}</td>
+            </tr>`;
+        }).join('');
+
+        const pagDiv = document.getElementById('ttCampaignPagination');
+        if (totalPages <= 1) { pagDiv.innerHTML = ''; return; }
+        let html = '';
+        for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+            html += `<button class="${i===ttCampaignPage?'active':''}" onclick="ttCampaignPage=${i};renderTTCampaigns()">${i}</button>`;
+        }
+        pagDiv.innerHTML = html;
+    }
+
+    function renderTTEventDelivery() {
+        const container = document.getElementById('ttEventDelivery');
+        if (!container) return;
+
+        const ttEvents = RAW_API_EVENTS.filter(e => e.api === 'tiktok_events');
+        const total = ttEvents.length;
+        const success = ttEvents.filter(e => e.success).length;
+        const failed = total - success;
+        const rate = total > 0 ? ((success / total) * 100).toFixed(1) : '0.0';
+
+        // Group by HTTP status
+        const statusCounts = {};
+        ttEvents.forEach(e => {
+            const s = e.http_status || 'N/A';
+            statusCounts[s] = (statusCounts[s] || 0) + 1;
+        });
+
+        let html = '';
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Total Eventos</span><span class="analytics-stat-value">${total}</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Sucesso</span><span class="analytics-stat-value good">${success}</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Falhas</span><span class="analytics-stat-value ${failed > 0 ? 'bad' : ''}">${failed}</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Taxa Sucesso</span><span class="analytics-stat-value ${parseFloat(rate) >= 90 ? 'good' : 'bad'}">${rate}%</span></div>`;
+
+        // Status breakdown
+        html += '<div style="margin-top:0.75rem">';
+        Object.entries(statusCounts).sort((a,b) => b[1] - a[1]).forEach(([status, count]) => {
+            const pct = total > 0 ? ((count / total) * 100).toFixed(0) : 0;
+            const color = status == 200 ? '#10b981' : '#f87171';
+            html += `<div class="pix-bar-wrap">
+                <span class="pix-bar-label">HTTP ${status}</span>
+                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+                <span class="pix-bar-value">${count}</span>
+            </div>`;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+    }
+
+    function renderTTEventTypes() {
+        const container = document.getElementById('ttEventTypes');
+        if (!container) return;
+
+        const ttEvents = RAW_API_EVENTS.filter(e => e.api === 'tiktok_events');
+        const byType = {};
+        ttEvents.forEach(e => {
+            const name = e.event || '?';
+            if (!byType[name]) byType[name] = { total: 0, success: 0 };
+            byType[name].total++;
+            if (e.success) byType[name].success++;
+        });
+
+        const sorted = Object.entries(byType).sort((a, b) => b[1].total - a[1].total);
+
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem eventos TikTok ainda</div>';
+            return;
+        }
+
+        let html = '';
+        sorted.forEach(([name, data]) => {
+            const rate = data.total > 0 ? ((data.success / data.total) * 100).toFixed(0) : 0;
+            const color = parseInt(rate) >= 90 ? '#10b981' : parseInt(rate) >= 50 ? '#fbbf24' : '#f87171';
+            html += `<div class="analytics-stat-row">
+                <span class="analytics-stat-label">${esc(name)}</span>
+                <span class="analytics-stat-value">${data.success}/${data.total} <span style="color:${color};font-size:0.72rem">(${rate}%)</span></span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function filterTTSales(type) {
+        ttSalesFilter = type;
+        ttSalesPage = 1;
+        document.querySelectorAll('[data-tt-filter]').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`[data-tt-filter="${type}"]`);
+        if (btn) btn.classList.add('active');
+        renderTTSales();
+    }
+
+    function renderTTSales() {
+        let ttPayments = getTikTokPayments();
+        if (ttSalesFilter === 'paid') ttPayments = ttPayments.filter(p => p.status === 'paid');
+        else if (ttSalesFilter === 'pending') ttPayments = ttPayments.filter(p => p.status !== 'paid');
+
+        const data = [...ttPayments].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        const tbody = document.getElementById('ttSalesBody');
+        if (!tbody) return;
+
+        const perPage = 15;
+        const totalPages = Math.max(1, Math.ceil(data.length / perPage));
+        if (ttSalesPage > totalPages) ttSalesPage = totalPages;
+        const start = (ttSalesPage - 1) * perPage;
+        const pageData = data.slice(start, start + perPage);
+
+        if (!pageData.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Sem vendas TikTok</td></tr>';
+            document.getElementById('ttSalesPagination').innerHTML = '';
+            return;
+        }
+
+        tbody.innerHTML = pageData.map(p => {
+            const t = p.tracking || {};
+            const statusCls = p.status === 'paid' ? 'badge-paid' : 'badge-pending';
+            const statusLabel = p.status === 'paid' ? 'Pago' : 'Pendente';
+            const pc = esc(p.payment_code || '');
+            const ttclid = t.ttclid ? t.ttclid.substring(0, 12) + '...' : '-';
+
+            return `<tr class="clickable-row" onclick="openSaleDetail('${pc}')">
+                <td>${formatDateBR(p.created_at)}</td>
+                <td>${esc(p.customer?.name || '-')}</td>
+                <td>${formatBRL(p.amount || 0)}</td>
+                <td><span class="badge ${statusCls}">${statusLabel}</span></td>
+                <td>${esc(t.utm_campaign || '-')}</td>
+                <td>${esc(t.utm_medium || '-')}</td>
+                <td style="font-family:monospace;font-size:0.72rem;color:#f0abfc">${esc(ttclid)}</td>
+                <td><button class="btn-detail" onclick="event.stopPropagation();openSaleDetail('${pc}')">Ver</button></td>
+            </tr>`;
+        }).join('');
+
+        const pagDiv = document.getElementById('ttSalesPagination');
+        if (totalPages <= 1) { pagDiv.innerHTML = ''; return; }
+        let html = '';
+        for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+            html += `<button class="${i===ttSalesPage?'active':''}" onclick="ttSalesPage=${i};renderTTSales()">${i}</button>`;
+        }
+        pagDiv.innerHTML = html;
+    }
+
+    function renderTTFailedEvents() {
+        const tbody = document.getElementById('ttFailedBody');
+        if (!tbody) return;
+
+        const failed = RAW_API_EVENTS.filter(e => e.api === 'tiktok_events' && !e.success && !e.retried)
+            .map((e, idx) => ({ ...e, originalIndex: RAW_API_EVENTS.indexOf(e) }))
+            .reverse();
+
+        if (!failed.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="no-data" style="color:#34d399">Nenhum evento com erro pendente!</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = failed.slice(0, 50).map(e => {
+            let errMsg = '-';
+            try {
+                const resp = typeof e.response === 'string' ? JSON.parse(e.response) : e.response;
+                errMsg = resp?.message || resp?.error || JSON.stringify(resp).substring(0, 100);
+            } catch(x) {
+                errMsg = typeof e.response === 'string' ? e.response.substring(0, 100) : '-';
+            }
+
+            return `<tr>
+                <td>${formatDateBR(e.timestamp)}</td>
+                <td style="font-family:monospace;font-size:0.72rem">${esc(e.payment_code || '-')}</td>
+                <td>${esc(e.event || '-')}</td>
+                <td><span class="http-err" style="padding:0.15rem 0.5rem;border-radius:4px;font-size:0.7rem;font-weight:600">${e.http_status || '-'}</span></td>
+                <td style="font-size:0.72rem;color:#fca5a5;max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(errMsg)}</td>
+                <td><button class="btn btn-sm" style="background:#4a044e;color:#f0abfc;border:1px solid #86198f;font-size:0.7rem" onclick="event.stopPropagation();retrySingleTikTok(${e.originalIndex})">Retry</button></td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Retry TikTok Functions ──
+    function retryFailedTikTok() {
+        const failed = RAW_API_EVENTS.filter(e => e.api === 'tiktok_events' && !e.success && !e.retried);
+        if (failed.length === 0) {
+            showToast('Nenhum evento TikTok com erro para reenviar!', 'success');
+            return;
+        }
+        if (!confirm(`Reenviar ${failed.length} evento(s) TikTok com erro?`)) return;
+
+        const btns = document.querySelectorAll('#retryTTBtn, #retryTTBtn2');
+        btns.forEach(b => { if (b) { b.disabled = true; b.textContent = 'Reenviando...'; } });
+
+        fetch('/api/retry-tiktok.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: 'ml2025', retry_all_failed: true })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btns.forEach(b => { if (b) { b.disabled = false; b.textContent = '\u21BB Retry TikTok com erro'; } });
+            if (data.success) {
+                showToast(`Retry concluido! ${data.success_count} sucesso, ${data.fail_count} falha(s)`, data.fail_count > 0 ? 'error' : 'success');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showToast('Erro: ' + (data.error || 'falha no retry'), 'error');
+            }
+        })
+        .catch(() => {
+            btns.forEach(b => { if (b) { b.disabled = false; b.textContent = '\u21BB Retry TikTok com erro'; } });
+            showToast('Erro de rede', 'error');
+        });
+    }
+
+    function retrySingleTikTok(eventIndex) {
+        if (!confirm('Reenviar este evento TikTok?')) return;
+
+        fetch('/api/retry-tiktok.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: 'ml2025', event_indices: [eventIndex] })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.success_count > 0) {
+                showToast('Evento reenviado com sucesso!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                const errMsg = data.results?.[0]?.response?.message || 'Falha no retry';
+                showToast('Erro: ' + errMsg, 'error');
+            }
+        })
+        .catch(() => showToast('Erro de rede', 'error'));
     }
 
     // ── Init ──

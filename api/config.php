@@ -75,8 +75,10 @@ function writeLog($event, $data = []) {
     file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
 }
 
-/* Helper: Send TikTok Events API event (enriched) */
-function sendTikTokEvent($eventName, $eventId, $userData, $properties = []) {
+/* Helper: Send TikTok Events API event (enriched)
+   $eventTime: optional Unix timestamp (default: time())
+   Use custom eventTime for delayed events like Purchase after webhook */
+function sendTikTokEvent($eventName, $eventId, $userData, $properties = [], $eventTime = null) {
     if (TIKTOK_ACCESS_TOKEN === 'SEU_TIKTOK_ACCESS_TOKEN_AQUI') return null; // Skip if not configured
 
     // Build context.user (separate ttclid from other fields)
@@ -105,7 +107,7 @@ function sendTikTokEvent($eventName, $eventId, $userData, $properties = []) {
             [
                 'event' => $eventName,
                 'event_id' => $eventId,
-                'timestamp' => date('c'),
+                'event_time' => $eventTime ?: time(),
                 'context' => $context,
                 'properties' => $properties
             ]
@@ -300,9 +302,12 @@ function fireApprovalTracking($paymentCode, $payment, $approvedAt) {
         'ttclid' => $tracking['ttclid'] ?? null
     ], function($v) { return $v !== null && $v !== ''; });
 
-    $ttPurchaseEventId = 'tt_pur_' . $paymentCode;
+    // MUST match browser event_id ('pur_' + paymentCode) for pixel dedup
+    $ttPurchaseEventId = 'pur_' . $paymentCode;
+    $ttEventTime = strtotime($approvedAt) ?: time();
     $ttResult = sendTikTokEvent('CompletePayment', $ttPurchaseEventId, $ttUserData,
-        ['contents' => $ttContents, 'content_type' => 'product', 'currency' => 'BRL', 'value' => $amount / 100, 'order_id' => $paymentCode]);
+        ['contents' => $ttContents, 'content_type' => 'product', 'currency' => 'BRL', 'value' => $amount / 100, 'order_id' => $paymentCode],
+        $ttEventTime);
     if ($ttResult) {
         writeApiEvent($paymentCode, 'CompletePayment', 'tiktok_events', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', $ttResult['status'],
             ['event' => 'CompletePayment', 'value' => $amount / 100, 'event_id' => $ttPurchaseEventId],
