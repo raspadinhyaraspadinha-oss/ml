@@ -398,6 +398,13 @@ $payments[$paymentCode] = [
     'items' => $items,
     'tracking' => $trackingParams,
     'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+    'client_ip' => $clientIp,
+    'address' => [
+        'cep' => $input['metadata']['cep'] ?? '',
+        'cidade' => $input['metadata']['cidade'] ?? '',
+        'uf' => $input['metadata']['uf'] ?? '',
+        'bairro' => $input['metadata']['bairro'] ?? ''
+    ],
     'created_at' => $createdAt,
     'paid_at' => null
 ];
@@ -443,52 +450,129 @@ writeApiEvent($paymentCode, 'waiting_payment', 'utmify', UTMIFY_API_URL, $utmify
     $utmifyResult['body'] ?? $utmifyResult['raw'], $trackingParams,
     $utmifyResult['status'] >= 200 && $utmifyResult['status'] < 300);
 
-// ── Facebook CAPI AddToCart ──
+// ── Build enriched user_data for FB CAPI (high EMQ) ──
 $nameParts = explode(' ', trim($customer['name'] ?? ''));
 $firstName = $nameParts[0] ?? '';
 $lastName = count($nameParts) > 1 ? end($nameParts) : '';
 
-$fbAddToCart = ['data' => [[
-    'event_name' => 'AddToCart', 'event_id' => 'atc_' . $paymentCode . '_' . time(),
-    'event_time' => time(), 'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/',
+// Parse address data from metadata for enriched matching
+$customerCity = $input['metadata']['cidade'] ?? '';
+$customerState = $input['metadata']['uf'] ?? '';
+$customerZip = preg_replace('/\D/', '', $input['metadata']['cep'] ?? '');
+
+$fbUserData = array_filter([
+    'em' => [hash('sha256', strtolower(trim($customer['email'] ?? '')))],
+    'ph' => [hash('sha256', '55' . preg_replace('/\D/', '', $customer['phone'] ?? ''))],
+    'fn' => [hash('sha256', strtolower(trim($firstName)))],
+    'ln' => [hash('sha256', strtolower(trim($lastName)))],
+    'ct' => $customerCity ? [hash('sha256', strtolower(trim($customerCity)))] : null,
+    'st' => $customerState ? [hash('sha256', strtolower(trim($customerState)))] : null,
+    'zp' => $customerZip ? [hash('sha256', $customerZip)] : null,
+    'country' => [hash('sha256', 'br')],
+    'external_id' => [hash('sha256', $paymentCode)],
+    'client_ip_address' => $clientIp,
+    'client_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+    'fbc' => $trackingParams['fbc'] ?? null,
+    'fbp' => $trackingParams['fbp'] ?? null
+], function($v) { return $v !== null && $v !== '' && $v !== []; });
+
+// ── Build rich contents array ──
+$fbContents = [];
+foreach ($items as $item) {
+    $fbContents[] = [
+        'id' => $item['id'] ?? 'item',
+        'quantity' => intval($item['quantity'] ?? 1),
+        'item_price' => ($item['price'] ?? 0) / 100
+    ];
+}
+
+// ── Facebook CAPI: AddPaymentInfo (PIX selected, server-side dedup partner) ──
+$fbApiEventId = 'api_' . $paymentCode . '_' . time();
+$fbAddPaymentInfo = ['data' => [[
+    'event_name' => 'AddPaymentInfo',
+    'event_id' => $fbApiEventId,
+    'event_time' => time(),
+    'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/',
     'action_source' => 'website',
-    'user_data' => array_filter([
-        'em' => [hash('sha256', strtolower(trim($customer['email'] ?? '')))],
-        'ph' => [hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? ''))],
-        'fn' => [hash('sha256', strtolower(trim($firstName)))],
-        'ln' => [hash('sha256', strtolower(trim($lastName)))],
-        'client_ip_address' => $clientIp, 'client_user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-        'fbc' => $trackingParams['fbc'] ?? null, 'fbp' => $trackingParams['fbp'] ?? null
-    ], function($v) { return $v !== null && $v !== ''; }),
+    'user_data' => $fbUserData,
     'custom_data' => [
         'currency' => 'BRL', 'value' => $amount / 100,
         'content_ids' => array_map(function($item) { return $item['id'] ?? 'item'; }, $items),
-        'content_type' => 'product', 'order_id' => $paymentCode
+        'contents' => $fbContents,
+        'content_type' => 'product', 'order_id' => $paymentCode,
+        'num_items' => count($items)
     ]
 ]]];
 
 $fbUrl = 'https://graph.facebook.com/' . FB_API_VERSION . '/' . FB_PIXEL_ID . '/events?access_token=' . FB_ACCESS_TOKEN;
-$fbResult = apiPost($fbUrl, ['Content-Type: application/json'], $fbAddToCart);
-writeApiEvent($paymentCode, 'AddToCart', 'facebook_capi', $fbUrl, $fbResult['status'],
-    ['event_name' => 'AddToCart', 'value' => $amount / 100, 'event_id' => $fbAddToCart['data'][0]['event_id']],
+$fbResult = apiPost($fbUrl, ['Content-Type: application/json'], $fbAddPaymentInfo);
+writeApiEvent($paymentCode, 'AddPaymentInfo', 'facebook_capi', $fbUrl, $fbResult['status'],
+    ['event_name' => 'AddPaymentInfo', 'value' => $amount / 100, 'event_id' => $fbApiEventId],
     $fbResult['body'] ?? $fbResult['raw'], $trackingParams, $fbResult['status'] === 200);
 if ($fbResult['status'] !== 200) {
-    writeLog('FB_CAPI_ERRO', ['evento' => 'AddToCart', 'payment_code' => $paymentCode, 'http_status' => $fbResult['status'], 'erro' => $fbResult['error'] ?: ($fbResult['raw'] ?? 'sem resposta')]);
+    writeLog('FB_CAPI_ERRO', ['evento' => 'AddPaymentInfo', 'payment_code' => $paymentCode, 'http_status' => $fbResult['status'], 'erro' => $fbResult['error'] ?: ($fbResult['raw'] ?? 'sem resposta')]);
 }
 
-// ── TikTok Events API - InitiateCheckout ──
-$ttContentIds = array_map(function($item) { return ['content_id' => $item['id'] ?? 'item', 'content_name' => $item['name'] ?? 'Produto', 'quantity' => intval($item['quantity'] ?? 1), 'price' => ($item['price'] ?? 0) / 100]; }, $items);
-$ttResult = sendTikTokEvent('InitiateCheckout', 'tt_ic_' . $paymentCode . '_' . time(), [
+// ── Facebook CAPI: GeneratePixCode (custom event) ──
+$fbGpxEventId = 'gpx_' . $paymentCode . '_' . time();
+$fbGeneratePix = ['data' => [[
+    'event_name' => 'GeneratePixCode',
+    'event_id' => $fbGpxEventId,
+    'event_time' => time(),
+    'event_source_url' => 'https://' . ($_SERVER['HTTP_HOST'] ?? 'seusite.com') . '/checkout/',
+    'action_source' => 'website',
+    'user_data' => $fbUserData,
+    'custom_data' => [
+        'currency' => 'BRL', 'value' => $amount / 100,
+        'payment_method' => 'pix', 'order_id' => $paymentCode,
+        'gateway' => $usedGateway
+    ]
+]]];
+
+$fbResult2 = apiPost($fbUrl, ['Content-Type: application/json'], $fbGeneratePix);
+writeApiEvent($paymentCode, 'GeneratePixCode', 'facebook_capi', $fbUrl, $fbResult2['status'],
+    ['event_name' => 'GeneratePixCode', 'value' => $amount / 100, 'event_id' => $fbGpxEventId],
+    $fbResult2['body'] ?? $fbResult2['raw'], $trackingParams, $fbResult2['status'] === 200);
+
+// ── TikTok Events API - AddPaymentInfo + PlaceAnOrder ──
+$ttContents = array_map(function($item) {
+    return [
+        'content_id' => $item['id'] ?? 'item',
+        'content_name' => $item['name'] ?? 'Produto',
+        'content_type' => 'product',
+        'quantity' => intval($item['quantity'] ?? 1),
+        'price' => ($item['price'] ?? 0) / 100
+    ];
+}, $items);
+
+$ttUserData = [
     'email' => hash('sha256', strtolower(trim($customer['email'] ?? ''))),
-    'phone' => hash('sha256', preg_replace('/\D/', '', $customer['phone'] ?? '')),
-    'ip' => $clientIp, 'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? ''
-], ['contents' => $ttContentIds, 'content_type' => 'product', 'currency' => 'BRL', 'value' => $amount / 100]);
-if ($ttResult) {
-    writeApiEvent($paymentCode, 'InitiateCheckout', 'tiktok_events', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', $ttResult['status'],
-        ['event' => 'InitiateCheckout', 'value' => $amount / 100, 'event_id' => 'tt_ic_' . $paymentCode],
-        $ttResult['body'] ?? $ttResult['raw'], $trackingParams, $ttResult['status'] === 200);
-    if ($ttResult['status'] !== 200) {
-        writeLog('TIKTOK_API_ERRO', ['evento' => 'InitiateCheckout', 'payment_code' => $paymentCode, 'http_status' => $ttResult['status'], 'erro' => $ttResult['error'] ?: ($ttResult['raw'] ?? 'sem resposta')]);
+    'phone_number' => hash('sha256', '+55' . preg_replace('/\D/', '', $customer['phone'] ?? '')),
+    'external_id' => hash('sha256', $paymentCode),
+    'ip' => $clientIp,
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+    'ttclid' => $trackingParams['ttclid'] ?? null
+];
+$ttUserData = array_filter($ttUserData, function($v) { return $v !== null && $v !== ''; });
+
+// AddPaymentInfo (standard event)
+$ttApiResult = sendTikTokEvent('AddPaymentInfo', 'tt_api_' . $paymentCode . '_' . time(), $ttUserData,
+    ['contents' => $ttContents, 'content_type' => 'product', 'currency' => 'BRL', 'value' => $amount / 100, 'description' => 'PIX']);
+if ($ttApiResult) {
+    writeApiEvent($paymentCode, 'AddPaymentInfo', 'tiktok_events', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', $ttApiResult['status'],
+        ['event' => 'AddPaymentInfo', 'value' => $amount / 100],
+        $ttApiResult['body'] ?? $ttApiResult['raw'], $trackingParams, $ttApiResult['status'] === 200);
+}
+
+// PlaceAnOrder (standard event - key for PIX intent signal, fires while user is still on page)
+$ttOrderResult = sendTikTokEvent('PlaceAnOrder', 'tt_pao_' . $paymentCode . '_' . time(), $ttUserData,
+    ['contents' => $ttContents, 'content_type' => 'product', 'currency' => 'BRL', 'value' => $amount / 100, 'order_id' => $paymentCode]);
+if ($ttOrderResult) {
+    writeApiEvent($paymentCode, 'PlaceAnOrder', 'tiktok_events', 'https://business-api.tiktok.com/open_api/v1.3/event/track/', $ttOrderResult['status'],
+        ['event' => 'PlaceAnOrder', 'value' => $amount / 100],
+        $ttOrderResult['body'] ?? $ttOrderResult['raw'], $trackingParams, $ttOrderResult['status'] === 200);
+    if ($ttOrderResult['status'] !== 200) {
+        writeLog('TIKTOK_API_ERRO', ['evento' => 'PlaceAnOrder', 'payment_code' => $paymentCode, 'http_status' => $ttOrderResult['status'], 'erro' => $ttOrderResult['error'] ?: ($ttOrderResult['raw'] ?? 'sem resposta')]);
     }
 }
 

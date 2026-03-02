@@ -70,6 +70,27 @@ function loadApiEvents(string $dir): array {
     return is_array($data) ? $data : [];
 }
 
+function loadAnalyticsEvents(string $dir, int $days = 7): array {
+    $eventsDir = $dir . 'events/';
+    if (!is_dir($eventsDir)) return [];
+    $all = [];
+    for ($i = 0; $i < $days; $i++) {
+        $date = date('Y-m-d', strtotime("-{$i} days"));
+        $file = $eventsDir . 'events_' . $date . '.json';
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true);
+            if (is_array($data)) {
+                $all = array_merge($all, $data);
+            }
+        }
+    }
+    // Sort by server_time desc
+    usort($all, function($a, $b) {
+        return strcmp($b['server_time'] ?? '', $a['server_time'] ?? '');
+    });
+    return $all;
+}
+
 function formatBRL(int $cents): string {
     return 'R$ ' . number_format($cents / 100, 2, ',', '.');
 }
@@ -153,6 +174,7 @@ if ($isAuthenticated) {
     $pageviews = loadPageviews($DATA_DIR);
     $logLines = loadLog($DATA_DIR, 50);
     $apiEvents = loadApiEvents($DATA_DIR);
+    $analyticsEvents = loadAnalyticsEvents($DATA_DIR, 14);
 
     // Gateway config
     $gwFile = $DATA_DIR . 'gateway_config.json';
@@ -714,6 +736,127 @@ if ($isAuthenticated) {
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast-success { background: #065f46; color: #34d399; border: 1px solid #10b981; }
         .toast-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
+
+        /* ════════════════════════════════════════
+           TAB NAVIGATION
+           ════════════════════════════════════════ */
+        .dash-tabs {
+            display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+            border-bottom: 1px solid #27272a; padding-bottom: 0;
+        }
+        .dash-tab {
+            padding: 0.65rem 1.25rem; background: transparent; border: none;
+            color: #71717a; font-family: inherit; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; border-bottom: 2px solid transparent;
+            transition: all 0.2s; position: relative; bottom: -1px;
+        }
+        .dash-tab:hover { color: #d4d4d8; }
+        .dash-tab.active { color: #fff; border-bottom-color: #3b82f6; }
+        .dash-tab-panel { display: none; }
+        .dash-tab-panel.active { display: block; }
+
+        /* ════════════════════════════════════════
+           ANALYTICS TAB
+           ════════════════════════════════════════ */
+        .funnel-viz {
+            display: flex; align-items: flex-end; gap: 2px;
+            padding: 1.5rem 0; justify-content: center;
+            flex-wrap: wrap;
+        }
+        .funnel-bar-wrap {
+            display: flex; flex-direction: column; align-items: center;
+            min-width: 80px; flex: 1; max-width: 140px;
+        }
+        .funnel-bar {
+            width: 100%; border-radius: 6px 6px 0 0;
+            transition: height 0.5s ease;
+            min-height: 4px;
+        }
+        .funnel-label {
+            font-size: 0.68rem; color: #a1a1aa; margin-top: 0.4rem;
+            text-align: center; font-weight: 500;
+        }
+        .funnel-count {
+            font-size: 0.85rem; color: #fff; font-weight: 700;
+            margin-top: 0.15rem; text-align: center;
+        }
+        .funnel-pct {
+            font-size: 0.68rem; color: #71717a; text-align: center;
+        }
+        .funnel-arrow {
+            color: #3f3f46; font-size: 1.2rem; padding-bottom: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .analytics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .analytics-card {
+            background: #18181b; border: 1px solid #27272a;
+            border-radius: 12px; padding: 1.25rem;
+        }
+        .analytics-card h3 {
+            font-size: 0.85rem; color: #d4d4d8; font-weight: 600;
+            margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .analytics-card h3 .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .analytics-stat-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.4rem 0; border-bottom: 1px solid #1f1f23;
+        }
+        .analytics-stat-row:last-child { border-bottom: none; }
+        .analytics-stat-label { font-size: 0.78rem; color: #a1a1aa; }
+        .analytics-stat-value { font-size: 0.85rem; color: #fff; font-weight: 600; }
+        .analytics-stat-value.good { color: #34d399; }
+        .analytics-stat-value.warn { color: #fbbf24; }
+        .analytics-stat-value.bad { color: #f87171; }
+
+        .pix-bar-wrap {
+            display: flex; align-items: center; gap: 0.5rem;
+            margin: 0.3rem 0;
+        }
+        .pix-bar-label { font-size: 0.72rem; color: #a1a1aa; min-width: 50px; }
+        .pix-bar-bg {
+            flex: 1; height: 20px; background: #27272a; border-radius: 4px; overflow: hidden;
+            position: relative;
+        }
+        .pix-bar-fill {
+            height: 100%; border-radius: 4px; transition: width 0.5s ease;
+        }
+        .pix-bar-value {
+            font-size: 0.72rem; color: #fff; font-weight: 600; min-width: 45px; text-align: right;
+        }
+
+        .session-timeline {
+            max-height: 400px; overflow-y: auto;
+        }
+        .session-row {
+            display: flex; align-items: flex-start; gap: 0.75rem;
+            padding: 0.5rem 0; border-bottom: 1px solid #1f1f23;
+            font-size: 0.78rem;
+        }
+        .session-time { color: #71717a; min-width: 60px; font-variant-numeric: tabular-nums; }
+        .session-event {
+            padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600;
+            font-size: 0.72rem; white-space: nowrap;
+        }
+        .session-event.view { background: #1e3a5f; color: #60a5fa; }
+        .session-event.action { background: #1a3a2a; color: #34d399; }
+        .session-event.checkout { background: #3b2f00; color: #fbbf24; }
+        .session-event.pix { background: #3b1f3b; color: #d8b4fe; }
+        .session-event.error { background: #450a0a; color: #fca5a5; }
+        .session-page { color: #a1a1aa; flex: 1; }
+        .session-data { color: #71717a; font-size: 0.72rem; }
+
+        .form-err-list { max-height: 250px; overflow-y: auto; }
+        .form-err-item {
+            display: flex; justify-content: space-between; padding: 0.4rem 0;
+            border-bottom: 1px solid #1f1f23; font-size: 0.78rem;
+        }
+        .form-err-field { color: #f87171; font-weight: 600; }
+        .form-err-msg { color: #a1a1aa; }
+        .form-err-count { color: #fff; font-weight: 700; min-width: 35px; text-align: right; }
     </style>
 </head>
 <body>
@@ -743,6 +886,19 @@ if ($isAuthenticated) {
                 <a href="?logout=1" class="btn btn-danger btn-sm">Sair</a>
             </div>
         </div>
+
+        <!-- ═══════════════════════════════════════
+             TAB NAVIGATION
+             ═══════════════════════════════════════ -->
+        <div class="dash-tabs">
+            <button class="dash-tab active" data-tab="vendas" onclick="switchDashTab('vendas')">Vendas</button>
+            <button class="dash-tab" data-tab="analytics" onclick="switchDashTab('analytics')">Analytics / Funil</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════
+             TAB: VENDAS (existing dashboard)
+             ═══════════════════════════════════════ -->
+        <div class="dash-tab-panel active" id="tab-vendas">
 
         <!-- ═══════════════════════════════════════
              GATEWAY SWITCHER - Prominent Card
@@ -974,6 +1130,89 @@ if ($isAuthenticated) {
             <div class="pagination" id="apiEventsPagination"></div>
         </div>
 
+        </div><!-- end tab-vendas -->
+
+        <!-- ═══════════════════════════════════════
+             TAB: ANALYTICS / FUNIL
+             ═══════════════════════════════════════ -->
+        <div class="dash-tab-panel" id="tab-analytics">
+            <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Funil de Conversao</div>
+
+            <!-- Funnel Visualization -->
+            <div class="analytics-card" style="margin-bottom:1.5rem">
+                <h3><span class="dot" style="background:#3b82f6"></span> Visualizacao do Funil (Ultimos 7 dias)</h3>
+                <div class="funnel-viz" id="funnelViz"></div>
+            </div>
+
+            <!-- KPI Row -->
+            <div class="kpi-grid" id="analyticsKpis"></div>
+
+            <!-- Analytics Grid: PIX Diagnostics + Form Errors -->
+            <div class="analytics-grid">
+                <!-- PIX Diagnostics -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#a78bfa"></span> Diagnostico PIX</h3>
+                    <div id="pixDiagnostics"></div>
+                </div>
+
+                <!-- Form Errors -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#f87171"></span> Erros de Formulario</h3>
+                    <div class="form-err-list" id="formErrors"></div>
+                </div>
+
+                <!-- Drop-off Analysis -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#fbbf24"></span> Abandono por Etapa</h3>
+                    <div id="dropoffAnalysis"></div>
+                </div>
+
+                <!-- Top Events -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#34d399"></span> Volume de Eventos</h3>
+                    <div id="eventVolume"></div>
+                </div>
+            </div>
+
+            <!-- Session Timeline -->
+            <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Timeline de Sessoes Recentes</div>
+            <div class="analytics-card">
+                <h3><span class="dot" style="background:#60a5fa"></span> Ultimas 20 Sessoes</h3>
+                <div class="session-timeline" id="sessionTimeline"></div>
+            </div>
+
+            <!-- Events Table -->
+            <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Eventos Detalhados</div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <h3>Ultimos Eventos de Analytics</h3>
+                    <div class="api-filters" id="analyticsFilters">
+                        <button class="api-filter-btn active" data-analytics-filter="all" onclick="filterAnalytics('all')">Todos</button>
+                        <button class="api-filter-btn" data-analytics-filter="funnel_view" onclick="filterAnalytics('funnel_view')">Funil</button>
+                        <button class="api-filter-btn" data-analytics-filter="checkout" onclick="filterAnalytics('checkout')">Checkout</button>
+                        <button class="api-filter-btn" data-analytics-filter="pix" onclick="filterAnalytics('pix')">PIX</button>
+                        <button class="api-filter-btn" data-analytics-filter="error" onclick="filterAnalytics('error')">Erros</button>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table id="analyticsTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Sessao</th>
+                                <th>Evento</th>
+                                <th>Pagina</th>
+                                <th>Dados</th>
+                                <th>UTMs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analyticsBody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="analyticsPagination"></div>
+            </div>
+        </div><!-- end tab-analytics -->
+
         <!-- Sale Detail Modal -->
         <div class="modal-overlay" id="saleDetailModal" onclick="if(event.target===this)closeSaleDetail()">
             <div class="modal-content">
@@ -1008,6 +1247,7 @@ if ($isAuthenticated) {
     const RAW_PAYMENTS = <?php echo json_encode(array_values($payments), JSON_UNESCAPED_UNICODE); ?>;
     const RAW_PAGEVIEWS = <?php echo json_encode($pageviews, JSON_UNESCAPED_UNICODE); ?>;
     const RAW_API_EVENTS = <?php echo json_encode($apiEvents ?? [], JSON_UNESCAPED_UNICODE); ?>;
+    const RAW_ANALYTICS = <?php echo json_encode($analyticsEvents ?? [], JSON_UNESCAPED_UNICODE); ?>;
     const ITEMS_PER_PAGE = <?php echo $ITEMS_PER_PAGE; ?>;
 
     // ── State ──
@@ -1879,6 +2119,404 @@ if ($isAuthenticated) {
             showToast('Erro de rede', 'error');
             if (btn) { btn.disabled = false; btn.textContent = isRefire ? '↻ Reenviar pixels' : '✓ Marcar como Pago'; }
         });
+    }
+
+    // ════════════════════════════════════════════
+    //  TAB SWITCHING
+    // ════════════════════════════════════════════
+    let analyticsRendered = false;
+
+    function switchDashTab(tabId) {
+        document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.dash-tab-panel').forEach(p => p.classList.remove('active'));
+
+        const btn = document.querySelector(`.dash-tab[data-tab="${tabId}"]`);
+        const panel = document.getElementById('tab-' + tabId);
+        if (btn) btn.classList.add('active');
+        if (panel) panel.classList.add('active');
+
+        if (tabId === 'analytics' && !analyticsRendered) {
+            renderAnalytics();
+            analyticsRendered = true;
+        }
+    }
+
+    // ════════════════════════════════════════════
+    //  ANALYTICS TAB RENDERING
+    // ════════════════════════════════════════════
+    let analyticsPage = 1;
+    let analyticsFilter = 'all';
+
+    function renderAnalytics() {
+        renderFunnel();
+        renderAnalyticsKpis();
+        renderPixDiagnostics();
+        renderFormErrors();
+        renderDropoff();
+        renderEventVolume();
+        renderSessionTimeline();
+        renderAnalyticsTable();
+    }
+
+    function renderFunnel() {
+        const container = document.getElementById('funnelViz');
+        if (!container) return;
+
+        // Count events by funnel stage
+        const stages = [
+            { key: 'prevsl', label: 'Pre-VSL', color: '#60a5fa' },
+            { key: 'vsl', label: 'VSL', color: '#818cf8' },
+            { key: 'questionario', label: 'Quiz', color: '#a78bfa' },
+            { key: 'roleta', label: 'Roleta', color: '#c084fc' },
+            { key: 'recompensas', label: 'Recomp.', color: '#e879f9' },
+            { key: 'produto', label: 'Produto', color: '#f472b6' },
+            { key: 'checkout', label: 'Checkout', color: '#fbbf24' },
+            { key: 'pix', label: 'PIX', color: '#34d399' },
+            { key: 'paid', label: 'Pago', color: '#10b981' }
+        ];
+
+        const counts = {};
+        stages.forEach(s => counts[s.key] = 0);
+
+        // Count from analytics events
+        RAW_ANALYTICS.forEach(evt => {
+            if (evt.event === 'funnel_view') {
+                const page = evt.data?.page || evt.page || '';
+                if (page.indexOf('prevsl') !== -1) counts.prevsl++;
+                else if (page.indexOf('vsl') !== -1 && page.indexOf('prevsl') === -1) counts.vsl++;
+                else if (page.indexOf('questionario') !== -1) counts.questionario++;
+                else if (page.indexOf('roleta') !== -1) counts.roleta++;
+                else if (page.indexOf('recompensas') !== -1) counts.recompensas++;
+                else if (page.indexOf('produto') !== -1) counts.produto++;
+                else if (page.indexOf('checkout') !== -1) counts.checkout++;
+            } else if (evt.event === 'GeneratePixCode' || evt.event === 'AddPaymentInfo') {
+                counts.pix++;
+            } else if (evt.event === 'Purchase') {
+                counts.paid++;
+            }
+        });
+
+        // Also count from payments data
+        if (counts.pix === 0) {
+            counts.pix = RAW_PAYMENTS.length;
+        }
+        if (counts.paid === 0) {
+            counts.paid = RAW_PAYMENTS.filter(p => p.status === 'paid').length;
+        }
+
+        const maxCount = Math.max(...Object.values(counts), 1);
+        const maxBarHeight = 160;
+
+        let html = '';
+        stages.forEach((stage, idx) => {
+            const count = counts[stage.key];
+            const height = Math.max(4, (count / maxCount) * maxBarHeight);
+            const pct = counts[stages[0].key] > 0
+                ? ((count / counts[stages[0].key]) * 100).toFixed(1)
+                : '0.0';
+
+            if (idx > 0) {
+                html += '<div class="funnel-arrow">&rarr;</div>';
+            }
+            html += `<div class="funnel-bar-wrap">
+                <div class="funnel-bar" style="height:${height}px;background:${stage.color}"></div>
+                <div class="funnel-label">${stage.label}</div>
+                <div class="funnel-count">${count.toLocaleString('pt-BR')}</div>
+                <div class="funnel-pct">${pct}%</div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function renderAnalyticsKpis() {
+        const container = document.getElementById('analyticsKpis');
+        if (!container) return;
+
+        const totalSessions = new Set(RAW_ANALYTICS.map(e => e.session_id).filter(Boolean)).size;
+        const totalEvents = RAW_ANALYTICS.length;
+        const pixGenerated = RAW_PAYMENTS.length;
+        const pixPaid = RAW_PAYMENTS.filter(p => p.status === 'paid').length;
+        const pixRate = pixGenerated > 0 ? ((pixPaid / pixGenerated) * 100).toFixed(1) : '0.0';
+        const viewContentCount = RAW_ANALYTICS.filter(e => e.event === 'ViewContent').length;
+        const addToCartCount = RAW_ANALYTICS.filter(e => e.event === 'AddToCart').length;
+        const formErrors = RAW_ANALYTICS.filter(e => e.event === 'form_error').length;
+
+        container.innerHTML = `
+            <div class="kpi-card"><div class="kpi-label">Sessoes</div><div class="kpi-value blue">${totalSessions.toLocaleString('pt-BR')}</div></div>
+            <div class="kpi-card"><div class="kpi-label">Total Eventos</div><div class="kpi-value">${totalEvents.toLocaleString('pt-BR')}</div></div>
+            <div class="kpi-card"><div class="kpi-label">ViewContent</div><div class="kpi-value purple">${viewContentCount.toLocaleString('pt-BR')}</div></div>
+            <div class="kpi-card"><div class="kpi-label">AddToCart</div><div class="kpi-value yellow">${addToCartCount.toLocaleString('pt-BR')}</div></div>
+            <div class="kpi-card"><div class="kpi-label">PIX Conv.</div><div class="kpi-value ${parseFloat(pixRate) >= 15 ? 'green' : parseFloat(pixRate) >= 8 ? 'yellow' : ''}" style="${parseFloat(pixRate) < 8 ? 'color:#f87171' : ''}">${pixRate}%</div></div>
+            <div class="kpi-card"><div class="kpi-label">Erros Form</div><div class="kpi-value" style="color:#f87171">${formErrors}</div></div>
+        `;
+    }
+
+    function renderPixDiagnostics() {
+        const container = document.getElementById('pixDiagnostics');
+        if (!container) return;
+
+        const total = RAW_PAYMENTS.length;
+        const paid = RAW_PAYMENTS.filter(p => p.status === 'paid');
+        const pending = RAW_PAYMENTS.filter(p => p.status === 'pending');
+
+        // Payment timing analysis
+        const timings = [];
+        paid.forEach(p => {
+            if (p.created_at && p.paid_at) {
+                const created = new Date(p.created_at);
+                const paidAt = new Date(p.paid_at);
+                const diffMin = (paidAt - created) / 60000;
+                if (diffMin > 0 && diffMin < 1440) timings.push(diffMin);
+            }
+        });
+
+        timings.sort((a, b) => a - b);
+        const median = timings.length > 0 ? timings[Math.floor(timings.length / 2)] : 0;
+        const under2 = timings.filter(t => t <= 2).length;
+        const under5 = timings.filter(t => t <= 5).length;
+        const under10 = timings.filter(t => t <= 10).length;
+
+        // Gateway split
+        const mgTotal = RAW_PAYMENTS.filter(p => (p.gateway || 'mangofy') === 'mangofy').length;
+        const mgPaid = RAW_PAYMENTS.filter(p => (p.gateway || 'mangofy') === 'mangofy' && p.status === 'paid').length;
+        const skTotal = RAW_PAYMENTS.filter(p => p.gateway === 'skalepay').length;
+        const skPaid = RAW_PAYMENTS.filter(p => p.gateway === 'skalepay' && p.status === 'paid').length;
+
+        const bars = [
+            { label: '<2min', count: under2, total: timings.length, color: '#10b981' },
+            { label: '<5min', count: under5, total: timings.length, color: '#34d399' },
+            { label: '<10min', count: under10, total: timings.length, color: '#fbbf24' },
+        ];
+
+        let html = '';
+
+        // Stats
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Total PIX</span><span class="analytics-stat-value">${total}</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pagos</span><span class="analytics-stat-value good">${paid.length}</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Abandono</span><span class="analytics-stat-value bad">${total > 0 ? ((pending.length / total) * 100).toFixed(1) : 0}%</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Tempo mediano</span><span class="analytics-stat-value">${median.toFixed(1)} min</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Mangofy</span><span class="analytics-stat-value">${mgPaid}/${mgTotal} (${mgTotal > 0 ? ((mgPaid/mgTotal)*100).toFixed(1) : 0}%)</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">SkalePay</span><span class="analytics-stat-value">${skPaid}/${skTotal} (${skTotal > 0 ? ((skPaid/skTotal)*100).toFixed(1) : 0}%)</span></div>`;
+
+        // Timing bars
+        html += '<div style="margin-top:0.75rem">';
+        bars.forEach(bar => {
+            const pct = bar.total > 0 ? ((bar.count / bar.total) * 100).toFixed(0) : 0;
+            html += `<div class="pix-bar-wrap">
+                <span class="pix-bar-label">${bar.label}</span>
+                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${pct}%;background:${bar.color}"></div></div>
+                <span class="pix-bar-value">${pct}%</span>
+            </div>`;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+    }
+
+    function renderFormErrors() {
+        const container = document.getElementById('formErrors');
+        if (!container) return;
+
+        const errors = {};
+        RAW_ANALYTICS.filter(e => e.event === 'form_error').forEach(e => {
+            const key = (e.data?.field || '?') + '|' + (e.data?.message || '?');
+            errors[key] = (errors[key] || 0) + 1;
+        });
+
+        const sorted = Object.entries(errors).sort((a, b) => b[1] - a[1]);
+
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Nenhum erro registrado</div>';
+            return;
+        }
+
+        let html = '';
+        sorted.slice(0, 15).forEach(([key, count]) => {
+            const [field, msg] = key.split('|');
+            html += `<div class="form-err-item">
+                <span class="form-err-field">${esc(field)}</span>
+                <span class="form-err-msg">${esc(msg)}</span>
+                <span class="form-err-count">${count}x</span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderDropoff() {
+        const container = document.getElementById('dropoffAnalysis');
+        if (!container) return;
+
+        // Count checkout steps
+        const stepCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        RAW_ANALYTICS.filter(e => e.event === 'checkout_step').forEach(e => {
+            const step = e.data?.step;
+            if (step && stepCounts[step] !== undefined) stepCounts[step]++;
+        });
+
+        const stepNames = { 1: 'Carrinho', 2: 'Dados', 3: 'Endereco', 4: 'Envio', 5: 'Pagamento' };
+        const maxStep = Math.max(...Object.values(stepCounts), 1);
+
+        let html = '';
+        for (let s = 1; s <= 5; s++) {
+            const count = stepCounts[s];
+            const pct = maxStep > 0 ? ((count / maxStep) * 100).toFixed(0) : 0;
+            const dropoff = s > 1 && stepCounts[s-1] > 0
+                ? ((1 - count / stepCounts[s-1]) * 100).toFixed(0)
+                : '—';
+
+            html += `<div class="analytics-stat-row">
+                <span class="analytics-stat-label">${s}. ${stepNames[s]}</span>
+                <span class="analytics-stat-value">${count} <span style="color:#71717a;font-size:0.72rem">${s > 1 ? '(-' + dropoff + '%)' : ''}</span></span>
+            </div>`;
+        }
+
+        if (Object.values(stepCounts).every(v => v === 0)) {
+            html = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem dados de checkout ainda</div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    function renderEventVolume() {
+        const container = document.getElementById('eventVolume');
+        if (!container) return;
+
+        const counts = {};
+        RAW_ANALYTICS.forEach(e => {
+            counts[e.event] = (counts[e.event] || 0) + 1;
+        });
+
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+        if (sorted.length === 0) {
+            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem eventos ainda</div>';
+            return;
+        }
+
+        const maxVal = sorted[0][1];
+        let html = '';
+        sorted.slice(0, 12).forEach(([name, count]) => {
+            const pct = ((count / maxVal) * 100).toFixed(0);
+            html += `<div class="pix-bar-wrap">
+                <span class="pix-bar-label" style="min-width:100px;font-size:0.72rem">${esc(name)}</span>
+                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${pct}%;background:#60a5fa"></div></div>
+                <span class="pix-bar-value">${count}</span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderSessionTimeline() {
+        const container = document.getElementById('sessionTimeline');
+        if (!container) return;
+
+        // Group by session
+        const sessions = {};
+        RAW_ANALYTICS.forEach(e => {
+            const sid = e.session_id || 'unknown';
+            if (!sessions[sid]) sessions[sid] = [];
+            sessions[sid].push(e);
+        });
+
+        // Get last 20 sessions sorted by most recent event
+        const sessionList = Object.entries(sessions)
+            .map(([sid, events]) => ({
+                sid,
+                events: events.sort((a, b) => (a.server_time || '').localeCompare(b.server_time || '')),
+                lastTime: events[events.length - 1]?.server_time || ''
+            }))
+            .sort((a, b) => b.lastTime.localeCompare(a.lastTime))
+            .slice(0, 20);
+
+        if (sessionList.length === 0) {
+            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem sessoes ainda</div>';
+            return;
+        }
+
+        let html = '';
+        sessionList.forEach(session => {
+            const shortSid = session.sid.replace('ses_', '').substring(0, 12);
+            html += `<div style="margin-bottom:0.75rem;padding:0.75rem;background:#111114;border-radius:8px;border:1px solid #1f1f23">`;
+            html += `<div style="font-size:0.75rem;color:#60a5fa;font-weight:600;margin-bottom:0.5rem">Sessao ${esc(shortSid)} &mdash; ${session.events.length} evento(s)</div>`;
+
+            session.events.forEach(evt => {
+                const time = evt.server_time ? new Date(evt.server_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+                let evtClass = 'view';
+                if (evt.event === 'form_error') evtClass = 'error';
+                else if (evt.event?.indexOf('Pix') !== -1 || evt.event?.indexOf('pix') !== -1) evtClass = 'pix';
+                else if (evt.event?.indexOf('checkout') !== -1 || evt.event === 'InitiateCheckout' || evt.event === 'AddPaymentInfo') evtClass = 'checkout';
+                else if (evt.event === 'AddToCart' || evt.event === 'Purchase') evtClass = 'action';
+
+                const dataStr = evt.data ? Object.entries(evt.data).map(([k,v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ').substring(0, 80) : '';
+
+                html += `<div class="session-row">
+                    <span class="session-time">${time}</span>
+                    <span class="session-event ${evtClass}">${esc(evt.event || '?')}</span>
+                    <span class="session-page">${esc(evt.page || '')}</span>
+                    <span class="session-data">${esc(dataStr)}</span>
+                </div>`;
+            });
+            html += '</div>';
+        });
+
+        container.innerHTML = html;
+    }
+
+    function renderAnalyticsTable() {
+        const body = document.getElementById('analyticsBody');
+        if (!body) return;
+
+        let filtered = RAW_ANALYTICS;
+        if (analyticsFilter !== 'all') {
+            filtered = RAW_ANALYTICS.filter(e => {
+                if (analyticsFilter === 'funnel_view') return e.event === 'funnel_view' || e.event === 'ViewContent';
+                if (analyticsFilter === 'checkout') return e.event?.indexOf('checkout') !== -1 || e.event === 'InitiateCheckout' || e.event === 'AddPaymentInfo' || e.event === 'AddToCart';
+                if (analyticsFilter === 'pix') return e.event?.indexOf('Pix') !== -1 || e.event?.indexOf('pix') !== -1 || e.event === 'Purchase';
+                if (analyticsFilter === 'error') return e.event === 'form_error';
+                return true;
+            });
+        }
+
+        const start = (analyticsPage - 1) * ITEMS_PER_PAGE;
+        const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
+
+        body.innerHTML = '';
+        pageItems.forEach(evt => {
+            const time = evt.server_time ? new Date(evt.server_time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+            const shortSid = (evt.session_id || '').replace('ses_', '').substring(0, 10);
+            const dataStr = evt.data ? JSON.stringify(evt.data).substring(0, 100) : '—';
+            const utmStr = evt.utms?.utm_source ? `${evt.utms.utm_source}/${evt.utms.utm_campaign || ''}` : '—';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${time}</td><td style="font-size:0.72rem;color:#71717a">${esc(shortSid)}</td><td><span style="color:#60a5fa;font-weight:600">${esc(evt.event || '?')}</span></td><td style="font-size:0.78rem">${esc(evt.page || '')}</td><td style="font-size:0.72rem;color:#a1a1aa;max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(dataStr)}</td><td style="font-size:0.72rem;color:#71717a">${esc(utmStr)}</td>`;
+            body.appendChild(tr);
+        });
+
+        // Pagination
+        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+        const pagEl = document.getElementById('analyticsPagination');
+        if (pagEl) {
+            pagEl.innerHTML = '';
+            if (totalPages > 1) {
+                for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'page-btn' + (i === analyticsPage ? ' active' : '');
+                    btn.textContent = i;
+                    btn.onclick = () => { analyticsPage = i; renderAnalyticsTable(); };
+                    pagEl.appendChild(btn);
+                }
+            }
+        }
+    }
+
+    function filterAnalytics(filter) {
+        analyticsFilter = filter;
+        analyticsPage = 1;
+        document.querySelectorAll('[data-analytics-filter]').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`[data-analytics-filter="${filter}"]`);
+        if (btn) btn.classList.add('active');
+        renderAnalyticsTable();
     }
 
     // ── Init ──

@@ -189,6 +189,40 @@ function resolveUrl(absolutePath) {
 document.addEventListener('DOMContentLoaded', function() {
   var buyBtn = document.querySelector('.pergunta-botao');
   if (buyBtn) {
+
+    /* ── Extract product data (shared between ViewContent + AddToCart) ── */
+    var pathParts = window.location.pathname.split('/');
+    var filtered = [];
+    for (var i = 0; i < pathParts.length; i++) {
+      if (pathParts[i] && pathParts[i] !== '') filtered.push(pathParts[i]);
+    }
+    var lastPart = filtered[filtered.length - 1] || '';
+    var productId;
+    if (lastPart.indexOf('.html') !== -1 || lastPart === 'index.html') {
+      productId = filtered[filtered.length - 2] || 'produto';
+    } else {
+      productId = lastPart || 'produto';
+    }
+
+    var nameEl = document.querySelector('.product-title') || document.querySelector('.title');
+    var priceEl = document.querySelector('.new-price') || document.querySelector('.new-price2');
+    var oldPriceEl = document.querySelector('.old-price') || document.querySelector('.old-price2');
+    var imgEl = document.querySelector('.main-image');
+
+    var _pageProduct = {
+      id: productId,
+      name: nameEl ? nameEl.textContent.trim() : 'Produto',
+      price: parsePriceToCents(priceEl ? priceEl.textContent : '0'),
+      oldPrice: parsePriceToCents(oldPriceEl ? oldPriceEl.textContent : '0'),
+      image: imgEl ? imgEl.src : '',
+      quantity: 1
+    };
+
+    /* ── Fire ViewContent on product page load (FB + TT + internal) ── */
+    if (_pageProduct.price > 0 && typeof MLA !== 'undefined') {
+      MLA.trackViewContent(_pageProduct);
+    }
+
     // CRITICAL: Remove the inline onclick handler properly
     // removeAttribute only removes the HTML attribute, not the compiled handler
     buyBtn.onclick = null;
@@ -199,65 +233,38 @@ document.addEventListener('DOMContentLoaded', function() {
       e.stopPropagation();
       e.stopImmediatePropagation();
 
-      // Extract product ID from URL path
-      var pathParts = window.location.pathname.split('/');
-      var filtered = [];
-      for (var i = 0; i < pathParts.length; i++) {
-        if (pathParts[i] && pathParts[i] !== '') filtered.push(pathParts[i]);
-      }
-      // If last part is index.html or .html file, use second-to-last
-      var lastPart = filtered[filtered.length - 1] || '';
-      var productId;
-      if (lastPart.indexOf('.html') !== -1 || lastPart === 'index.html') {
-        productId = filtered[filtered.length - 2] || 'produto';
-      } else {
-        productId = lastPart || 'produto';
-      }
-
-      // Try multiple selectors for compatibility with old and new product page layouts
-      var nameEl = document.querySelector('.product-title') || document.querySelector('.title');
-      var priceEl = document.querySelector('.new-price') || document.querySelector('.new-price2');
-      var oldPriceEl = document.querySelector('.old-price') || document.querySelector('.old-price2');
-      var imgEl = document.querySelector('.main-image');
-
-      var product = {
-        id: productId,
-        name: nameEl ? nameEl.textContent.trim() : 'Produto',
-        price: parsePriceToCents(priceEl ? priceEl.textContent : '0'),
-        oldPrice: parsePriceToCents(oldPriceEl ? oldPriceEl.textContent : '0'),
-        image: imgEl ? imgEl.src : '',
-        quantity: 1
-      };
-
       // Safety: never add a product with price 0 to cart
-      if (product.price <= 0) {
-        console.error('Cart: product price is 0, selectors may be wrong. Name:', product.name, 'Price element:', priceEl);
+      if (_pageProduct.price <= 0) {
+        console.error('Cart: product price is 0, selectors may be wrong. Name:', _pageProduct.name, 'Price element:', priceEl);
         alert('Erro ao adicionar produto. Por favor, tente novamente.');
         return;
       }
 
-      Cart.addItem(product);
+      Cart.addItem(_pageProduct);
 
-      // Fire Facebook AddToCart event
-      if (typeof fbq === 'function') {
-        fbq('track', 'AddToCart', {
-          content_name: product.name,
-          content_ids: [product.id],
-          content_type: 'product',
-          value: product.price / 100,
-          currency: 'BRL'
-        });
-      }
-
-      // Fire TikTok AddToCart event
-      if (typeof ttq !== 'undefined') {
-        ttq.track('AddToCart', {
-          content_id: product.id,
-          content_name: product.name,
-          content_type: 'product',
-          value: product.price / 100,
-          currency: 'BRL'
-        });
+      // ── Fire AddToCart via MLA (FB + TT + internal, with dedup eventID) ──
+      if (typeof MLA !== 'undefined') {
+        MLA.trackAddToCart(_pageProduct);
+      } else {
+        // Fallback: fire pixels directly (no dedup)
+        if (typeof fbq === 'function') {
+          fbq('track', 'AddToCart', {
+            content_name: _pageProduct.name,
+            content_ids: [_pageProduct.id],
+            content_type: 'product',
+            value: _pageProduct.price / 100,
+            currency: 'BRL'
+          });
+        }
+        if (typeof ttq !== 'undefined') {
+          ttq.track('AddToCart', {
+            content_id: _pageProduct.id,
+            content_name: _pageProduct.name,
+            content_type: 'product',
+            value: _pageProduct.price / 100,
+            currency: 'BRL'
+          });
+        }
       }
 
       window.location.href = resolveUrl('/checkout/index.html') + getUTMQueryString();
