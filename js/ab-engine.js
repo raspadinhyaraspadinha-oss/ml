@@ -142,7 +142,8 @@ var ABEngine = (function() {
       if (exp.status !== 'running') continue;
 
       // Check if this experiment targets the current page
-      var targets = exp.target_pages || [];
+      // Support both "target_pages" (dashboard-created) and "pages" (JSON-seeded)
+      var targets = exp.target_pages || exp.pages || [];
       var targeted = targets.length === 0; // empty = all pages
       if (!targeted) {
         for (var t = 0; t < targets.length; t++) {

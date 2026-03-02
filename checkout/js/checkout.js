@@ -435,7 +435,8 @@
     var cepBtn = document.querySelector('.cep-btn');
     if (cepBtn) cepBtn.textContent = '...';
 
-    fetch('https://viacep.com.br/ws/' + cep + '/json/')
+    // Use server-side proxy to avoid CORS issues with ViaCEP
+    fetch('/api/cep.php?cep=' + cep)
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.erro) {
@@ -452,6 +453,7 @@
       })
       .catch(function() {
         unlockAddressFields();
+        showToast('CEP não encontrado. Digite o endereço manualmente.');
       })
       .finally(function() {
         if (cepBtn) cepBtn.textContent = 'Buscar';
@@ -547,7 +549,12 @@
           quantity: item.quantity
         };
       }),
-      trackingParameters: Object.assign({}, utms, { fbp: fbp, fbc: fbc, ttclid: ttclid }),
+      trackingParameters: (function() {
+        var tp = {};
+        for (var k in utms) { if (utms.hasOwnProperty(k)) tp[k] = utms[k]; }
+        tp.fbp = fbp; tp.fbc = fbc; tp.ttclid = ttclid;
+        return tp;
+      })(),
       metadata: {
         frete: selectedFrete,
         frete_type: getSelectedFreteType(),
