@@ -16,22 +16,20 @@ var Cart = {
 
   addItem: function(item) {
     var items = this.getItems();
-    var existing = null;
     for (var i = 0; i < items.length; i++) {
-      if (items[i].id === item.id) { existing = items[i]; break; }
+      if (items[i].id === item.id) {
+        // Item already in cart — don't add again
+        return items;
+      }
     }
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      items.push({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        oldPrice: item.oldPrice,
-        image: item.image,
-        quantity: 1
-      });
-    }
+    items.push({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      oldPrice: item.oldPrice,
+      image: item.image,
+      quantity: 1
+    });
     localStorage.setItem(this.KEY, JSON.stringify(items));
     return items;
   },

@@ -31,11 +31,23 @@ if (!$input) {
     exit;
 }
 
-// SkalePay sends: { id, status, amount, ... }
-// Possible statuses: paid, refused, refunded, pending, processing, waiting_payment
-$skTransactionId = $input['id'] ?? $input['transaction_id'] ?? $input['tid'] ?? '';
-$skStatus = $input['status'] ?? $input['current_status'] ?? '';
-$skAmount = $input['amount'] ?? $input['paid_amount'] ?? 0;
+// SkalePay sends TWO formats:
+// Wrapper format (postback):  { id, type, objectId, url, data: { id, status, amount, paidAt, ... } }
+// Direct format (legacy):     { id, status, amount, ... }
+// Detect wrapper format: if 'data' key exists and is an array/object with 'id', use it
+$txData = $input;
+if (isset($input['data']) && is_array($input['data']) && isset($input['data']['id'])) {
+    $txData = $input['data'];
+    writeLog('SKALEPAY_WEBHOOK_WRAPPER', [
+        'wrapper_id' => $input['id'] ?? '',
+        'type' => $input['type'] ?? '',
+        'inner_id' => $txData['id']
+    ]);
+}
+
+$skTransactionId = $txData['id'] ?? $txData['transaction_id'] ?? $txData['tid'] ?? '';
+$skStatus = $txData['status'] ?? $txData['current_status'] ?? '';
+$skAmount = $txData['amount'] ?? $txData['paid_amount'] ?? 0;
 
 writeLog('SKALEPAY_WEBHOOK_PARSED', [
     'transaction_id' => $skTransactionId,
@@ -100,7 +112,7 @@ if ($payment['status'] === 'paid') {
 }
 
 // Mark as paid
-$approvedAt = $input['date_updated'] ?? $input['paidAt'] ?? date('Y-m-d H:i:s');
+$approvedAt = $txData['paidAt'] ?? $txData['date_updated'] ?? $input['date_updated'] ?? date('Y-m-d H:i:s');
 $payments[$foundCode]['status'] = 'paid';
 $payments[$foundCode]['paid_at'] = $approvedAt;
 savePayments($payments);

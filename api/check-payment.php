@@ -49,10 +49,17 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
 
     if ($gatewayId) {
         $auth = 'Basic ' . base64_encode(SKALEPAY_API_KEY . ':x');
-        $response = apiGet(
-            SKALEPAY_API_URL . '/transactions/' . $gatewayId,
-            ['Accept: application/json', 'Authorization: ' . $auth]
-        );
+        $pollUrl = SKALEPAY_API_URL . '/transactions/' . $gatewayId;
+        $response = apiGet($pollUrl, ['Accept: application/json', 'Authorization: ' . $auth]);
+
+        writeLog('SKALEPAY_POLL', [
+            'payment_code' => $paymentCode,
+            'gateway_id' => $gatewayId,
+            'url' => $pollUrl,
+            'http_status' => $response['status'],
+            'sk_status' => $response['body']['status'] ?? 'N/A',
+            'error' => $response['error'] ?: 'none'
+        ]);
 
         if ($response['status'] === 200 && isset($response['body']['status'])) {
             $skStatus = $response['body']['status'];

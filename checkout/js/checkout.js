@@ -1,6 +1,6 @@
 /* ============================================
    Checkout - Mercado Livre Style
-   Steps, Cart, ViaCEP, PIX Payment, Tracking
+   5 Steps: Carrinho → Dados → Endereço → Envio → Pagamento
    ============================================ */
 
 (function() {
@@ -19,10 +19,9 @@
      INIT
      ═══════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', function() {
-    renderCartBar();
-    renderCartExpand();
     initTimer();
     initInputMasks();
+    renderCartPage();
 
     // If cart is empty, redirect back
     if (Cart.getCount() === 0) {
@@ -32,57 +31,65 @@
   });
 
   /* ═══════════════════════════════════════
-     CART BAR (compact top bar)
+     CART PAGE (Step 1 - dedicated)
      ═══════════════════════════════════════ */
-  function renderCartBar() {
-    var countEl = document.getElementById('cart-bar-count');
-    var totalEl = document.getElementById('cart-bar-total');
-
-    if (countEl) countEl.textContent = Cart.getCount();
-    if (totalEl) totalEl.textContent = formatPrice(Cart.getSubtotal() + selectedFrete);
-  }
-
-  function renderCartExpand() {
-    var container = document.getElementById('cart-expand-items');
+  function renderCartPage() {
+    var container = document.getElementById('cart-items');
+    var totalEl = document.getElementById('cart-page-total');
     if (!container) return;
 
     var items = Cart.getItems();
     container.innerHTML = '';
 
+    if (items.length === 0) {
+      container.innerHTML =
+        '<div class="cart-empty">' +
+          '<svg width="48" height="48" viewBox="0 0 24 24" fill="#999"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A.996.996 0 0020.01 4H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25z"/></svg>' +
+          '<p>Seu carrinho está vazio</p>' +
+          '<a href="#" onclick="goToRecompensas(); return false;" class="cart-empty-btn">Ver produtos</a>' +
+        '</div>';
+      if (totalEl) totalEl.textContent = 'R$ 0,00';
+      return;
+    }
+
     items.forEach(function(item) {
       var div = document.createElement('div');
-      div.className = 'cart-expand-item';
+      div.className = 'cart-item';
+
+      var oldPriceHtml = '';
+      if (item.oldPrice && item.oldPrice > item.price) {
+        oldPriceHtml = '<span class="cart-item-old-price">' + formatPrice(item.oldPrice) + '</span>';
+      }
+
       div.innerHTML =
-        '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '">' +
-        '<div class="cart-expand-item-info">' +
-          '<div class="cart-expand-item-name">' + escapeHtml(item.name) + '</div>' +
-          '<div class="cart-expand-item-meta">' + item.quantity + ' un.</div>' +
-        '</div>' +
-        '<span class="cart-expand-item-price">' + formatPrice(item.price * item.quantity) + '</span>' +
-        '<button class="cart-expand-item-remove" data-id="' + escapeHtml(item.id) + '" title="Remover">&times;</button>';
+        '<img class="cart-item-img" src="' + escapeHtml(item.image || '') + '" alt="' + escapeHtml(item.name) + '">' +
+        '<div class="cart-item-body">' +
+          '<div class="cart-item-name">' + escapeHtml(item.name) + '</div>' +
+          '<div class="cart-item-prices">' +
+            oldPriceHtml +
+            '<span class="cart-item-price">' + formatPrice(item.price) + '</span>' +
+          '</div>' +
+          '<div class="cart-item-qty">Quantidade: ' + (item.quantity || 1) + '</div>' +
+          '<button class="cart-item-remove" data-id="' + escapeHtml(item.id) + '">Eliminar</button>' +
+        '</div>';
       container.appendChild(div);
     });
 
     // Bind remove buttons
-    container.querySelectorAll('.cart-expand-item-remove').forEach(function(btn) {
+    container.querySelectorAll('.cart-item-remove').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
-        e.stopPropagation();
+        e.preventDefault();
         Cart.removeItem(this.getAttribute('data-id'));
-        renderCartBar();
-        renderCartExpand();
+        renderCartPage();
         if (Cart.getCount() === 0) {
           window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
         }
       });
     });
-  }
 
-  window.toggleCartExpand = function() {
-    var expand = document.getElementById('cart-expand');
-    var chevron = document.getElementById('cart-bar-chevron');
-    if (expand) expand.classList.toggle('open');
-    if (chevron) chevron.classList.toggle('open');
-  };
+    // Update total
+    if (totalEl) totalEl.textContent = formatPrice(Cart.getSubtotal());
+  }
 
   window.goToRecompensas = function() {
     window.location.href = resolveUrl('/recompensas/index.html') + getUTMQueryString();
@@ -129,20 +136,8 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Show/hide cart bar (hide on step 4 - payment)
-    var cartBar = document.getElementById('cart-bar');
-    var cartExpand = document.getElementById('cart-expand');
-    if (cartBar) cartBar.style.display = step === 4 ? 'none' : '';
-    if (cartExpand) {
-      cartExpand.classList.remove('open');
-      if (step === 4) cartExpand.style.display = 'none';
-      else cartExpand.style.display = '';
-    }
-    var chevron = document.getElementById('cart-bar-chevron');
-    if (chevron) chevron.classList.remove('open');
-
     // Save customer data for UP page
-    if (step >= 2) {
+    if (step >= 3) {
       localStorage.setItem('ml_customer_data', JSON.stringify({
         email: getValue('email'),
         name: getValue('nome'),
@@ -151,17 +146,11 @@
       }));
     }
 
-    // Step 3: auto-show shipping options (they were hidden until CEP was filled)
-    if (step === 3) {
-      var shippingCard = document.getElementById('step-3');
-      // Shipping is always visible on its own page
-    }
-
-    // Step 4: show REVIEW first (not PIX yet)
-    if (step === 4) {
+    // Step 5: show REVIEW first (not PIX yet)
+    if (step === 5) {
       renderReview();
-      var reviewEl = document.getElementById('step-4-review');
-      var pixEl = document.getElementById('step-4-pix');
+      var reviewEl = document.getElementById('step-5-review');
+      var pixEl = document.getElementById('step-5-pix');
       if (reviewEl) reviewEl.style.display = 'block';
       if (pixEl) pixEl.style.display = 'none';
     }
@@ -169,10 +158,10 @@
 
   window.goBack = function() {
     if (currentStep > 1) {
-      // If on PIX view within step 4, go back to review (not previous step)
-      var pixEl = document.getElementById('step-4-pix');
-      var reviewEl = document.getElementById('step-4-review');
-      if (currentStep === 4 && pixEl && pixEl.style.display !== 'none') {
+      // If on PIX view within step 5, go back to review (not previous step)
+      var pixEl = document.getElementById('step-5-pix');
+      var reviewEl = document.getElementById('step-5-review');
+      if (currentStep === 5 && pixEl && pixEl.style.display !== 'none') {
         pixEl.style.display = 'none';
         if (reviewEl) reviewEl.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -186,8 +175,8 @@
      CONFIRM AND PAY (Review → PIX transition)
      ═══════════════════════════════════════ */
   window.confirmAndPay = function() {
-    var reviewEl = document.getElementById('step-4-review');
-    var pixEl = document.getElementById('step-4-pix');
+    var reviewEl = document.getElementById('step-5-review');
+    var pixEl = document.getElementById('step-5-pix');
 
     // Hide review, show PIX view
     if (reviewEl) reviewEl.style.display = 'none';
@@ -293,6 +282,11 @@
     clearErrors();
 
     if (step === 1) {
+      // Cart: just ensure cart isn't empty
+      return Cart.getCount() > 0;
+    }
+
+    if (step === 2) {
       var email = getValue('email');
       var nome = getValue('nome');
       var cpf = getValue('cpf');
@@ -318,7 +312,7 @@
       return valid;
     }
 
-    if (step === 2) {
+    if (step === 3) {
       /* No strict blocking — accept any data to not lose leads */
       return true;
     }
@@ -409,8 +403,6 @@
         el.placeholder = 'Digite aqui';
       }
     });
-    var shippingCard = document.getElementById('shipping-card');
-    if (shippingCard) shippingCard.style.display = '';
   }
 
   window.buscarCEP = function() {
@@ -431,9 +423,6 @@
         setField('bairro', data.bairro || '');
         setField('cidade', data.localidade || '');
         setField('uf', data.uf || '');
-
-        var shippingCard = document.getElementById('shipping-card');
-        if (shippingCard) shippingCard.style.display = '';
 
         var numEl = document.getElementById('numero');
         if (numEl) numEl.focus();
@@ -470,7 +459,6 @@
       radio.checked = true;
       radio.closest('.ship-opt').classList.add('selected');
     }
-    renderCartBar();
   };
 
   /* ═══════════════════════════════════════
@@ -659,7 +647,7 @@
     var copySuccess = function() {
       if (btn) {
         btn.classList.add('copied');
-        btn.textContent = '✓ Código copiado!';
+        btn.textContent = '\u2713 Código copiado!';
 
         setTimeout(function() {
           btn.classList.remove('copied');
@@ -861,8 +849,6 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
-
-  /* Social proof disabled for cleaner checkout */
 
   /* ═══════════════════════════════════════
      TOAST
