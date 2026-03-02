@@ -1713,11 +1713,11 @@ if ($isAuthenticated) {
 
             // Mark as Paid / Re-fire button
             if (payment.status === 'paid') {
-                html += `<button class="btn-mark-paid refire" onclick="markAsPaid('${pc}', true)" id="markPaidBtn">
+                html += `<button class="btn-mark-paid refire" onclick="markAsPaid('${esc(paymentCode)}', true)" id="markPaidBtn">
                     &#x21BB; Reenviar pixels (UTMify, FB, TikTok)
                 </button>`;
             } else {
-                html += `<button class="btn-mark-paid" onclick="markAsPaid('${pc}', false)" id="markPaidBtn">
+                html += `<button class="btn-mark-paid" onclick="markAsPaid('${esc(paymentCode)}', false)" id="markPaidBtn">
                     &#x2713; Marcar como Pago + Disparar Pixels
                 </button>`;
             }
