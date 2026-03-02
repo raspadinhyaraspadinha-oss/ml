@@ -737,6 +737,20 @@
       .then(function(data) {
         if (data.status === 'paid') {
           onPaymentConfirmed();
+        } else if (data.status === 'failed') {
+          // Payment failed at gateway level - show error and allow retry
+          if (pollingInterval) clearInterval(pollingInterval);
+          var statusEl = document.getElementById('payment-status');
+          if (statusEl) {
+            statusEl.classList.remove('checking');
+            statusEl.innerHTML = '<div style="color:#ef4444;text-align:center;padding:1rem 0">' +
+              '<div style="font-size:1.3rem;margin-bottom:0.5rem">⚠️ Erro no pagamento</div>' +
+              '<div style="font-size:0.9rem;color:#fca5a5;margin-bottom:1rem">O banco retornou um erro ao processar o PIX. Isso pode acontecer por instabilidade momentânea.</div>' +
+              '<button onclick="location.reload()" style="background:#3b82f6;color:#fff;border:none;padding:0.7rem 2rem;border-radius:8px;font-size:0.95rem;cursor:pointer;font-weight:600">Tentar novamente</button>' +
+              '</div>';
+          }
+          var btn = document.getElementById('check-btn');
+          if (btn) btn.style.display = 'none';
         } else if (manual) {
           var btn = document.getElementById('check-btn');
           if (btn) {

@@ -41,6 +41,17 @@ if ($payment['status'] === 'paid') {
     exit;
 }
 
+// If already failed, return immediately with reason
+if ($payment['status'] === 'failed') {
+    echo json_encode([
+        'status' => 'failed',
+        'payment_code' => $paymentCode,
+        'fail_reason' => $payment['fail_reason'] ?? 'gateway_error',
+        'failed_at' => $payment['failed_at'] ?? null
+    ]);
+    exit;
+}
+
 // ── SkalePay: poll API for real-time status ──
 $gateway = $payment['gateway'] ?? 'mangofy';
 
@@ -83,7 +94,55 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
                 ]);
                 exit;
             }
+
+            // Detect SkalePay error/refused statuses via polling
+            $skErrorStatuses = ['refused', 'error', 'chargedback', 'cancelled', 'expired', 'failed'];
+            if (in_array($skStatus, $skErrorStatuses)) {
+                $payments[$paymentCode]['status'] = 'failed';
+                $payments[$paymentCode]['failed_at'] = date('Y-m-d H:i:s');
+                $payments[$paymentCode]['fail_reason'] = $skStatus;
+                savePayments($payments);
+
+                writeLog('SKALEPAY_POLL_FALHOU', [
+                    'payment_code' => $paymentCode,
+                    'gateway_id' => $gatewayId,
+                    'motivo' => $skStatus
+                ]);
+
+                echo json_encode([
+                    'status' => 'failed',
+                    'payment_code' => $paymentCode,
+                    'fail_reason' => $skStatus
+                ]);
+                exit;
+            }
         }
+    }
+}
+
+// ── Mangofy: check for stale pending payments (no webhook after 30min = likely failed) ──
+if ($gateway === 'mangofy' && $payment['status'] === 'pending') {
+    $createdAt = strtotime($payment['created_at'] ?? '');
+    $minutesElapsed = $createdAt ? (time() - $createdAt) / 60 : 0;
+
+    // After 60 minutes without approval, mark as expired
+    if ($minutesElapsed > 60) {
+        $payments[$paymentCode]['status'] = 'failed';
+        $payments[$paymentCode]['failed_at'] = date('Y-m-d H:i:s');
+        $payments[$paymentCode]['fail_reason'] = 'expired_no_payment';
+        savePayments($payments);
+
+        writeLog('MANGOFY_PIX_EXPIRADO', [
+            'payment_code' => $paymentCode,
+            'minutos_desde_criacao' => round($minutesElapsed, 1)
+        ]);
+
+        echo json_encode([
+            'status' => 'failed',
+            'payment_code' => $paymentCode,
+            'fail_reason' => 'expired_no_payment'
+        ]);
+        exit;
     }
 }
 
@@ -91,7 +150,7 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
 echo json_encode([
     'status' => $payment['status'],
     'payment_code' => $paymentCode,
-    'paid_at' => $payment['paid_at']
+    'paid_at' => $payment['paid_at'] ?? null
 ]);
 
 // fireApprovalTracking() is now in config.php (shared)

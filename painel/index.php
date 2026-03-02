@@ -458,6 +458,7 @@ if ($isAuthenticated) {
         }
         .badge-paid { background: #064e3b; color: #34d399; }
         .badge-pending { background: #78350f44; color: #fbbf24; }
+        .badge-failed { background: #450a0a44; color: #f87171; }
         .badge-mg { background: #05966920; color: #34d399; }
         .badge-sk { background: #7c3aed20; color: #a78bfa; }
 
@@ -929,6 +930,13 @@ if ($isAuthenticated) {
             <input type="date" id="dateTo" value="<?php echo $defaultTo; ?>">
             <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filtrar</button>
             <button class="btn btn-secondary btn-sm" onclick="resetFilters()">Limpar</button>
+            <label style="margin-left:0.5rem">Status:</label>
+            <select id="statusFilter" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.4rem 0.6rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="applyFilters()">
+                <option value="all">Todos</option>
+                <option value="paid">Pagos</option>
+                <option value="pending">Pendentes</option>
+                <option value="failed">Falhas</option>
+            </select>
             <div style="flex:1"></div>
             <button class="btn btn-secondary btn-sm" onclick="exportCSV()">Exportar CSV</button>
         </div>
@@ -958,6 +966,10 @@ if ($isAuthenticated) {
             <div class="kpi-card">
                 <div class="kpi-label">Ticket Medio</div>
                 <div class="kpi-value" id="kpiTicket">-</div>
+            </div>
+            <div class="kpi-card" style="border-top:2px solid #ef4444">
+                <div class="kpi-label">Falhas Gateway</div>
+                <div class="kpi-value" style="color:#f87171" id="kpiFalhas">0</div>
             </div>
         </div>
 
@@ -1222,6 +1234,7 @@ if ($isAuthenticated) {
                         <button class="api-filter-btn active" data-tt-filter="all" onclick="filterTTSales('all')">Todas</button>
                         <button class="api-filter-btn" data-tt-filter="paid" onclick="filterTTSales('paid')">Pagas</button>
                         <button class="api-filter-btn" data-tt-filter="pending" onclick="filterTTSales('pending')">Pendentes</button>
+                        <button class="api-filter-btn" data-tt-filter="failed" onclick="filterTTSales('failed')">Falhas</button>
                     </div>
                 </div>
                 <div class="table-scroll">
@@ -1489,11 +1502,13 @@ if ($isAuthenticated) {
     function applyFilters() {
         const from = document.getElementById('dateFrom').value;
         const to = document.getElementById('dateTo').value;
+        const statusFilter = document.getElementById('statusFilter')?.value || 'all';
 
         filteredPayments = RAW_PAYMENTS.filter(p => {
             const d = getDateStr(p.created_at);
             if (from && d < from) return false;
             if (to && d > to) return false;
+            if (statusFilter !== 'all' && p.status !== statusFilter) return false;
             return true;
         });
 
@@ -1512,6 +1527,8 @@ if ($isAuthenticated) {
     function resetFilters() {
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
+        const sf = document.getElementById('statusFilter');
+        if (sf) sf.value = 'all';
         filteredPayments = [...RAW_PAYMENTS];
         filteredPageviews = [...RAW_PAGEVIEWS];
         salesPage = 1;
@@ -1524,6 +1541,7 @@ if ($isAuthenticated) {
         const totalViews = filteredPageviews.length;
         const totalPix = filteredPayments.length;
         const totalPaid = filteredPayments.filter(p => p.status === 'paid').length;
+        const totalFailed = filteredPayments.filter(p => p.status === 'failed').length;
         const cvr = totalPix > 0 ? ((totalPaid / totalPix) * 100).toFixed(1) : '0.0';
         const totalRevenue = filteredPayments.filter(p => p.status === 'paid')
             .reduce((s, p) => s + (p.amount || 0), 0);
@@ -1535,6 +1553,10 @@ if ($isAuthenticated) {
         document.getElementById('kpiCvr').textContent = cvr + '%';
         document.getElementById('kpiReceita').textContent = formatBRL(totalRevenue);
         document.getElementById('kpiTicket').textContent = formatBRL(ticket);
+
+        // Show failed count if any
+        const failedEl = document.getElementById('kpiFalhas');
+        if (failedEl) failedEl.textContent = totalFailed.toLocaleString('pt-BR');
     }
 
     // ── Chart: Bar (Sales / Revenue by Day) ──
@@ -1851,8 +1873,8 @@ if ($isAuthenticated) {
 
         tbody.innerHTML = pageData.map(p => {
             const items = (p.items || []).map(i => esc((i.name || 'Produto') + ' x' + (i.quantity || 1))).join(', ');
-            const statusCls = p.status === 'paid' ? 'badge-paid' : 'badge-pending';
-            const statusLabel = p.status === 'paid' ? 'Pago' : 'Pendente';
+            const statusCls = p.status === 'paid' ? 'badge-paid' : p.status === 'failed' ? 'badge-failed' : 'badge-pending';
+            const statusLabel = p.status === 'paid' ? 'Pago' : p.status === 'failed' ? 'Falhou' : 'Pendente';
             const gw = (p.gateway || 'mangofy').toLowerCase();
             const gwCls = gw === 'skalepay' ? 'badge-sk' : 'badge-mg';
             const gwLabel = gw === 'skalepay' ? 'SkalePay' : 'Mangofy';
@@ -2130,7 +2152,7 @@ if ($isAuthenticated) {
                     <h4>Pagamento</h4>
                     <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace;font-size:0.76rem">${esc(paymentCode)}</span></div>
                     <div class="detail-row"><span class="label">Valor</span><span class="value">${formatBRL(payment.amount || 0)}</span></div>
-                    <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge ${payment.status==='paid'?'badge-paid':'badge-pending'}">${payment.status==='paid'?'Pago':'Pendente'}</span></span></div>
+                    <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge ${payment.status==='paid'?'badge-paid':payment.status==='failed'?'badge-failed':'badge-pending'}">${payment.status==='paid'?'Pago':payment.status==='failed'?'Falhou'+(payment.fail_reason?' ('+esc(payment.fail_reason)+')':''):'Pendente'}</span></span></div>
                     <div class="detail-row"><span class="label">Gateway</span><span class="value"><span class="badge ${(payment.gateway||'mangofy')==='skalepay'?'badge-sk':'badge-mg'}">${(payment.gateway||'mangofy')==='skalepay'?'SkalePay':'Mangofy'}</span></span></div>
                     <div class="detail-row"><span class="label">Criado</span><span class="value">${formatDateBR(payment.created_at)}</span></div>
                     <div class="detail-row"><span class="label">Pago em</span><span class="value">${formatDateBR(payment.paid_at)}</span></div>
@@ -2553,6 +2575,7 @@ if ($isAuthenticated) {
         const total = payments.length;
         const paid = payments.filter(p => p.status === 'paid');
         const pending = payments.filter(p => p.status === 'pending');
+        const failed = payments.filter(p => p.status === 'failed');
 
         const timings = [];
         paid.forEach(p => {
@@ -2567,17 +2590,22 @@ if ($isAuthenticated) {
 
         const mgTotal = payments.filter(p => (p.gateway||'mangofy') === 'mangofy').length;
         const mgPaid = payments.filter(p => (p.gateway||'mangofy') === 'mangofy' && p.status === 'paid').length;
+        const mgFailed = payments.filter(p => (p.gateway||'mangofy') === 'mangofy' && p.status === 'failed').length;
         const skTotal = payments.filter(p => p.gateway === 'skalepay').length;
         const skPaid = payments.filter(p => p.gateway === 'skalepay' && p.status === 'paid').length;
+        const skFailed = payments.filter(p => p.gateway === 'skalepay' && p.status === 'failed').length;
 
         let html = '';
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Total PIX</span><span class="analytics-stat-value">${total}</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pagos</span><span class="analytics-stat-value good">${paid.length}</span></div>`;
+        if (failed.length > 0) {
+            html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Falhas Gateway</span><span class="analytics-stat-value bad">${failed.length} (${total>0?((failed.length/total)*100).toFixed(1):0}%)</span></div>`;
+        }
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Abandono</span><span class="analytics-stat-value bad">${total > 0 ? ((pending.length/total)*100).toFixed(1) : 0}%</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Tempo mediano</span><span class="analytics-stat-value">${median.toFixed(1)} min</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pagam <5min</span><span class="analytics-stat-value">${timings.length > 0 ? ((under5/timings.length)*100).toFixed(0) : 0}%</span></div>`;
-        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Mangofy</span><span class="analytics-stat-value">${mgPaid}/${mgTotal} (${mgTotal>0?((mgPaid/mgTotal)*100).toFixed(1):0}%)</span></div>`;
-        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">SkalePay</span><span class="analytics-stat-value">${skPaid}/${skTotal} (${skTotal>0?((skPaid/skTotal)*100).toFixed(1):0}%)</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Mangofy</span><span class="analytics-stat-value">${mgPaid}/${mgTotal} (${mgTotal>0?((mgPaid/mgTotal)*100).toFixed(1):0}%)${mgFailed?' <span style="color:#f87171;font-size:0.65rem">'+mgFailed+' falha(s)</span>':''}</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">SkalePay</span><span class="analytics-stat-value">${skPaid}/${skTotal} (${skTotal>0?((skPaid/skTotal)*100).toFixed(1):0}%)${skFailed?' <span style="color:#f87171;font-size:0.65rem">'+skFailed+' falha(s)</span>':''}</span></div>`;
         container.innerHTML = html;
     }
 
@@ -3126,7 +3154,8 @@ if ($isAuthenticated) {
     function renderTTSales() {
         let ttPayments = getTikTokPayments();
         if (ttSalesFilter === 'paid') ttPayments = ttPayments.filter(p => p.status === 'paid');
-        else if (ttSalesFilter === 'pending') ttPayments = ttPayments.filter(p => p.status !== 'paid');
+        else if (ttSalesFilter === 'pending') ttPayments = ttPayments.filter(p => p.status === 'pending');
+        else if (ttSalesFilter === 'failed') ttPayments = ttPayments.filter(p => p.status === 'failed');
 
         const data = [...ttPayments].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
         const tbody = document.getElementById('ttSalesBody');
@@ -3146,8 +3175,8 @@ if ($isAuthenticated) {
 
         tbody.innerHTML = pageData.map(p => {
             const t = p.tracking || {};
-            const statusCls = p.status === 'paid' ? 'badge-paid' : 'badge-pending';
-            const statusLabel = p.status === 'paid' ? 'Pago' : 'Pendente';
+            const statusCls = p.status === 'paid' ? 'badge-paid' : p.status === 'failed' ? 'badge-failed' : 'badge-pending';
+            const statusLabel = p.status === 'paid' ? 'Pago' : p.status === 'failed' ? 'Falhou' : 'Pendente';
             const pc = esc(p.payment_code || '');
             const ttclid = t.ttclid ? t.ttclid.substring(0, 12) + '...' : '-';
 

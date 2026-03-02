@@ -60,18 +60,64 @@ if (empty($skTransactionId)) {
     exit;
 }
 
-// Only process if paid
-if ($skStatus !== 'paid') {
-    writeLog('SKALEPAY_WEBHOOK_IGNORADO', [
-        'motivo' => 'status_nao_e_paid',
-        'status_recebido' => $skStatus,
-        'transaction_id' => $skTransactionId
-    ]);
-    echo json_encode(['status' => 'ok', 'message' => 'status not paid: ' . $skStatus]);
+// ── Handle ERROR statuses ──
+$skErrorStatuses = ['refused', 'error', 'chargedback', 'cancelled', 'expired', 'failed'];
+if (in_array($skStatus, $skErrorStatuses)) {
+    $payments = getPayments();
+    $foundCode = null;
+    foreach ($payments as $code => $payment) {
+        if (($payment['gateway'] ?? '') === 'skalepay' && ($payment['gateway_id'] ?? '') == $skTransactionId) { $foundCode = $code; break; }
+    }
+    if (!$foundCode) { $possibleCode = 'sk_' . $skTransactionId; if (isset($payments[$possibleCode])) $foundCode = $possibleCode; }
+
+    if ($foundCode && $payments[$foundCode]['status'] === 'pending') {
+        $payments[$foundCode]['status'] = 'failed';
+        $payments[$foundCode]['failed_at'] = date('Y-m-d H:i:s');
+        $payments[$foundCode]['fail_reason'] = $skStatus;
+        savePayments($payments);
+
+        writeLog('SKALEPAY_PAGAMENTO_FALHOU', [
+            'payment_code' => $foundCode,
+            'transaction_id' => $skTransactionId,
+            'motivo' => $skStatus,
+            'valor' => 'R$ ' . number_format(($payments[$foundCode]['amount'] ?? 0) / 100, 2, ',', '.')
+        ]);
+
+        // Notify UTMify
+        $payment = $payments[$foundCode];
+        $tracking = $payment['tracking'] ?? [];
+        $utmifyPayload = [
+            'orderId' => $foundCode, 'platform' => 'MercadoLivre25Anos', 'paymentMethod' => 'pix',
+            'status' => 'refused', 'createdAt' => $payment['created_at'] ?? date('Y-m-d H:i:s'),
+            'approvedDate' => null, 'refundedAt' => null,
+            'customer' => ['name' => strtoupper($payment['customer']['name'] ?? ''), 'email' => $payment['customer']['email'] ?? '',
+                'phone' => preg_replace('/\D/', '', $payment['customer']['phone'] ?? ''),
+                'document' => preg_replace('/\D/', '', $payment['customer']['document'] ?? ''), 'country' => 'BR', 'ip' => $payment['customer']['ip'] ?? '0.0.0.0'],
+            'products' => [['id' => $foundCode, 'name' => 'Pedido', 'planId' => 'order', 'planName' => 'Pedido', 'quantity' => 1, 'priceInCents' => $payment['amount'] ?? 0]],
+            'trackingParameters' => ['src' => $tracking['src'] ?? null, 'sck' => $tracking['sck'] ?? null,
+                'utm_source' => $tracking['utm_source'] ?? null, 'utm_campaign' => $tracking['utm_campaign'] ?? null,
+                'utm_medium' => $tracking['utm_medium'] ?? null, 'utm_content' => $tracking['utm_content'] ?? null, 'utm_term' => $tracking['utm_term'] ?? null],
+            'commission' => ['totalPriceInCents' => $payment['amount'] ?? 0, 'gatewayFeeInCents' => 0, 'userCommissionInCents' => $payment['amount'] ?? 0],
+            'isTest' => false
+        ];
+        apiPost(UTMIFY_API_URL, ['Content-Type: application/json', 'x-api-token: ' . UTMIFY_API_TOKEN], $utmifyPayload);
+    }
+    echo json_encode(['status' => 'ok', 'message' => 'error status recorded: ' . $skStatus]);
     exit;
 }
 
-// Find local payment by gateway_id (SkalePay transaction ID)
+// Ignore non-actionable statuses (waiting_payment, processing, etc.)
+if ($skStatus !== 'paid') {
+    writeLog('SKALEPAY_WEBHOOK_IGNORADO', [
+        'motivo' => 'status_nao_e_paid_nem_erro',
+        'status_recebido' => $skStatus,
+        'transaction_id' => $skTransactionId
+    ]);
+    echo json_encode(['status' => 'ok', 'message' => 'status ignored: ' . $skStatus]);
+    exit;
+}
+
+// ── Process PAID payments ──
 $payments = getPayments();
 $foundCode = null;
 
@@ -83,7 +129,6 @@ foreach ($payments as $code => $payment) {
 }
 
 if (!$foundCode) {
-    // Try matching by payment_code pattern: sk_{transaction_id}
     $possibleCode = 'sk_' . $skTransactionId;
     if (isset($payments[$possibleCode])) {
         $foundCode = $possibleCode;

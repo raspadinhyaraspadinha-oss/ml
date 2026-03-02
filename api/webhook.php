@@ -31,17 +31,72 @@ writeLog('WEBHOOK_RECEBIDO', [
     'status' => $paymentStatus
 ]);
 
-// Only process if approved
-if ($paymentStatus !== 'approved') {
-    echo json_encode(['status' => 'ok', 'message' => 'not approved']);
+// ── Handle ERROR statuses (gateway_error, refused, expired, cancelled) ──
+$errorStatuses = ['gateway_error', 'refused', 'expired', 'cancelled', 'chargedback', 'error'];
+if (in_array($paymentStatus, $errorStatuses)) {
+    $payments = getPayments();
+    if (isset($payments[$paymentCode]) && $payments[$paymentCode]['status'] === 'pending') {
+        $payments[$paymentCode]['status'] = 'failed';
+        $payments[$paymentCode]['failed_at'] = date('Y-m-d H:i:s');
+        $payments[$paymentCode]['fail_reason'] = $paymentStatus;
+        savePayments($payments);
+
+        writeLog('MANGOFY_PAGAMENTO_FALHOU', [
+            'payment_code' => $paymentCode,
+            'motivo' => $paymentStatus,
+            'valor' => 'R$ ' . number_format(($payments[$paymentCode]['amount'] ?? 0) / 100, 2, ',', '.'),
+            'nome' => $payments[$paymentCode]['customer']['name'] ?? ''
+        ]);
+
+        // Notify UTMify about the failure
+        $payment = $payments[$paymentCode];
+        $tracking = $payment['tracking'] ?? [];
+        $utmifyPayload = [
+            'orderId' => $paymentCode,
+            'platform' => 'MercadoLivre25Anos',
+            'paymentMethod' => 'pix',
+            'status' => 'refused',
+            'createdAt' => $payment['created_at'] ?? date('Y-m-d H:i:s'),
+            'approvedDate' => null,
+            'refundedAt' => null,
+            'customer' => [
+                'name' => strtoupper($payment['customer']['name'] ?? ''),
+                'email' => $payment['customer']['email'] ?? '',
+                'phone' => preg_replace('/\D/', '', $payment['customer']['phone'] ?? ''),
+                'document' => preg_replace('/\D/', '', $payment['customer']['document'] ?? ''),
+                'country' => 'BR',
+                'ip' => $payment['customer']['ip'] ?? '0.0.0.0'
+            ],
+            'products' => [['id' => $paymentCode, 'name' => 'Pedido', 'planId' => 'order', 'planName' => 'Pedido', 'quantity' => 1, 'priceInCents' => $payment['amount'] ?? 0]],
+            'trackingParameters' => [
+                'src' => $tracking['src'] ?? null, 'sck' => $tracking['sck'] ?? null,
+                'utm_source' => $tracking['utm_source'] ?? null, 'utm_campaign' => $tracking['utm_campaign'] ?? null,
+                'utm_medium' => $tracking['utm_medium'] ?? null, 'utm_content' => $tracking['utm_content'] ?? null,
+                'utm_term' => $tracking['utm_term'] ?? null
+            ],
+            'commission' => ['totalPriceInCents' => $payment['amount'] ?? 0, 'gatewayFeeInCents' => 0, 'userCommissionInCents' => $payment['amount'] ?? 0],
+            'isTest' => false
+        ];
+        $utmifyResult = apiPost(UTMIFY_API_URL, ['Content-Type: application/json', 'x-api-token: ' . UTMIFY_API_TOKEN], $utmifyPayload);
+        writeApiEvent($paymentCode, 'refused', 'utmify', UTMIFY_API_URL, $utmifyResult['status'],
+            ['orderId' => $paymentCode, 'status' => 'refused', 'reason' => $paymentStatus],
+            $utmifyResult['body'] ?? $utmifyResult['raw'], $tracking,
+            $utmifyResult['status'] >= 200 && $utmifyResult['status'] < 300);
+    }
+    echo json_encode(['status' => 'ok', 'message' => 'error status recorded']);
     exit;
 }
 
-// Update local payment record
+// Ignore non-actionable statuses (waiting_payment, processing, etc.)
+if ($paymentStatus !== 'approved') {
+    echo json_encode(['status' => 'ok', 'message' => 'status ignored: ' . $paymentStatus]);
+    exit;
+}
+
+// ── Process APPROVED payments ──
 $payments = getPayments();
 
 if (!isset($payments[$paymentCode])) {
-    // Payment not found locally, still return 200
     echo json_encode(['status' => 'ok', 'message' => 'payment not found']);
     exit;
 }
