@@ -22,7 +22,6 @@
     renderCartBar();
     renderCartExpand();
     initTimer();
-    initSocialProof();
     initInputMasks();
 
     // If cart is empty, redirect back
@@ -130,20 +129,20 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Show/hide cart bar (hide on step 3)
+    // Show/hide cart bar (hide on step 4 - payment)
     var cartBar = document.getElementById('cart-bar');
     var cartExpand = document.getElementById('cart-expand');
-    if (cartBar) cartBar.style.display = step === 3 ? 'none' : '';
+    if (cartBar) cartBar.style.display = step === 4 ? 'none' : '';
     if (cartExpand) {
       cartExpand.classList.remove('open');
-      if (step === 3) cartExpand.style.display = 'none';
+      if (step === 4) cartExpand.style.display = 'none';
       else cartExpand.style.display = '';
     }
     var chevron = document.getElementById('cart-bar-chevron');
     if (chevron) chevron.classList.remove('open');
 
     // Save customer data for UP page
-    if (step === 2 || step === 3) {
+    if (step >= 2) {
       localStorage.setItem('ml_customer_data', JSON.stringify({
         email: getValue('email'),
         name: getValue('nome'),
@@ -152,12 +151,17 @@
       }));
     }
 
-    // Step 3: show REVIEW first (not PIX yet)
+    // Step 3: auto-show shipping options (they were hidden until CEP was filled)
     if (step === 3) {
+      var shippingCard = document.getElementById('step-3');
+      // Shipping is always visible on its own page
+    }
+
+    // Step 4: show REVIEW first (not PIX yet)
+    if (step === 4) {
       renderReview();
-      // Make sure review is visible, pix is hidden
-      var reviewEl = document.getElementById('step-3-review');
-      var pixEl = document.getElementById('step-3-pix');
+      var reviewEl = document.getElementById('step-4-review');
+      var pixEl = document.getElementById('step-4-pix');
       if (reviewEl) reviewEl.style.display = 'block';
       if (pixEl) pixEl.style.display = 'none';
     }
@@ -165,10 +169,10 @@
 
   window.goBack = function() {
     if (currentStep > 1) {
-      // If on PIX view, go back to review (not previous step)
-      var pixEl = document.getElementById('step-3-pix');
-      var reviewEl = document.getElementById('step-3-review');
-      if (currentStep === 3 && pixEl && pixEl.style.display !== 'none') {
+      // If on PIX view within step 4, go back to review (not previous step)
+      var pixEl = document.getElementById('step-4-pix');
+      var reviewEl = document.getElementById('step-4-review');
+      if (currentStep === 4 && pixEl && pixEl.style.display !== 'none') {
         pixEl.style.display = 'none';
         if (reviewEl) reviewEl.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -182,8 +186,8 @@
      CONFIRM AND PAY (Review → PIX transition)
      ═══════════════════════════════════════ */
   window.confirmAndPay = function() {
-    var reviewEl = document.getElementById('step-3-review');
-    var pixEl = document.getElementById('step-3-pix');
+    var reviewEl = document.getElementById('step-4-review');
+    var pixEl = document.getElementById('step-4-pix');
 
     // Hide review, show PIX view
     if (reviewEl) reviewEl.style.display = 'none';
@@ -858,75 +862,7 @@
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
-  /* ═══════════════════════════════════════
-     SOCIAL PROOF
-     ═══════════════════════════════════════ */
-  function initSocialProof() {
-    var people = [
-      { name: 'Carlos H. de São Paulo', img: '../images/carloshenrique.jpeg' },
-      { name: 'Felipe A. de Recife', img: '../images/felipeandrade.jpeg' },
-      { name: 'Isabela M. de Curitiba', img: '../images/isabelamonteiro.jpeg' },
-      { name: 'Ricardo M. de BH', img: '../images/ricardomoura.jpeg' },
-      { name: 'Tatiane F. do Rio', img: '../images/tatianefreitas.jpeg' },
-      { name: 'Daniel V. de Salvador', img: '../images/danielvasques.jpeg' },
-      { name: 'Letícia N. de Brasília', img: '../images/leticianunes.jpeg' },
-      { name: 'Lucas F. de Fortaleza', img: '../images/lucasferreira.jpeg' },
-      { name: 'Vanessa B. de Manaus', img: '../images/vanessabarros.jpeg' },
-      { name: 'Gabriela D. de Campinas', img: '../images/gabrieladuarte.jpeg' },
-      { name: 'Natália R. de Goiânia', img: '../images/nataliaribeiro.jpeg' },
-      { name: 'Bianca M. de Porto Alegre', img: '../images/biancamartins.jpeg' },
-      { name: 'Thaís G. de Florianópolis', img: '../images/thaisgomes.jpeg' },
-      { name: 'Simone O. de Belém', img: '../images/simoneoliveira.jpeg' },
-      { name: 'Carolina V. de Vitória', img: '../images/carolinavasconcelos.jpeg' },
-      { name: 'Ana Paula M. de Natal', img: '../images/anapaulamendes.jpg' },
-      { name: 'Mariana T. de Santos', img: '../images/marianatorres.jpg' },
-      { name: 'Larissa A. de Joinville', img: '../images/larissaaparecida.jpeg' },
-      { name: 'Renata L. de Ribeirão Preto', img: '../images/renatalima.jpeg' },
-      { name: 'Patrícia S. de Maceió', img: '../images/patriciasilva.jpeg' },
-      { name: 'Camila F. de Maceió', img: '../images/camilafernandes.jpeg' },
-      { name: 'Aline R. de Cuiabá', img: '../images/alinerocha.jpeg' }
-    ];
-
-    var actions = [
-      'acabou de finalizar a compra via PIX',
-      'resgatou o cupom de desconto',
-      'acabou de pagar via PIX',
-      'confirmou o pagamento PIX',
-      'concluiu a compra agora',
-      'adicionou itens ao carrinho'
-    ];
-
-    var timeAgo = [
-      'agora mesmo',
-      'há 1 minuto',
-      'há 2 minutos',
-      'há poucos segundos',
-      'agora mesmo'
-    ];
-
-    var el = document.getElementById('social-proof');
-    if (!el) return;
-
-    setTimeout(function() { showSocialNotification(); }, 4000);
-    setInterval(function() { showSocialNotification(); }, 8000);
-
-    function showSocialNotification() {
-      var person = people[Math.floor(Math.random() * people.length)];
-      var action = actions[Math.floor(Math.random() * actions.length)];
-      var time = timeAgo[Math.floor(Math.random() * timeAgo.length)];
-
-      var imgEl = el.querySelector('img');
-      var textEl = el.querySelector('p');
-      var timeEl = el.querySelector('.sp-time');
-
-      if (imgEl) { imgEl.src = person.img; imgEl.alt = person.name; }
-      if (textEl) { textEl.innerHTML = '<b>' + person.name + '</b> ' + action; }
-      if (timeEl) { timeEl.textContent = time; }
-
-      el.classList.add('show');
-      setTimeout(function() { el.classList.remove('show'); }, 4000);
-    }
-  }
+  /* Social proof disabled for cleaner checkout */
 
   /* ═══════════════════════════════════════
      TOAST

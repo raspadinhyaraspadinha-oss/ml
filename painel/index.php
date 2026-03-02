@@ -676,6 +676,22 @@ if ($isAuthenticated) {
         }
         .no-api-events { text-align: center; padding: 2rem; color: #52525b; font-size: 0.85rem; }
 
+        /* Mark as Paid button */
+        .btn-mark-paid {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1.25rem; border-radius: 8px; border: none;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #fff; font-family: inherit; font-size: 0.85rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        .btn-mark-paid:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        .btn-mark-paid:disabled { opacity: 0.5; cursor: wait; transform: none; box-shadow: none; }
+        .btn-mark-paid.refire {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+        }
+        .btn-mark-paid.refire:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+
         /* API filter tabs */
         .api-filters { display: flex; gap: 0.35rem; flex-wrap: wrap; }
         .api-filter-btn {
@@ -1695,6 +1711,17 @@ if ($isAuthenticated) {
                 </div>
             </div>`;
 
+            // Mark as Paid / Re-fire button
+            if (payment.status === 'paid') {
+                html += `<button class="btn-mark-paid refire" onclick="markAsPaid('${pc}', true)" id="markPaidBtn">
+                    &#x21BB; Reenviar pixels (UTMify, FB, TikTok)
+                </button>`;
+            } else {
+                html += `<button class="btn-mark-paid" onclick="markAsPaid('${pc}', false)" id="markPaidBtn">
+                    &#x2713; Marcar como Pago + Disparar Pixels
+                </button>`;
+            }
+
             // UTMs card
             const hasUtms = t.utm_source || t.utm_campaign || t.utm_medium || t.utm_content || t.utm_term || t.fbclid || t.src || t.sck;
             if (hasUtms) {
@@ -1810,6 +1837,47 @@ if ($isAuthenticated) {
         .catch(() => {
             showToast('Erro de rede ao trocar gateway', 'error');
             location.reload();
+        });
+    }
+
+    // ── Mark as Paid ──
+    function markAsPaid(paymentCode, isRefire) {
+        const action = isRefire ? 'reenviar todos os pixels' : 'marcar como PAGO e disparar todos os pixels';
+        if (!confirm(`Confirma ${action} para:\n${paymentCode}?`)) return;
+
+        const btn = document.getElementById('markPaidBtn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Processando...'; }
+
+        fetch('/api/mark-paid.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_code: paymentCode, password: 'ml2025' })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(isRefire ? 'Pixels reenviados com sucesso!' : 'Pagamento marcado como pago! Pixels disparados.', 'success');
+
+                // Update local data
+                const p = RAW_PAYMENTS.find(p => p.payment_code === paymentCode);
+                if (p) {
+                    p.status = 'paid';
+                    p.paid_at = data.approved_at;
+                }
+
+                // Refresh tables
+                applyFilters();
+
+                // Refresh modal
+                setTimeout(() => openSaleDetail(paymentCode), 500);
+            } else {
+                showToast('Erro: ' + (data.error || 'falha'), 'error');
+                if (btn) { btn.disabled = false; btn.textContent = isRefire ? '↻ Reenviar pixels' : '✓ Marcar como Pago'; }
+            }
+        })
+        .catch(() => {
+            showToast('Erro de rede', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = isRefire ? '↻ Reenviar pixels' : '✓ Marcar como Pago'; }
         });
     }
 
