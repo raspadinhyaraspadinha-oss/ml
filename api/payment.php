@@ -55,14 +55,18 @@ $activeGateway = getActiveGateway();
 function trySkalepay($cust, $amount, $items, $clientIp) {
     $auth = 'Basic ' . base64_encode(SKALEPAY_API_KEY . ':x');
 
+    // IMPORTANT: Gateway must NOT see product names (compliance).
+    // Use generic "Pedido" + sequential index only.
     $skItems = [];
+    $itemIdx = 1;
     foreach ($items as $item) {
         $skItems[] = [
             'tangible' => false,
-            'title' => $item['name'] ?? 'Produto',
+            'title' => 'Pedido Item ' . $itemIdx,
             'unitPrice' => intval($item['price'] ?? $amount),
             'quantity' => intval($item['quantity'] ?? 1)
         ];
+        $itemIdx++;
     }
     if (empty($skItems)) {
         $skItems[] = ['tangible' => false, 'title' => 'Pedido', 'unitPrice' => $amount, 'quantity' => 1];
@@ -160,13 +164,17 @@ function trySkalepay($cust, $amount, $items, $clientIp) {
 }
 
 function tryMangofy($cust, $amount, $items, $externalCode, $clientIp, $metadata) {
+    // IMPORTANT: Gateway must NOT see product names (compliance).
+    // Use generic codes only.
     $mangofyItems = [];
+    $itemIdx = 1;
     foreach ($items as $item) {
         $mangofyItems[] = [
-            'code' => 'ITEM-' . $externalCode . '-' . ($item['id'] ?? 'item'),
+            'code' => 'ITEM-' . $externalCode . '-' . $itemIdx,
             'amount' => intval($item['quantity'] ?? 1),
             'price' => intval($item['price'] ?? $amount)
         ];
+        $itemIdx++;
     }
     if (empty($mangofyItems)) {
         $mangofyItems[] = ['code' => 'ITEM-' . $externalCode, 'amount' => 1, 'price' => $amount];

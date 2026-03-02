@@ -1273,23 +1273,69 @@ if ($isAuthenticated) {
              TAB: ANALYTICS / FUNIL
              ═══════════════════════════════════════ -->
         <div class="dash-tab-panel" id="tab-analytics">
-            <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Funil de Conversao</div>
+            <!-- Analytics Header with Date Filter + Export -->
+            <div class="filter-bar" style="margin-bottom:1rem">
+                <label style="font-weight:600;color:#06b6d4">Analytics do Funil</label>
+                <div style="flex:1"></div>
+                <label>Fonte:</label>
+                <select id="analyticsSourceFilter" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.4rem 0.7rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="renderAnalytics()">
+                    <option value="all">Todas</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="organic">Organico</option>
+                </select>
+                <button class="btn btn-sm" style="background:#06468a;color:#38bdf8;border:1px solid #0369a1" onclick="exportAnalyticsCSV()">Exportar CSV</button>
+            </div>
+
+            <!-- Main KPIs -->
+            <div class="kpi-grid" id="analyticsKpis"></div>
 
             <!-- Funnel Visualization -->
             <div class="analytics-card" style="margin-bottom:1.5rem">
-                <h3><span class="dot" style="background:#3b82f6"></span> Visualizacao do Funil (Ultimos 7 dias)</h3>
+                <h3><span class="dot" style="background:#3b82f6"></span> Funil de Conversao (Dados combinados: Events + Payments)</h3>
                 <div class="funnel-viz" id="funnelViz"></div>
+                <div id="funnelConversionRates" style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #27272a;font-size:0.78rem;color:#a1a1aa"></div>
             </div>
 
-            <!-- KPI Row -->
-            <div class="kpi-grid" id="analyticsKpis"></div>
-
-            <!-- Analytics Grid: PIX Diagnostics + Form Errors -->
+            <!-- Row 1: Conversion Analysis -->
             <div class="analytics-grid">
+                <!-- Conversion Rates Step-by-Step -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#fbbf24"></span> Taxas de Conversao por Etapa</h3>
+                    <div id="conversionRates"></div>
+                </div>
+
                 <!-- PIX Diagnostics -->
                 <div class="analytics-card">
                     <h3><span class="dot" style="background:#a78bfa"></span> Diagnostico PIX</h3>
                     <div id="pixDiagnostics"></div>
+                </div>
+
+                <!-- Checkout Dropout -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#f87171"></span> Abandono no Checkout</h3>
+                    <div id="dropoffAnalysis"></div>
+                </div>
+
+                <!-- Top Products -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#34d399"></span> Produtos Mais Vistos</h3>
+                    <div id="topProductsViewed"></div>
+                </div>
+            </div>
+
+            <!-- Row 2: Behavior Analysis -->
+            <div class="analytics-grid">
+                <!-- Event Volume -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#60a5fa"></span> Volume de Eventos</h3>
+                    <div id="eventVolume"></div>
+                </div>
+
+                <!-- Source Performance -->
+                <div class="analytics-card">
+                    <h3><span class="dot" style="background:#06b6d4"></span> Performance por Fonte</h3>
+                    <div id="sourcePerformance"></div>
                 </div>
 
                 <!-- Form Errors -->
@@ -1298,37 +1344,41 @@ if ($isAuthenticated) {
                     <div class="form-err-list" id="formErrors"></div>
                 </div>
 
-                <!-- Drop-off Analysis -->
+                <!-- Time Analysis -->
                 <div class="analytics-card">
-                    <h3><span class="dot" style="background:#fbbf24"></span> Abandono por Etapa</h3>
-                    <div id="dropoffAnalysis"></div>
-                </div>
-
-                <!-- Top Events -->
-                <div class="analytics-card">
-                    <h3><span class="dot" style="background:#34d399"></span> Volume de Eventos</h3>
-                    <div id="eventVolume"></div>
+                    <h3><span class="dot" style="background:#fbbf24"></span> Horarios de Pico</h3>
+                    <div id="peakHours"></div>
                 </div>
             </div>
 
-            <!-- Session Timeline -->
-            <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Timeline de Sessoes Recentes</div>
+            <!-- Session Flow Explorer -->
+            <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Sessoes Completas (Jornada do Usuario)</div>
             <div class="analytics-card">
-                <h3><span class="dot" style="background:#60a5fa"></span> Ultimas 20 Sessoes</h3>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
+                    <h3 style="margin:0"><span class="dot" style="background:#60a5fa"></span> Ultimas 30 Sessoes</h3>
+                    <div class="api-filters">
+                        <button class="api-filter-btn active" data-session-filter="all" onclick="filterSessions('all')">Todas</button>
+                        <button class="api-filter-btn" data-session-filter="converted" onclick="filterSessions('converted')">Converteram</button>
+                        <button class="api-filter-btn" data-session-filter="abandoned" onclick="filterSessions('abandoned')">Abandonaram</button>
+                        <button class="api-filter-btn" data-session-filter="bounce" onclick="filterSessions('bounce')">Bounce</button>
+                    </div>
+                </div>
                 <div class="session-timeline" id="sessionTimeline"></div>
             </div>
 
-            <!-- Events Table -->
+            <!-- Raw Events Table -->
             <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Eventos Detalhados</div>
             <div class="table-wrap">
                 <div class="table-header">
-                    <h3>Ultimos Eventos de Analytics</h3>
-                    <div class="api-filters" id="analyticsFilters">
-                        <button class="api-filter-btn active" data-analytics-filter="all" onclick="filterAnalytics('all')">Todos</button>
-                        <button class="api-filter-btn" data-analytics-filter="funnel_view" onclick="filterAnalytics('funnel_view')">Funil</button>
-                        <button class="api-filter-btn" data-analytics-filter="checkout" onclick="filterAnalytics('checkout')">Checkout</button>
-                        <button class="api-filter-btn" data-analytics-filter="pix" onclick="filterAnalytics('pix')">PIX</button>
-                        <button class="api-filter-btn" data-analytics-filter="error" onclick="filterAnalytics('error')">Erros</button>
+                    <h3>Todos os Eventos de Analytics</h3>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                        <div class="api-filters" id="analyticsFilters">
+                            <button class="api-filter-btn active" data-analytics-filter="all" onclick="filterAnalytics('all')">Todos</button>
+                            <button class="api-filter-btn" data-analytics-filter="funnel_view" onclick="filterAnalytics('funnel_view')">Funil</button>
+                            <button class="api-filter-btn" data-analytics-filter="checkout" onclick="filterAnalytics('checkout')">Checkout</button>
+                            <button class="api-filter-btn" data-analytics-filter="pix" onclick="filterAnalytics('pix')">PIX</button>
+                            <button class="api-filter-btn" data-analytics-filter="error" onclick="filterAnalytics('error')">Erros</button>
+                        </div>
                     </div>
                 </div>
                 <div class="table-scroll">
@@ -2272,7 +2322,7 @@ if ($isAuthenticated) {
         if (btn) btn.classList.add('active');
         if (panel) panel.classList.add('active');
 
-        if (tabId === 'analytics' && !analyticsRendered) {
+        if (tabId === 'analytics') {
             renderAnalytics();
             analyticsRendered = true;
         }
@@ -2283,27 +2333,90 @@ if ($isAuthenticated) {
     }
 
     // ════════════════════════════════════════════
-    //  ANALYTICS TAB RENDERING
+    //  ANALYTICS TAB RENDERING (v2 - Deep Funnel)
     // ════════════════════════════════════════════
     let analyticsPage = 1;
     let analyticsFilter = 'all';
+    let sessionFilter = 'all';
+
+    // Helper: get filtered analytics based on source dropdown
+    function getFilteredAnalytics() {
+        const srcFilter = document.getElementById('analyticsSourceFilter')?.value || 'all';
+        if (srcFilter === 'all') return RAW_ANALYTICS;
+        return RAW_ANALYTICS.filter(e => {
+            const src = (e.utms?.utm_source || '').toLowerCase();
+            if (srcFilter === 'tiktok') return src.indexOf('tiktok') !== -1;
+            if (srcFilter === 'facebook') return src.indexOf('facebook') !== -1 || src.indexOf('fb') !== -1 || src.indexOf('ig') !== -1;
+            if (srcFilter === 'organic') return !src || src === '(direto)';
+            return true;
+        });
+    }
+
+    // Helper: get filtered payments based on source
+    function getFilteredPaymentsForAnalytics() {
+        const srcFilter = document.getElementById('analyticsSourceFilter')?.value || 'all';
+        if (srcFilter === 'all') return filteredPayments;
+        return filteredPayments.filter(p => {
+            const src = (p.tracking?.utm_source || '').toLowerCase();
+            if (srcFilter === 'tiktok') return src.indexOf('tiktok') !== -1 || p.tracking?.ttclid;
+            if (srcFilter === 'facebook') return src.indexOf('facebook') !== -1 || src.indexOf('fb') !== -1;
+            if (srcFilter === 'organic') return !src;
+            return true;
+        });
+    }
 
     function renderAnalytics() {
-        renderFunnel();
         renderAnalyticsKpis();
+        renderFunnel();
+        renderConversionRates();
         renderPixDiagnostics();
-        renderFormErrors();
         renderDropoff();
+        renderTopProductsViewed();
         renderEventVolume();
+        renderSourcePerformance();
+        renderFormErrors();
+        renderPeakHours();
         renderSessionTimeline();
         renderAnalyticsTable();
+    }
+
+    function renderAnalyticsKpis() {
+        const container = document.getElementById('analyticsKpis');
+        if (!container) return;
+        const events = getFilteredAnalytics();
+        const payments = getFilteredPaymentsForAnalytics();
+
+        const totalSessions = new Set(events.map(e => e.session_id).filter(Boolean)).size;
+        const totalEvents = events.length;
+        const funnelViews = events.filter(e => e.event === 'funnel_view');
+        const prevslViews = funnelViews.filter(e => (e.page || '').indexOf('prevsl') !== -1).length;
+        const checkoutViews = funnelViews.filter(e => (e.page || '').indexOf('checkout') !== -1).length;
+        const pixGenerated = payments.length;
+        const pixPaid = payments.filter(p => p.status === 'paid');
+        const totalRevenue = pixPaid.reduce((s, p) => s + (p.amount || 0), 0);
+        const pixRate = pixGenerated > 0 ? ((pixPaid.length / pixGenerated) * 100).toFixed(1) : '0.0';
+        const overallCvr = prevslViews > 0 ? ((pixPaid.length / prevslViews) * 100).toFixed(2) : '0.00';
+        const viewToCheckout = prevslViews > 0 ? ((checkoutViews / prevslViews) * 100).toFixed(1) : '0.0';
+        const formErrors = events.filter(e => e.event === 'form_error').length;
+
+        container.innerHTML = `
+            <div class="kpi-card" style="border-top:2px solid #60a5fa"><div class="kpi-label">Sessoes Unicas</div><div class="kpi-value blue">${totalSessions}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #a78bfa"><div class="kpi-label">Entrada Funil (prevsl)</div><div class="kpi-value purple">${prevslViews}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #fbbf24"><div class="kpi-label">Chegaram Checkout</div><div class="kpi-value yellow">${checkoutViews}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #06b6d4"><div class="kpi-label">View→Checkout</div><div class="kpi-value" style="color:#06b6d4">${viewToCheckout}%</div></div>
+            <div class="kpi-card" style="border-top:2px solid #34d399"><div class="kpi-label">PIX Pagos</div><div class="kpi-value green">${pixPaid.length} / ${pixGenerated}</div></div>
+            <div class="kpi-card" style="border-top:2px solid #10b981"><div class="kpi-label">Receita</div><div class="kpi-value green">${formatBRL(totalRevenue)}</div></div>
+            <div class="kpi-card" style="border-top:2px solid ${parseFloat(pixRate) >= 12 ? '#10b981' : '#f87171'}"><div class="kpi-label">PIX→Pago</div><div class="kpi-value" style="color:${parseFloat(pixRate) >= 12 ? '#34d399' : '#f87171'}">${pixRate}%</div></div>
+            <div class="kpi-card" style="border-top:2px solid ${parseFloat(overallCvr) >= 1 ? '#10b981' : '#f87171'}"><div class="kpi-label">CVR Total</div><div class="kpi-value" style="color:${parseFloat(overallCvr) >= 1 ? '#34d399' : '#f87171'}">${overallCvr}%</div></div>
+        `;
     }
 
     function renderFunnel() {
         const container = document.getElementById('funnelViz');
         if (!container) return;
+        const events = getFilteredAnalytics();
+        const payments = getFilteredPaymentsForAnalytics();
 
-        // Count events by funnel stage
         const stages = [
             { key: 'prevsl', label: 'Pre-VSL', color: '#60a5fa' },
             { key: 'vsl', label: 'VSL', color: '#818cf8' },
@@ -2312,52 +2425,59 @@ if ($isAuthenticated) {
             { key: 'recompensas', label: 'Recomp.', color: '#e879f9' },
             { key: 'produto', label: 'Produto', color: '#f472b6' },
             { key: 'checkout', label: 'Checkout', color: '#fbbf24' },
-            { key: 'pix', label: 'PIX', color: '#34d399' },
+            { key: 'pix', label: 'PIX Gerado', color: '#34d399' },
             { key: 'paid', label: 'Pago', color: '#10b981' }
         ];
 
-        const counts = {};
-        stages.forEach(s => counts[s.key] = 0);
+        // Count UNIQUE SESSIONS per funnel stage (not raw events)
+        const sessionStages = {};
+        stages.forEach(s => sessionStages[s.key] = new Set());
 
-        // Count from analytics events
-        RAW_ANALYTICS.forEach(evt => {
+        events.forEach(evt => {
+            const sid = evt.session_id || '';
             if (evt.event === 'funnel_view') {
-                const page = evt.data?.page || evt.page || '';
-                if (page.indexOf('prevsl') !== -1) counts.prevsl++;
-                else if (page.indexOf('vsl') !== -1 && page.indexOf('prevsl') === -1) counts.vsl++;
-                else if (page.indexOf('questionario') !== -1) counts.questionario++;
-                else if (page.indexOf('roleta') !== -1) counts.roleta++;
-                else if (page.indexOf('recompensas') !== -1) counts.recompensas++;
-                else if (page.indexOf('produto') !== -1) counts.produto++;
-                else if (page.indexOf('checkout') !== -1) counts.checkout++;
-            } else if (evt.event === 'GeneratePixCode' || evt.event === 'AddPaymentInfo') {
-                counts.pix++;
+                const page = evt.page || '';
+                if (page.indexOf('prevsl') !== -1) sessionStages.prevsl.add(sid);
+                else if (page === 'vsl' || (page.indexOf('vsl') !== -1 && page.indexOf('prevsl') === -1)) sessionStages.vsl.add(sid);
+                else if (page.indexOf('questionario') !== -1) sessionStages.questionario.add(sid);
+                else if (page.indexOf('roleta') !== -1) sessionStages.roleta.add(sid);
+                else if (page.indexOf('recompensas') !== -1) sessionStages.recompensas.add(sid);
+                else if (page.indexOf('produto') !== -1) sessionStages.produto.add(sid);
+                else if (page.indexOf('checkout') !== -1) sessionStages.checkout.add(sid);
+            } else if (evt.event === 'InitiateCheckout') {
+                sessionStages.checkout.add(sid);
+            } else if (evt.event === 'GeneratePixCode' || evt.event === 'CopyPixCode') {
+                sessionStages.pix.add(sid);
             } else if (evt.event === 'Purchase') {
-                counts.paid++;
+                sessionStages.paid.add(sid);
             }
         });
 
-        // Also count from payments data
-        if (counts.pix === 0) {
-            counts.pix = RAW_PAYMENTS.length;
-        }
-        if (counts.paid === 0) {
-            counts.paid = RAW_PAYMENTS.filter(p => p.status === 'paid').length;
-        }
+        // Use payments data for pix + paid (more reliable)
+        const counts = {};
+        stages.forEach(s => counts[s.key] = sessionStages[s.key].size);
+        // Always use payments for pix/paid counts as they're authoritative
+        counts.pix = Math.max(counts.pix, payments.length);
+        counts.paid = Math.max(counts.paid, payments.filter(p => p.status === 'paid').length);
 
         const maxCount = Math.max(...Object.values(counts), 1);
         const maxBarHeight = 160;
+        const entryCount = counts[stages[0].key] || 1;
 
         let html = '';
         stages.forEach((stage, idx) => {
             const count = counts[stage.key];
             const height = Math.max(4, (count / maxCount) * maxBarHeight);
-            const pct = counts[stages[0].key] > 0
-                ? ((count / counts[stages[0].key]) * 100).toFixed(1)
-                : '0.0';
+            const pct = ((count / entryCount) * 100).toFixed(1);
+            const dropPct = idx > 0 && counts[stages[idx-1].key] > 0
+                ? ((1 - count / counts[stages[idx-1].key]) * 100).toFixed(0)
+                : '';
 
             if (idx > 0) {
-                html += '<div class="funnel-arrow">&rarr;</div>';
+                html += `<div class="funnel-arrow" style="display:flex;flex-direction:column;align-items:center;padding-bottom:2rem">
+                    <span style="font-size:0.65rem;color:${parseInt(dropPct) > 50 ? '#f87171' : '#71717a'};white-space:nowrap">-${dropPct}%</span>
+                    <span>&rarr;</span>
+                </div>`;
             }
             html += `<div class="funnel-bar-wrap">
                 <div class="funnel-bar" style="height:${height}px;background:${stage.color}"></div>
@@ -2366,285 +2486,367 @@ if ($isAuthenticated) {
                 <div class="funnel-pct">${pct}%</div>
             </div>`;
         });
-
         container.innerHTML = html;
+
+        // Summary line
+        const ratesEl = document.getElementById('funnelConversionRates');
+        if (ratesEl) {
+            ratesEl.innerHTML = `<strong>Resumo:</strong> ${counts.prevsl} entraram &rarr; ${counts.checkout} checkout (${((counts.checkout/entryCount)*100).toFixed(1)}%) &rarr; ${counts.pix} PIX (${((counts.pix/entryCount)*100).toFixed(1)}%) &rarr; ${counts.paid} pagaram (${((counts.paid/entryCount)*100).toFixed(2)}%) &nbsp;|&nbsp; <strong style="color:#34d399">Ticket:</strong> ${formatBRL(payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount||0),0) / Math.max(counts.paid,1))}`;
+        }
     }
 
-    function renderAnalyticsKpis() {
-        const container = document.getElementById('analyticsKpis');
+    function renderConversionRates() {
+        const container = document.getElementById('conversionRates');
         if (!container) return;
+        const events = getFilteredAnalytics();
+        const payments = getFilteredPaymentsForAnalytics();
 
-        const totalSessions = new Set(RAW_ANALYTICS.map(e => e.session_id).filter(Boolean)).size;
-        const totalEvents = RAW_ANALYTICS.length;
-        const pixGenerated = RAW_PAYMENTS.length;
-        const pixPaid = RAW_PAYMENTS.filter(p => p.status === 'paid').length;
-        const pixRate = pixGenerated > 0 ? ((pixPaid / pixGenerated) * 100).toFixed(1) : '0.0';
-        const viewContentCount = RAW_ANALYTICS.filter(e => e.event === 'ViewContent').length;
-        const addToCartCount = RAW_ANALYTICS.filter(e => e.event === 'AddToCart').length;
-        const formErrors = RAW_ANALYTICS.filter(e => e.event === 'form_error').length;
+        // Build step-by-step conversion with drop-off analysis
+        const steps = [
+            { name: 'Pre-VSL', count: 0 },
+            { name: 'VSL', count: 0 },
+            { name: 'Quiz', count: 0 },
+            { name: 'Roleta', count: 0 },
+            { name: 'Recompensas', count: 0 },
+            { name: 'Produto', count: 0 },
+            { name: 'Checkout', count: 0 },
+            { name: 'PIX Gerado', count: payments.length },
+            { name: 'Pago', count: payments.filter(p => p.status === 'paid').length }
+        ];
 
-        container.innerHTML = `
-            <div class="kpi-card"><div class="kpi-label">Sessoes</div><div class="kpi-value blue">${totalSessions.toLocaleString('pt-BR')}</div></div>
-            <div class="kpi-card"><div class="kpi-label">Total Eventos</div><div class="kpi-value">${totalEvents.toLocaleString('pt-BR')}</div></div>
-            <div class="kpi-card"><div class="kpi-label">ViewContent</div><div class="kpi-value purple">${viewContentCount.toLocaleString('pt-BR')}</div></div>
-            <div class="kpi-card"><div class="kpi-label">AddToCart</div><div class="kpi-value yellow">${addToCartCount.toLocaleString('pt-BR')}</div></div>
-            <div class="kpi-card"><div class="kpi-label">PIX Conv.</div><div class="kpi-value ${parseFloat(pixRate) >= 15 ? 'green' : parseFloat(pixRate) >= 8 ? 'yellow' : ''}" style="${parseFloat(pixRate) < 8 ? 'color:#f87171' : ''}">${pixRate}%</div></div>
-            <div class="kpi-card"><div class="kpi-label">Erros Form</div><div class="kpi-value" style="color:#f87171">${formErrors}</div></div>
-        `;
+        // Count unique sessions per step
+        const sets = steps.map(() => new Set());
+        events.forEach(e => {
+            const sid = e.session_id || '';
+            const page = e.page || '';
+            if (e.event === 'funnel_view') {
+                if (page.indexOf('prevsl') !== -1) sets[0].add(sid);
+                else if (page === 'vsl' || (page.indexOf('vsl') !== -1 && page.indexOf('prevsl') === -1)) sets[1].add(sid);
+                else if (page.indexOf('questionario') !== -1) sets[2].add(sid);
+                else if (page.indexOf('roleta') !== -1) sets[3].add(sid);
+                else if (page.indexOf('recompensas') !== -1) sets[4].add(sid);
+                else if (page.indexOf('produto') !== -1) sets[5].add(sid);
+                else if (page.indexOf('checkout') !== -1) sets[6].add(sid);
+            }
+        });
+        for (let i = 0; i < 7; i++) steps[i].count = sets[i].size;
+
+        let html = '';
+        steps.forEach((step, i) => {
+            const prev = i > 0 ? steps[i-1].count : step.count;
+            const convRate = prev > 0 ? ((step.count / prev) * 100).toFixed(1) : '—';
+            const lost = i > 0 ? Math.max(0, prev - step.count) : 0;
+            const isBottleneck = i > 0 && prev > 0 && (step.count / prev) < 0.5;
+
+            html += `<div class="analytics-stat-row" style="${isBottleneck ? 'background:#450a0a22;border-radius:4px;padding:0.4rem 0.5rem;margin:0 -0.5rem' : ''}">
+                <span class="analytics-stat-label">${step.name}${isBottleneck ? ' <span style="color:#f87171;font-size:0.65rem">GARGALO</span>' : ''}</span>
+                <span class="analytics-stat-value">${step.count} <span style="color:#71717a;font-size:0.68rem">${i > 0 ? convRate + '% | -' + lost : ''}</span></span>
+            </div>`;
+        });
+        container.innerHTML = html;
     }
 
     function renderPixDiagnostics() {
         const container = document.getElementById('pixDiagnostics');
         if (!container) return;
+        const payments = getFilteredPaymentsForAnalytics();
+        const total = payments.length;
+        const paid = payments.filter(p => p.status === 'paid');
+        const pending = payments.filter(p => p.status === 'pending');
 
-        const total = RAW_PAYMENTS.length;
-        const paid = RAW_PAYMENTS.filter(p => p.status === 'paid');
-        const pending = RAW_PAYMENTS.filter(p => p.status === 'pending');
-
-        // Payment timing analysis
         const timings = [];
         paid.forEach(p => {
             if (p.created_at && p.paid_at) {
-                const created = new Date(p.created_at);
-                const paidAt = new Date(p.paid_at);
-                const diffMin = (paidAt - created) / 60000;
+                const diffMin = (new Date(p.paid_at) - new Date(p.created_at)) / 60000;
                 if (diffMin > 0 && diffMin < 1440) timings.push(diffMin);
             }
         });
-
         timings.sort((a, b) => a - b);
         const median = timings.length > 0 ? timings[Math.floor(timings.length / 2)] : 0;
-        const under2 = timings.filter(t => t <= 2).length;
         const under5 = timings.filter(t => t <= 5).length;
-        const under10 = timings.filter(t => t <= 10).length;
 
-        // Gateway split
-        const mgTotal = RAW_PAYMENTS.filter(p => (p.gateway || 'mangofy') === 'mangofy').length;
-        const mgPaid = RAW_PAYMENTS.filter(p => (p.gateway || 'mangofy') === 'mangofy' && p.status === 'paid').length;
-        const skTotal = RAW_PAYMENTS.filter(p => p.gateway === 'skalepay').length;
-        const skPaid = RAW_PAYMENTS.filter(p => p.gateway === 'skalepay' && p.status === 'paid').length;
-
-        const bars = [
-            { label: '<2min', count: under2, total: timings.length, color: '#10b981' },
-            { label: '<5min', count: under5, total: timings.length, color: '#34d399' },
-            { label: '<10min', count: under10, total: timings.length, color: '#fbbf24' },
-        ];
+        const mgTotal = payments.filter(p => (p.gateway||'mangofy') === 'mangofy').length;
+        const mgPaid = payments.filter(p => (p.gateway||'mangofy') === 'mangofy' && p.status === 'paid').length;
+        const skTotal = payments.filter(p => p.gateway === 'skalepay').length;
+        const skPaid = payments.filter(p => p.gateway === 'skalepay' && p.status === 'paid').length;
 
         let html = '';
-
-        // Stats
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Total PIX</span><span class="analytics-stat-value">${total}</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pagos</span><span class="analytics-stat-value good">${paid.length}</span></div>`;
-        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Abandono</span><span class="analytics-stat-value bad">${total > 0 ? ((pending.length / total) * 100).toFixed(1) : 0}%</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Abandono</span><span class="analytics-stat-value bad">${total > 0 ? ((pending.length/total)*100).toFixed(1) : 0}%</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Tempo mediano</span><span class="analytics-stat-value">${median.toFixed(1)} min</span></div>`;
-        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Mangofy</span><span class="analytics-stat-value">${mgPaid}/${mgTotal} (${mgTotal > 0 ? ((mgPaid/mgTotal)*100).toFixed(1) : 0}%)</span></div>`;
-        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">SkalePay</span><span class="analytics-stat-value">${skPaid}/${skTotal} (${skTotal > 0 ? ((skPaid/skTotal)*100).toFixed(1) : 0}%)</span></div>`;
-
-        // Timing bars
-        html += '<div style="margin-top:0.75rem">';
-        bars.forEach(bar => {
-            const pct = bar.total > 0 ? ((bar.count / bar.total) * 100).toFixed(0) : 0;
-            html += `<div class="pix-bar-wrap">
-                <span class="pix-bar-label">${bar.label}</span>
-                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${pct}%;background:${bar.color}"></div></div>
-                <span class="pix-bar-value">${pct}%</span>
-            </div>`;
-        });
-        html += '</div>';
-
-        container.innerHTML = html;
-    }
-
-    function renderFormErrors() {
-        const container = document.getElementById('formErrors');
-        if (!container) return;
-
-        const errors = {};
-        RAW_ANALYTICS.filter(e => e.event === 'form_error').forEach(e => {
-            const key = (e.data?.field || '?') + '|' + (e.data?.message || '?');
-            errors[key] = (errors[key] || 0) + 1;
-        });
-
-        const sorted = Object.entries(errors).sort((a, b) => b[1] - a[1]);
-
-        if (sorted.length === 0) {
-            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Nenhum erro registrado</div>';
-            return;
-        }
-
-        let html = '';
-        sorted.slice(0, 15).forEach(([key, count]) => {
-            const [field, msg] = key.split('|');
-            html += `<div class="form-err-item">
-                <span class="form-err-field">${esc(field)}</span>
-                <span class="form-err-msg">${esc(msg)}</span>
-                <span class="form-err-count">${count}x</span>
-            </div>`;
-        });
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pagam <5min</span><span class="analytics-stat-value">${timings.length > 0 ? ((under5/timings.length)*100).toFixed(0) : 0}%</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Mangofy</span><span class="analytics-stat-value">${mgPaid}/${mgTotal} (${mgTotal>0?((mgPaid/mgTotal)*100).toFixed(1):0}%)</span></div>`;
+        html += `<div class="analytics-stat-row"><span class="analytics-stat-label">SkalePay</span><span class="analytics-stat-value">${skPaid}/${skTotal} (${skTotal>0?((skPaid/skTotal)*100).toFixed(1):0}%)</span></div>`;
         container.innerHTML = html;
     }
 
     function renderDropoff() {
         const container = document.getElementById('dropoffAnalysis');
         if (!container) return;
-
-        // Count checkout steps
+        const events = getFilteredAnalytics();
         const stepCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        RAW_ANALYTICS.filter(e => e.event === 'checkout_step').forEach(e => {
+        events.filter(e => e.event === 'checkout_step').forEach(e => {
             const step = e.data?.step;
             if (step && stepCounts[step] !== undefined) stepCounts[step]++;
         });
-
         const stepNames = { 1: 'Carrinho', 2: 'Dados', 3: 'Endereco', 4: 'Envio', 5: 'Pagamento' };
         const maxStep = Math.max(...Object.values(stepCounts), 1);
-
         let html = '';
         for (let s = 1; s <= 5; s++) {
             const count = stepCounts[s];
-            const pct = maxStep > 0 ? ((count / maxStep) * 100).toFixed(0) : 0;
-            const dropoff = s > 1 && stepCounts[s-1] > 0
-                ? ((1 - count / stepCounts[s-1]) * 100).toFixed(0)
-                : '—';
-
-            html += `<div class="analytics-stat-row">
-                <span class="analytics-stat-label">${s}. ${stepNames[s]}</span>
-                <span class="analytics-stat-value">${count} <span style="color:#71717a;font-size:0.72rem">${s > 1 ? '(-' + dropoff + '%)' : ''}</span></span>
+            const pct = maxStep > 0 ? ((count/maxStep)*100).toFixed(0) : 0;
+            const dropoff = s > 1 && stepCounts[s-1] > 0 ? ((1-count/stepCounts[s-1])*100).toFixed(0) : '';
+            html += `<div class="pix-bar-wrap">
+                <span class="pix-bar-label" style="min-width:70px">${s}. ${stepNames[s]}</span>
+                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${pct}%;background:${parseInt(dropoff)>50?'#f87171':'#fbbf24'}"></div></div>
+                <span class="pix-bar-value">${count} ${s>1 && dropoff ? '<span style=\"color:#f87171;font-size:0.65rem\">-'+dropoff+'%</span>' : ''}</span>
             </div>`;
         }
-
-        if (Object.values(stepCounts).every(v => v === 0)) {
-            html = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem dados de checkout ainda</div>';
-        }
-
+        if (Object.values(stepCounts).every(v => v === 0)) html = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem dados de checkout ainda</div>';
         container.innerHTML = html;
     }
 
-    function renderEventVolume() {
-        const container = document.getElementById('eventVolume');
+    function renderTopProductsViewed() {
+        const container = document.getElementById('topProductsViewed');
         if (!container) return;
-
-        const counts = {};
-        RAW_ANALYTICS.forEach(e => {
-            counts[e.event] = (counts[e.event] || 0) + 1;
+        const events = getFilteredAnalytics();
+        const products = {};
+        events.filter(e => e.event === 'funnel_view' && (e.page||'').indexOf('produto') !== -1).forEach(e => {
+            const name = (e.page || '').replace('produto:', '') || '?';
+            products[name] = (products[name] || 0) + 1;
         });
-
-        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
-        if (sorted.length === 0) {
-            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem eventos ainda</div>';
-            return;
-        }
-
-        const maxVal = sorted[0][1];
+        events.filter(e => e.event === 'ViewContent').forEach(e => {
+            const name = e.data?.content_name || e.page || '?';
+            const key = name.replace('produto:', '');
+            products[key] = (products[key] || 0) + 1;
+        });
+        const sorted = Object.entries(products).sort((a,b) => b[1]-a[1]);
+        if (!sorted.length) { container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem dados</div>'; return; }
+        const maxV = sorted[0][1];
         let html = '';
-        sorted.slice(0, 12).forEach(([name, count]) => {
-            const pct = ((count / maxVal) * 100).toFixed(0);
+        sorted.slice(0,10).forEach(([name, count]) => {
             html += `<div class="pix-bar-wrap">
-                <span class="pix-bar-label" style="min-width:100px;font-size:0.72rem">${esc(name)}</span>
-                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${pct}%;background:#60a5fa"></div></div>
+                <span class="pix-bar-label" style="min-width:90px;font-size:0.72rem">${esc(name)}</span>
+                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${((count/maxV)*100).toFixed(0)}%;background:#f472b6"></div></div>
                 <span class="pix-bar-value">${count}</span>
             </div>`;
         });
         container.innerHTML = html;
     }
 
+    function renderEventVolume() {
+        const container = document.getElementById('eventVolume');
+        if (!container) return;
+        const events = getFilteredAnalytics();
+        const counts = {};
+        events.forEach(e => { counts[e.event] = (counts[e.event]||0)+1; });
+        const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+        if (!sorted.length) { container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem eventos</div>'; return; }
+        const maxVal = sorted[0][1];
+        let html = '';
+        sorted.slice(0,12).forEach(([name, count]) => {
+            html += `<div class="pix-bar-wrap">
+                <span class="pix-bar-label" style="min-width:100px;font-size:0.72rem">${esc(name)}</span>
+                <div class="pix-bar-bg"><div class="pix-bar-fill" style="width:${((count/maxVal)*100).toFixed(0)}%;background:#60a5fa"></div></div>
+                <span class="pix-bar-value">${count}</span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderSourcePerformance() {
+        const container = document.getElementById('sourcePerformance');
+        if (!container) return;
+        const sources = {};
+        RAW_ANALYTICS.forEach(e => {
+            const src = e.utms?.utm_source || '(direto)';
+            if (!sources[src]) sources[src] = { sessions: new Set(), events: 0 };
+            sources[src].sessions.add(e.session_id || '');
+            sources[src].events++;
+        });
+        // Add payment data
+        RAW_PAYMENTS.forEach(p => {
+            const src = p.tracking?.utm_source || '(direto)';
+            if (!sources[src]) sources[src] = { sessions: new Set(), events: 0, pix: 0, paid: 0, revenue: 0 };
+            sources[src].pix = (sources[src].pix || 0) + 1;
+            if (p.status === 'paid') {
+                sources[src].paid = (sources[src].paid || 0) + 1;
+                sources[src].revenue = (sources[src].revenue || 0) + (p.amount || 0);
+            }
+        });
+        const sorted = Object.entries(sources).sort((a,b) => (b[1].revenue||0)-(a[1].revenue||0));
+        if (!sorted.length) { container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem dados</div>'; return; }
+        let html = '';
+        sorted.slice(0,8).forEach(([src, data]) => {
+            const cvr = (data.pix||0) > 0 ? (((data.paid||0)/(data.pix||1))*100).toFixed(1) : '0';
+            html += `<div class="analytics-stat-row">
+                <span class="analytics-stat-label">${esc(src)} <span style="color:#71717a;font-size:0.65rem">(${data.sessions.size} sess.)</span></span>
+                <span class="analytics-stat-value">${data.paid||0} vendas <span style="color:#71717a;font-size:0.68rem">${formatBRL(data.revenue||0)} | ${cvr}%</span></span>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderFormErrors() {
+        const container = document.getElementById('formErrors');
+        if (!container) return;
+        const events = getFilteredAnalytics();
+        const errors = {};
+        events.filter(e => e.event === 'form_error').forEach(e => {
+            const key = (e.data?.field||'?') + '|' + (e.data?.message||'?');
+            errors[key] = (errors[key]||0)+1;
+        });
+        const sorted = Object.entries(errors).sort((a,b) => b[1]-a[1]);
+        if (!sorted.length) { container.innerHTML = '<div style="color:#34d399;font-size:0.82rem;padding:1rem 0">Nenhum erro registrado!</div>'; return; }
+        let html = '';
+        sorted.slice(0,15).forEach(([key, count]) => {
+            const [field, msg] = key.split('|');
+            html += `<div class="form-err-item"><span class="form-err-field">${esc(field)}</span><span class="form-err-msg">${esc(msg)}</span><span class="form-err-count">${count}x</span></div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderPeakHours() {
+        const container = document.getElementById('peakHours');
+        if (!container) return;
+        const events = getFilteredAnalytics();
+        const hours = {};
+        for (let h = 0; h < 24; h++) hours[h] = 0;
+        events.forEach(e => {
+            if (e.server_time) {
+                const h = new Date(e.server_time).getHours();
+                if (!isNaN(h)) hours[h]++;
+            }
+        });
+        const maxH = Math.max(...Object.values(hours), 1);
+        // Show as mini heatmap bars
+        let html = '<div style="display:flex;gap:2px;align-items:flex-end;height:80px;margin-bottom:0.5rem">';
+        for (let h = 0; h < 24; h++) {
+            const pct = (hours[h] / maxH) * 100;
+            const color = pct > 60 ? '#f87171' : pct > 30 ? '#fbbf24' : '#3f3f46';
+            html += `<div title="${h}h: ${hours[h]} eventos" style="flex:1;height:${Math.max(2,pct)}%;background:${color};border-radius:2px 2px 0 0"></div>`;
+        }
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:0.62rem;color:#71717a"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div>';
+        // Top 3 hours
+        const topHours = Object.entries(hours).sort((a,b)=>b[1]-a[1]).slice(0,3);
+        html += '<div style="margin-top:0.5rem">';
+        topHours.forEach(([h, count]) => {
+            html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pico ${h}h</span><span class="analytics-stat-value">${count} eventos</span></div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function filterSessions(type) {
+        sessionFilter = type;
+        document.querySelectorAll('[data-session-filter]').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`[data-session-filter="${type}"]`);
+        if (btn) btn.classList.add('active');
+        renderSessionTimeline();
+    }
+
     function renderSessionTimeline() {
         const container = document.getElementById('sessionTimeline');
         if (!container) return;
+        const events = getFilteredAnalytics();
 
-        // Group by session
         const sessions = {};
-        RAW_ANALYTICS.forEach(e => {
+        events.forEach(e => {
             const sid = e.session_id || 'unknown';
             if (!sessions[sid]) sessions[sid] = [];
             sessions[sid].push(e);
         });
 
-        // Get last 20 sessions sorted by most recent event
-        const sessionList = Object.entries(sessions)
-            .map(([sid, events]) => ({
-                sid,
-                events: events.sort((a, b) => (a.server_time || '').localeCompare(b.server_time || '')),
-                lastTime: events[events.length - 1]?.server_time || ''
-            }))
-            .sort((a, b) => b.lastTime.localeCompare(a.lastTime))
-            .slice(0, 20);
+        let sessionList = Object.entries(sessions)
+            .map(([sid, evts]) => {
+                const sorted = evts.sort((a,b) => (a.server_time||'').localeCompare(b.server_time||''));
+                const hasCheckout = evts.some(e => e.event === 'InitiateCheckout' || (e.page||'').indexOf('checkout') !== -1);
+                const hasPix = evts.some(e => e.event === 'GeneratePixCode' || e.event === 'CopyPixCode');
+                const hasPurchase = evts.some(e => e.event === 'Purchase');
+                const isBounce = evts.length <= 1;
+                return { sid, events: sorted, lastTime: sorted[sorted.length-1]?.server_time||'', hasCheckout, hasPix, hasPurchase, isBounce };
+            })
+            .sort((a,b) => b.lastTime.localeCompare(a.lastTime));
 
-        if (sessionList.length === 0) {
-            container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Sem sessoes ainda</div>';
-            return;
-        }
+        if (sessionFilter === 'converted') sessionList = sessionList.filter(s => s.hasPix || s.hasPurchase);
+        else if (sessionFilter === 'abandoned') sessionList = sessionList.filter(s => s.hasCheckout && !s.hasPix);
+        else if (sessionFilter === 'bounce') sessionList = sessionList.filter(s => s.isBounce);
+
+        sessionList = sessionList.slice(0, 30);
+
+        if (!sessionList.length) { container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Nenhuma sessao encontrada</div>'; return; }
 
         let html = '';
         sessionList.forEach(session => {
-            const shortSid = session.sid.replace('ses_', '').substring(0, 12);
+            const shortSid = session.sid.replace('ses_','').substring(0,12);
+            const badge = session.hasPurchase ? '<span style="color:#10b981;font-size:0.68rem;font-weight:700"> COMPROU</span>'
+                : session.hasPix ? '<span style="color:#fbbf24;font-size:0.68rem;font-weight:700"> PIX GERADO</span>'
+                : session.hasCheckout ? '<span style="color:#f87171;font-size:0.68rem;font-weight:700"> ABANDONOU CHECKOUT</span>'
+                : session.isBounce ? '<span style="color:#71717a;font-size:0.68rem"> BOUNCE</span>' : '';
+
+            const pages = [...new Set(session.events.map(e => e.page).filter(Boolean))];
+            const journey = pages.join(' → ');
+
             html += `<div style="margin-bottom:0.75rem;padding:0.75rem;background:#111114;border-radius:8px;border:1px solid #1f1f23">`;
-            html += `<div style="font-size:0.75rem;color:#60a5fa;font-weight:600;margin-bottom:0.5rem">Sessao ${esc(shortSid)} &mdash; ${session.events.length} evento(s)</div>`;
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+                <span style="font-size:0.75rem;color:#60a5fa;font-weight:600">Sessao ${esc(shortSid)} — ${session.events.length} evento(s)${badge}</span>
+                <span style="font-size:0.68rem;color:#52525b">${session.lastTime ? new Date(session.lastTime).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+            </div>`;
+            html += `<div style="font-size:0.72rem;color:#71717a;margin-bottom:0.5rem">Jornada: ${esc(journey)}</div>`;
 
             session.events.forEach(evt => {
-                const time = evt.server_time ? new Date(evt.server_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+                const time = evt.server_time ? new Date(evt.server_time).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
                 let evtClass = 'view';
                 if (evt.event === 'form_error') evtClass = 'error';
-                else if (evt.event?.indexOf('Pix') !== -1 || evt.event?.indexOf('pix') !== -1) evtClass = 'pix';
-                else if (evt.event?.indexOf('checkout') !== -1 || evt.event === 'InitiateCheckout' || evt.event === 'AddPaymentInfo') evtClass = 'checkout';
-                else if (evt.event === 'AddToCart' || evt.event === 'Purchase') evtClass = 'action';
-
-                const dataStr = evt.data ? Object.entries(evt.data).map(([k,v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ').substring(0, 80) : '';
-
-                html += `<div class="session-row">
-                    <span class="session-time">${time}</span>
-                    <span class="session-event ${evtClass}">${esc(evt.event || '?')}</span>
-                    <span class="session-page">${esc(evt.page || '')}</span>
-                    <span class="session-data">${esc(dataStr)}</span>
-                </div>`;
+                else if (evt.event?.indexOf('Pix')!==-1 || evt.event?.indexOf('pix')!==-1) evtClass = 'pix';
+                else if (evt.event?.indexOf('checkout')!==-1 || evt.event==='InitiateCheckout' || evt.event==='AddPaymentInfo') evtClass = 'checkout';
+                else if (evt.event==='AddToCart' || evt.event==='Purchase') evtClass = 'action';
+                const dataStr = evt.data ? Object.entries(evt.data).map(([k,v])=>`${k}=${typeof v==='object'?JSON.stringify(v):v}`).join(', ').substring(0,80) : '';
+                html += `<div class="session-row"><span class="session-time">${time}</span><span class="session-event ${evtClass}">${esc(evt.event||'?')}</span><span class="session-page">${esc(evt.page||'')}</span><span class="session-data">${esc(dataStr)}</span></div>`;
             });
             html += '</div>';
         });
-
         container.innerHTML = html;
     }
 
     function renderAnalyticsTable() {
         const body = document.getElementById('analyticsBody');
         if (!body) return;
-
-        let filtered = RAW_ANALYTICS;
+        const events = getFilteredAnalytics();
+        let filtered = events;
         if (analyticsFilter !== 'all') {
-            filtered = RAW_ANALYTICS.filter(e => {
-                if (analyticsFilter === 'funnel_view') return e.event === 'funnel_view' || e.event === 'ViewContent';
-                if (analyticsFilter === 'checkout') return e.event?.indexOf('checkout') !== -1 || e.event === 'InitiateCheckout' || e.event === 'AddPaymentInfo' || e.event === 'AddToCart';
-                if (analyticsFilter === 'pix') return e.event?.indexOf('Pix') !== -1 || e.event?.indexOf('pix') !== -1 || e.event === 'Purchase';
-                if (analyticsFilter === 'error') return e.event === 'form_error';
+            filtered = events.filter(e => {
+                if (analyticsFilter === 'funnel_view') return e.event==='funnel_view' || e.event==='ViewContent';
+                if (analyticsFilter === 'checkout') return e.event?.indexOf('checkout')!==-1 || e.event==='InitiateCheckout' || e.event==='AddPaymentInfo' || e.event==='AddToCart';
+                if (analyticsFilter === 'pix') return e.event?.indexOf('Pix')!==-1 || e.event?.indexOf('pix')!==-1 || e.event==='Purchase';
+                if (analyticsFilter === 'error') return e.event==='form_error';
                 return true;
             });
         }
-
-        const start = (analyticsPage - 1) * ITEMS_PER_PAGE;
-        const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
-
+        const start = (analyticsPage-1)*ITEMS_PER_PAGE;
+        const pageItems = filtered.slice(start, start+ITEMS_PER_PAGE);
         body.innerHTML = '';
         pageItems.forEach(evt => {
-            const time = evt.server_time ? new Date(evt.server_time).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
-            const shortSid = (evt.session_id || '').replace('ses_', '').substring(0, 10);
-            const dataStr = evt.data ? JSON.stringify(evt.data).substring(0, 100) : '—';
-            const utmStr = evt.utms?.utm_source ? `${evt.utms.utm_source}/${evt.utms.utm_campaign || ''}` : '—';
-
+            const time = evt.server_time ? new Date(evt.server_time).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+            const shortSid = (evt.session_id||'').replace('ses_','').substring(0,10);
+            const dataStr = evt.data ? JSON.stringify(evt.data).substring(0,100) : '';
+            const utmStr = evt.utms?.utm_source ? `${evt.utms.utm_source}/${evt.utms.utm_campaign||''}` : '';
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${time}</td><td style="font-size:0.72rem;color:#71717a">${esc(shortSid)}</td><td><span style="color:#60a5fa;font-weight:600">${esc(evt.event || '?')}</span></td><td style="font-size:0.78rem">${esc(evt.page || '')}</td><td style="font-size:0.72rem;color:#a1a1aa;max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(dataStr)}</td><td style="font-size:0.72rem;color:#71717a">${esc(utmStr)}</td>`;
+            tr.innerHTML = `<td>${time}</td><td style="font-size:0.72rem;color:#71717a">${esc(shortSid)}</td><td><span style="color:#60a5fa;font-weight:600">${esc(evt.event||'?')}</span></td><td style="font-size:0.78rem">${esc(evt.page||'')}</td><td style="font-size:0.72rem;color:#a1a1aa;max-width:200px;overflow:hidden;text-overflow:ellipsis">${esc(dataStr)}</td><td style="font-size:0.72rem;color:#71717a">${esc(utmStr)}</td>`;
             body.appendChild(tr);
         });
-
-        // Pagination
-        const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+        const totalPages = Math.ceil(filtered.length/ITEMS_PER_PAGE);
         const pagEl = document.getElementById('analyticsPagination');
         if (pagEl) {
             pagEl.innerHTML = '';
             if (totalPages > 1) {
-                for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+                for (let i=1;i<=Math.min(totalPages,10);i++) {
                     const btn = document.createElement('button');
-                    btn.className = 'page-btn' + (i === analyticsPage ? ' active' : '');
+                    btn.className = (i===analyticsPage?'active':'');
                     btn.textContent = i;
-                    btn.onclick = () => { analyticsPage = i; renderAnalyticsTable(); };
+                    btn.onclick = () => { analyticsPage=i; renderAnalyticsTable(); };
                     pagEl.appendChild(btn);
                 }
             }
@@ -2658,6 +2860,26 @@ if ($isAuthenticated) {
         const btn = document.querySelector(`[data-analytics-filter="${filter}"]`);
         if (btn) btn.classList.add('active');
         renderAnalyticsTable();
+    }
+
+    function exportAnalyticsCSV() {
+        const events = getFilteredAnalytics();
+        if (!events.length) { showToast('Sem eventos para exportar', 'error'); return; }
+        let csv = '\ufeff' + 'Data;Sessao;Evento;Pagina;UTM Source;UTM Campaign;UTM Medium;Dados\n';
+        events.forEach(e => {
+            const time = e.server_time || '';
+            const sid = (e.session_id||'').replace('ses_','');
+            const dataStr = e.data ? JSON.stringify(e.data).replace(/;/g,',') : '';
+            csv += [time, sid, e.event||'', e.page||'', e.utms?.utm_source||'', e.utms?.utm_campaign||'', e.utms?.utm_medium||'', dataStr].join(';') + '\n';
+        });
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'analytics_funil_' + new Date().toISOString().substring(0,10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('CSV exportado com ' + events.length + ' eventos!', 'success');
     }
 
     // ════════════════════════════════════════════
