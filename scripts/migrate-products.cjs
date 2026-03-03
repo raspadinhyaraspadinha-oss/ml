@@ -1,9 +1,55 @@
-<!DOCTYPE html>
+/**
+ * Product Page Migration Script
+ * Redesigns all product pages to match real Mercado Livre product page layout.
+ *
+ * Handles both "new format" (26 pages) and "old format" (12 pages).
+ *
+ * New elements added:
+ * - "MAIS VENDIDO" badge
+ * - "Chegará grátis hoje" delivery section
+ * - "Estoque disponível" with FULL badge
+ * - "Comprar agora" + "Adicionar ao carrinho" dual buttons
+ * - "Loja oficial" seller section
+ * - Enhanced trust badges
+ * - NO "Retire Grátis", NO "Quantidade" (per user request)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const BASE = path.join(__dirname, '..', 'produtos');
+
+// ============================================================
+// TEMPLATE
+// ============================================================
+
+function generatePage(data) {
+  const {
+    title,         // Full product name
+    dirName,       // Directory name (e.g. "ps5")
+    mainImage,     // Main image src
+    thumbs,        // Array of {src, alt}
+    oldPrice,      // "R$ 6.499,99"
+    newPrice,      // "R$ 108,17"
+    discount,      // "95% OFF"
+    installments,  // "em 12x R$ 9,01 sem juros"
+    rating,        // "4.8"
+    reviewCount,   // "675"
+    salesCount,    // "+500 vendidos"
+    reviewsHTML,   // Raw HTML of review cards
+    ratingImg,     // Rating bar image src (or null)
+  } = data;
+
+  const thumbsHTML = thumbs.map((t, i) =>
+    `    <div class="thumb${i === 0 ? ' active' : ''}" onclick="changeImage(this, '${t.src}')"><img src="${t.src}" alt="${t.alt}" loading="lazy"></div>`
+  ).join('\n');
+
+  return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Samsung Galaxy S24 Ultra (Dual eSIM) 5G Dual SIM 528 GB Preto 12 GB RAM - Mercado Livre</title>
+<title>${title} - Mercado Livre</title>
 <link rel="icon" href="images/favicon.png">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="stylesheet" href="css/fonts.css">
@@ -226,35 +272,32 @@ body{font-family:'GellixRegular',-apple-system,BlinkMacSystemFont,'Segoe UI',san
     MAIS VENDIDO
   </div>
   <div class="condition-row">
-    <span>Novo</span> | <span class="sold">+5mil vendidos</span> |
-    <span style="color:#3483fa">&#9733;</span> <strong style="color:#333;font-family:'GellixMedium',sans-serif">4.9</strong> <span>(2718)</span>
+    <span>Novo</span> | <span class="sold">${salesCount}</span> |
+    <span style="color:#3483fa">&#9733;</span> <strong style="color:#333;font-family:'GellixMedium',sans-serif">${rating}</strong> <span>(${reviewCount})</span>
   </div>
 </div>
 
 <!-- TITLE -->
-<h1 class="product-title">Samsung Galaxy S24 Ultra (Dual eSIM) 5G Dual SIM 528 GB Preto 12 GB RAM</h1>
+<h1 class="product-title">${title}</h1>
 
 <!-- IMAGE GALLERY -->
 <div class="gallery">
   <div class="main-img-wrap">
-    <img src="images/1.jpg" alt="Samsung Galaxy S24 Ultra (Dual eSIM) 5G Dual SIM 528 GB Preto 12 GB RAM" class="main-image" id="mainImg">
+    <img src="${mainImage}" alt="${title}" class="main-image" id="mainImg">
   </div>
   <div class="thumbs-row">
-    <div class="thumb active" onclick="changeImage(this, 'images/2.jpg')"><img src="images/2.jpg" alt="Vista 1" loading="lazy"></div>
-    <div class="thumb" onclick="changeImage(this, 'images/3.jpg')"><img src="images/3.jpg" alt="Vista 2" loading="lazy"></div>
-    <div class="thumb" onclick="changeImage(this, 'images/4.jpg')"><img src="images/4.jpg" alt="Vista 3" loading="lazy"></div>
-    <div class="thumb" onclick="changeImage(this, 'images/5.jpg')"><img src="images/5.jpg" alt="Vista 4" loading="lazy"></div>
+${thumbsHTML}
   </div>
 </div>
 
 <!-- PRICE SECTION -->
 <div class="price-section">
-  <div class="old-price">R$ 4.398,00</div>
+  <div class="old-price">${oldPrice}</div>
   <div class="price-row">
-    <span class="new-price">R$ 97,90</span>
-    <span class="discount-tag">96% OFF no PIX</span>
+    <span class="new-price">${newPrice}</span>
+    <span class="discount-tag">${discount}</span>
   </div>
-  <div class="installments">em 12x R$ 8,16 sem juros</div>
+  <div class="installments">${installments}</div>
   <div class="free-ship-badge">
     <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
     Frete gratis a todo o Brasil
@@ -345,52 +388,9 @@ body{font-family:'GellixRegular',-apple-system,BlinkMacSystemFont,'Segoe UI',san
 <!-- REVIEWS -->
 <div class="reviews-section">
   <h3 class="reviews-title">Opinioes do produto</h3>
-  
+  ${ratingImg ? `<img src="${ratingImg}" alt="Rating" class="rating-bar-img" loading="lazy">` : ''}
   <h4 class="reviews-highlight">Opinioes em destaque</h4>
-  <div class="review-card">
-          <div class="rev-header">
-            <div class="rev-stars"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
-            <span class="rev-date">10 jul. 2024</span>
-          </div>
-          <div class="rev-images"><img src="images/d2.jpg" alt="Review" loading="lazy"><img src="images/d3.jpg" alt="Review" loading="lazy"><img src="images/d4.jpg" alt="Review" loading="lazy"><img src="images/2_1.jpg" alt="Review" loading="lazy"></div>
-          <p class="rev-text">Melhor celular do mundo. Já venho do s20, s22 ultra. Já pulei pro s24 ultra 512g. É inexplicável. Pra quem tem condições é a melhor compra. 😍.</p>
-          <div class="rev-actions">
-            <button class="rev-like" onclick="this.classList.toggle('liked')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-              <span>97</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="review-card">
-          <div class="rev-header">
-            <div class="rev-stars"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
-            <span class="rev-date">12 jul. 2024</span>
-          </div>
-          <div class="rev-images"><img src="images/d8.jpg" alt="Review" loading="lazy"><img src="images/d1.jpg" alt="Review" loading="lazy"><img src="images/d5.jpg" alt="Review" loading="lazy"><img src="images/d6.jpg" alt="Review" loading="lazy"><img src="images/d9.jpg" alt="Review" loading="lazy"></div>
-          <p class="rev-text">Excelente celular, superou todas as expectativas e a cada minuto continua a superar ainda mais. Recomendo!.</p>
-          <div class="rev-actions">
-            <button class="rev-like" onclick="this.classList.toggle('liked')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-              <span>127</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="review-card">
-          <div class="rev-header">
-            <div class="rev-stars"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
-            <span class="rev-date">15 jul. 2024</span>
-          </div>
-          
-          <p class="rev-text">Até agora, não tenho nada a reclamar, as câmera é boa, carregamento é rápido em menos de uma hora, roda vários aplicativos pesados.</p>
-          <div class="rev-actions">
-            <button class="rev-like" onclick="this.classList.toggle('liked')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-              <span>73</span>
-            </button>
-          </div>
-        
+  ${reviewsHTML}
 </div>
 
 <!-- FOOTER -->
@@ -480,4 +480,243 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 </body>
-</html>
+</html>`;
+}
+
+// ============================================================
+// DATA EXTRACTION: NEW FORMAT
+// ============================================================
+
+function extractNewFormat(html, dirName) {
+  const title = (html.match(/class="product-title">(.*?)<\/h1>/) || [])[1] || 'Product';
+  const oldPrice = (html.match(/old-price[^>]*>(.*?)</) || [])[1] || 'R$ 0,00';
+  const newPrice = (html.match(/new-price[^>]*>(.*?)</) || [])[1] || 'R$ 0,00';
+  const discount = (html.match(/discount-tag[^>]*>(.*?)</) || [])[1] || '95% OFF';
+  const installments = (html.match(/installments[^>]*>(.*?)</) || [])[1] || 'em 12x sem juros';
+
+  const ratingM = html.match(/class="sb-rating"[\s\S]*?<strong>([\d.]+)<\/strong>/);
+  const rating = ratingM ? ratingM[1] : '4.8';
+
+  const reviewCountM = html.match(/class="sb-rating"[\s\S]*?\((\d+)\)/);
+  const reviewCount = reviewCountM ? reviewCountM[1] : '675';
+
+  const salesM = html.match(/sb-sales[^>]*>(.*?)<\/span>/);
+  const salesCount = salesM ? salesM[1].trim() : '+500 vendidos';
+
+  // Main image
+  const mainImgM = html.match(/class="main-image"[^>]*src="([^"]+)"|src="([^"]+)"[^>]*class="main-image"/);
+  let mainImage = 'images/s1-1.jpg';
+  if (mainImgM) mainImage = mainImgM[1] || mainImgM[2];
+  // Fallback: first image in main-img-wrap
+  if (!mainImgM) {
+    const wrapM = html.match(/main-img-wrap[\s\S]*?src="([^"]+)"/);
+    if (wrapM) mainImage = wrapM[1];
+  }
+
+  // Thumbnails
+  const thumbs = [];
+  const thumbRegex = /class="thumb[^"]*"[^>]*onclick="changeImage\(this,\s*'([^']+)'\)"[\s\S]*?<img[^>]*src="([^"]+)"/g;
+  let m;
+  while ((m = thumbRegex.exec(html)) !== null) {
+    thumbs.push({ src: m[1], alt: 'Vista ' + (thumbs.length + 1) });
+  }
+  if (thumbs.length === 0) {
+    thumbs.push({ src: mainImage, alt: 'Vista 1' });
+  }
+
+  // Rating bar image
+  const ratingImgM = html.match(/rating-bar-img[^>]*src="([^"]+)"/);
+  const ratingImg = ratingImgM ? ratingImgM[1] : null;
+
+  // Reviews HTML (extract review cards)
+  let reviewsHTML = '';
+  const reviewsBlock = html.match(/reviews-highlight[\s\S]*?(<div class="review-card"[\s\S]*?)<\/div>\s*\n?\s*<\/div>\s*\n?\s*<!-- FOOTER/);
+  if (reviewsBlock) {
+    reviewsHTML = reviewsBlock[1];
+    // Clean up - remove trailing </div> that belongs to reviews-section
+  } else {
+    // Try simpler extraction
+    const cards = html.match(/<div class="review-card"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g);
+    if (cards) reviewsHTML = cards.join('\n');
+  }
+  // Fallback: extract everything between reviews-highlight and site-footer
+  if (!reviewsHTML) {
+    const fallback = html.match(/reviews-highlight[\s\S]*?<\/h4>([\s\S]*?)<\/div>\s*\n*\s*<!-- FOOTER/);
+    if (fallback) reviewsHTML = fallback[1].trim();
+  }
+
+  return {
+    title, dirName, mainImage, thumbs, oldPrice, newPrice, discount,
+    installments, rating, reviewCount, salesCount, reviewsHTML, ratingImg
+  };
+}
+
+// ============================================================
+// DATA EXTRACTION: OLD FORMAT
+// ============================================================
+
+function extractOldFormat(html, dirName) {
+  // Title from <p class="title">
+  const titleM = html.match(/<p\s+class="title">([\s\S]*?)<\/p>/);
+  let title = titleM ? titleM[1].replace(/<[^>]+>/g, '').trim() : 'Product';
+
+  // Prices
+  const oldPriceM = html.match(/old-price2[^>]*>(.*?)</) || html.match(/class="old-price"[^>]*>(.*?)</);
+  const oldPrice = oldPriceM ? oldPriceM[1].trim() : 'R$ 0,00';
+
+  const newPriceM = html.match(/new-price2[^>]*>(.*?)</) || html.match(/class="new-price"[^>]*>(.*?)</);
+  const newPrice = newPriceM ? newPriceM[1].trim() : 'R$ 0,00';
+
+  const discountM = html.match(/discount2[^>]*>(.*?)</) || html.match(/class="discount"[^>]*>(.*?)</);
+  const discount = discountM ? discountM[1].trim() : '95% OFF';
+
+  // Installments
+  const installM = html.match(/parcela[^>]*>(.*?)</) || html.match(/installments[^>]*>(.*?)</);
+  const installments = installM ? installM[1].trim() : 'em 12x sem juros';
+
+  // Rating
+  const ratingM = html.match(/product-rating-custom[\s\S]*?<strong[^>]*>([\d.]+)<\/strong>/);
+  const rating = ratingM ? ratingM[1] : '4.8';
+
+  const reviewCountM = html.match(/product-rating-custom[\s\S]*?\((\d+)\)/);
+  const reviewCount = reviewCountM ? reviewCountM[1] : '1000';
+
+  // Sales count
+  const salesM = html.match(/product-status-custom[\s\S]*?vendidos[^<]*/);
+  let salesCount = '+5mil vendidos';
+  if (salesM) {
+    const numM = salesM[0].match(/(\+?\d[\d.]*\s*(?:mil)?\s*vendidos)/i);
+    if (numM) salesCount = numM[1].trim();
+  }
+
+  // Images - collect all from images/ folder
+  const imgSet = new Set();
+  const imgRegex = /(?:src|data-src)="(images\/[^"]+)"/g;
+  let im;
+  while ((im = imgRegex.exec(html)) !== null) {
+    if (!im[1].includes('favicon') && !im[1].includes('logo') && !im[1].includes('icon') && !im[1].includes('star')) {
+      imgSet.add(im[1]);
+    }
+  }
+  const images = Array.from(imgSet);
+  const mainImage = images[0] || 'images/main.jpg';
+  const thumbs = images.slice(0, 5).map((src, i) => ({ src, alt: 'Vista ' + (i + 1) }));
+  if (thumbs.length === 0) thumbs.push({ src: mainImage, alt: 'Vista 1' });
+
+  // Rating bar image
+  let ratingImg = null;
+  const ratingImgM = html.match(/src="(images\/[^"]*(?:rating|es|estrela|star|avalia)[^"]*\.(?:png|jpg|webp))"/i);
+  if (ratingImgM) ratingImg = ratingImgM[1];
+
+  // Reviews - extract comment blocks
+  let reviewsHTML = '';
+  const commentRegex = /<div class="comment">([\s\S]*?)<\/div>\s*<\/div>/g;
+  const comments = [];
+  let cm;
+  while ((cm = commentRegex.exec(html)) !== null) {
+    comments.push(cm[0]);
+  }
+  // Convert old format comments to new format review cards
+  if (comments.length > 0) {
+    reviewsHTML = comments.map(c => {
+      const textM = c.match(/class="comment-text[^"]*"[^>]*>([\s\S]*?)<\/p>/);
+      const text = textM ? textM[1].trim() : 'Otimo produto!';
+      const dateM = c.match(/comment-date[^>]*>(.*?)</);
+      const date = dateM ? dateM[1].trim() : 'jan. 2025';
+      const revImgs = [];
+      const riRegex = /src="(images\/[^"]+)"/g;
+      let ri;
+      while ((ri = riRegex.exec(c)) !== null) {
+        if (!ri[1].includes('icon') && !ri[1].includes('star')) revImgs.push(ri[1]);
+      }
+      const starSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
+      return `
+        <div class="review-card">
+          <div class="rev-header">
+            <div class="rev-stars">${starSvg.repeat(5)}</div>
+            <span class="rev-date">${date}</span>
+          </div>
+          ${revImgs.length > 0 ? '<div class="rev-images">' + revImgs.map(s => `<img src="${s}" alt="Review" loading="lazy">`).join('') + '</div>' : ''}
+          <p class="rev-text">${text}</p>
+          <div class="rev-actions">
+            <button class="rev-like" onclick="this.classList.toggle('liked')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+              <span>${Math.floor(Math.random() * 50) + 10}</span>
+            </button>
+          </div>
+        </div>`;
+    }).join('\n');
+  } else {
+    // Fallback generic review
+    const starSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
+    reviewsHTML = `
+        <div class="review-card">
+          <div class="rev-header">
+            <div class="rev-stars">${starSvg.repeat(5)}</div>
+            <span class="rev-date">jan. 2025</span>
+          </div>
+          <p class="rev-text">Produto excelente, chegou rapido e bem embalado. Recomendo!</p>
+          <div class="rev-actions">
+            <button class="rev-like" onclick="this.classList.toggle('liked')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+              <span>42</span>
+            </button>
+          </div>
+        </div>`;
+  }
+
+  return {
+    title, dirName, mainImage, thumbs, oldPrice, newPrice, discount,
+    installments, rating, reviewCount, salesCount, reviewsHTML, ratingImg
+  };
+}
+
+// ============================================================
+// MAIN
+// ============================================================
+
+const NEW_FORMAT_DIRS = ['ar','aspirador','fogao','fritadeira','geladeira','guarda-branco','guarda-preto','iph06','iph07','iph08','iph09','iphone16-preto','jbl01','jbl02','kitferramenta','lavar','lilo','microo','projetor04','ps5','sam25','sofa','tv','xiaome','xiaomex6','xiaomex7'];
+
+const OLD_FORMAT_DIRS = ['caixa-de-som-1','caixa-de-som-2','caixa-de-som-3','celular-azul','celular-rosa','celular-titanio','celular-verde','microondas','parafusadeira','samsung','smart-tv','smartwatch'];
+
+let migrated = 0;
+let errors = [];
+
+// Process NEW format
+NEW_FORMAT_DIRS.forEach(dir => {
+  try {
+    const fp = path.join(BASE, dir, 'index.html');
+    const html = fs.readFileSync(fp, 'utf-8');
+    const data = extractNewFormat(html, dir);
+    const newHTML = generatePage(data);
+    fs.writeFileSync(fp, newHTML, 'utf-8');
+    migrated++;
+    console.log(`[OK] ${dir} (new format) -> migrated`);
+  } catch (e) {
+    errors.push(`${dir}: ${e.message}`);
+    console.error(`[ERR] ${dir}: ${e.message}`);
+  }
+});
+
+// Process OLD format
+OLD_FORMAT_DIRS.forEach(dir => {
+  try {
+    const fp = path.join(BASE, dir, 'index.html');
+    const html = fs.readFileSync(fp, 'utf-8');
+    const data = extractOldFormat(html, dir);
+    const newHTML = generatePage(data);
+    fs.writeFileSync(fp, newHTML, 'utf-8');
+    migrated++;
+    console.log(`[OK] ${dir} (old format) -> migrated`);
+  } catch (e) {
+    errors.push(`${dir}: ${e.message}`);
+    console.error(`[ERR] ${dir}: ${e.message}`);
+  }
+});
+
+console.log(`\n=== MIGRATION COMPLETE ===`);
+console.log(`Migrated: ${migrated}/${NEW_FORMAT_DIRS.length + OLD_FORMAT_DIRS.length}`);
+if (errors.length > 0) {
+  console.log(`Errors (${errors.length}):`);
+  errors.forEach(e => console.log(`  - ${e}`));
+}
