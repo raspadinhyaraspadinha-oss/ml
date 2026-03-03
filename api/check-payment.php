@@ -120,6 +120,92 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
     }
 }
 
+// ── NitroPagamento: poll API for real-time status ──
+if ($gateway === 'nitropagamento' && $payment['status'] === 'pending') {
+    $gatewayId = $payment['gateway_id'] ?? '';
+
+    if ($gatewayId) {
+        $auth = 'Basic ' . base64_encode(NITROPAGAMENTO_PK . ':' . NITROPAGAMENTO_SK);
+        $pollUrl = NITROPAGAMENTO_API_URL . '/transactions/' . $gatewayId;
+        $response = apiGet($pollUrl, ['Accept: application/json', 'Authorization: ' . $auth]);
+
+        if ($response['status'] !== 200 || !empty($response['error'])) {
+            writeLog('NITROPAGAMENTO_POLL_ERRO', [
+                'payment_code' => $paymentCode,
+                'gateway_id' => $gatewayId,
+                'http_status' => $response['status'],
+                'error' => $response['error'] ?: 'none'
+            ]);
+        }
+
+        $npData = $response['body']['data'] ?? $response['body'] ?? [];
+        $npStatus = $npData['status'] ?? '';
+
+        if ($response['status'] === 200 && $npStatus !== '') {
+            // NitroPagamento status: "pago" = paid
+            if ($npStatus === 'pago' || $npStatus === 'paid') {
+                $approvedAt = $npData['paid_at'] ?? date('Y-m-d H:i:s');
+                $payments[$paymentCode]['status'] = 'paid';
+                $payments[$paymentCode]['paid_at'] = $approvedAt;
+                savePayments($payments);
+
+                fireApprovalTracking($paymentCode, $payments[$paymentCode], $approvedAt);
+
+                echo json_encode([
+                    'status' => 'paid',
+                    'payment_code' => $paymentCode,
+                    'paid_at' => $approvedAt
+                ]);
+                exit;
+            }
+
+            // NitroPagamento error statuses
+            $npErrorStatuses = ['falhou', 'failed', 'expirado', 'expired', 'reembolsado', 'refunded', 'cancelled'];
+            if (in_array($npStatus, $npErrorStatuses)) {
+                $payments[$paymentCode]['status'] = 'failed';
+                $payments[$paymentCode]['failed_at'] = date('Y-m-d H:i:s');
+                $payments[$paymentCode]['fail_reason'] = $npStatus;
+                savePayments($payments);
+
+                writeLog('NITROPAGAMENTO_POLL_FALHOU', [
+                    'payment_code' => $paymentCode,
+                    'gateway_id' => $gatewayId,
+                    'motivo' => $npStatus
+                ]);
+
+                echo json_encode([
+                    'status' => 'failed',
+                    'payment_code' => $paymentCode,
+                    'fail_reason' => $npStatus
+                ]);
+                exit;
+            }
+        }
+    }
+
+    // Also check for stale NitroPagamento payments (no webhook/poll after 60min)
+    $createdAt = strtotime($payment['created_at'] ?? '');
+    $minutesElapsed = $createdAt ? (time() - $createdAt) / 60 : 0;
+    if ($minutesElapsed > 60) {
+        $payments[$paymentCode]['status'] = 'failed';
+        $payments[$paymentCode]['failed_at'] = date('Y-m-d H:i:s');
+        $payments[$paymentCode]['fail_reason'] = 'expired_no_payment';
+        savePayments($payments);
+
+        writeLog('NITROPAGAMENTO_PIX_EXPIRADO', [
+            'payment_code' => $paymentCode,
+            'minutos_desde_criacao' => round($minutesElapsed, 1)
+        ]);
+
+        echo json_encode([
+            'status' => 'failed',
+            'payment_code' => $paymentCode,
+            'fail_reason' => 'expired_no_payment'
+        ]);
+        exit;
+    }
+}
+
 // ── Mangofy: check for stale pending payments (no webhook after 30min = likely failed) ──
 if ($gateway === 'mangofy' && $payment['status'] === 'pending') {
     $createdAt = strtotime($payment['created_at'] ?? '');

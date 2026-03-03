@@ -16,6 +16,11 @@ define('MANGOFY_STORE_CODE', '0d4e1ba5d97eba0bb822b05fae41df4b');
 define('SKALEPAY_API_URL', 'https://api.conta.skalepay.com.br/v1');
 define('SKALEPAY_API_KEY', 'sk_live_v2H9kEj5vdo0cTYZivnvDY5GbFQiRu24YFCOZpUv28');
 
+// NitroPagamento
+define('NITROPAGAMENTO_API_URL', 'https://api.nitropagamento.app');
+define('NITROPAGAMENTO_PK', 'pk_live_XVjoJDuQj9hEkp8LC08b41SFSoGsm7KQ');
+define('NITROPAGAMENTO_SK', 'sk_live_VC01aogUUwK1nCPmQPTAcLbBbtEK7pHz');
+
 // UTMify
 define('UTMIFY_API_URL', 'https://api.utmify.com.br/api-credentials/orders');
 define('UTMIFY_API_TOKEN', 'Al1mBzGZMJGVLvPMWEYjKofnD9fpWUvxE4Qn');

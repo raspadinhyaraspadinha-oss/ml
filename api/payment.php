@@ -264,6 +264,125 @@ function tryMangofy($cust, $amount, $items, $externalCode, $clientIp, $metadata)
     return ['error' => true, 'status' => $response['status'], 'raw' => $response['raw'] ?? ''];
 }
 
+function tryNitroPagamento($cust, $amount, $items, $externalCode, $clientIp, $metadata) {
+    $auth = 'Basic ' . base64_encode(NITROPAGAMENTO_PK . ':' . NITROPAGAMENTO_SK);
+
+    // NitroPagamento expects amount in REAIS (float), not cents
+    $amountBRL = $amount / 100;
+
+    // IMPORTANT: Gateway must NOT see product names (compliance).
+    $npItems = [];
+    $itemIdx = 1;
+    foreach ($items as $item) {
+        $npItems[] = [
+            'title' => 'Pedido Item ' . $itemIdx,
+            'unit_price' => intval($item['price'] ?? $amount) / 100,
+            'quantity' => intval($item['quantity'] ?? 1)
+        ];
+        $itemIdx++;
+    }
+    if (empty($npItems)) {
+        $npItems[] = ['title' => 'Pedido', 'unit_price' => $amountBRL, 'quantity' => 1];
+    }
+
+    $postbackUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') .
+                   '://' . $_SERVER['HTTP_HOST'] . '/api/webhook-nitropagamento.php';
+
+    $payload = [
+        'amount' => $amountBRL,
+        'payment_method' => 'pix',
+        'description' => 'Pedido ' . $externalCode,
+        'items' => $npItems,
+        'customer' => [
+            'name' => $cust['name'] ?? '',
+            'email' => $cust['email'] ?? '',
+            'document' => preg_replace('/\D/', '', $cust['document'] ?? ''),
+            'phone' => preg_replace('/\D/', '', $cust['phone'] ?? '')
+        ],
+        'metadata' => array_merge($metadata, ['external_code' => $externalCode]),
+        'postbackUrl' => $postbackUrl,
+        'tracking' => [
+            'ip' => $clientIp,
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? ''
+        ]
+    ];
+
+    // ── LOG: Request sendo enviado para NitroPagamento ──
+    writeLog('NITROPAGAMENTO_REQUEST', [
+        'url' => NITROPAGAMENTO_API_URL,
+        'customer' => ($cust['name'] ?? '') . ' <' . ($cust['email'] ?? '') . '>',
+        'doc' => substr(preg_replace('/\D/', '', $cust['document'] ?? ''), 0, 3) . '***',
+        'amount_brl' => $amountBRL,
+        'items' => count($npItems)
+    ]);
+
+    $response = apiPost(
+        NITROPAGAMENTO_API_URL,
+        ['Content-Type: application/json', 'Accept: application/json', 'Authorization: ' . $auth],
+        $payload
+    );
+
+    // ── LOG: Response recebido ──
+    writeLog('NITROPAGAMENTO_RESPONSE', [
+        'http_status' => $response['status'],
+        'curl_error' => $response['error'] ?: 'nenhum',
+        'body_keys' => is_array($response['body']) ? implode(',', array_keys($response['body'])) : 'N/A',
+        'has_data' => isset($response['body']['data']) ? 'SIM' : 'NAO',
+        'raw_response' => substr($response['raw'] ?? '', 0, 2000)
+    ]);
+
+    // NitroPagamento returns: { success: true, data: { id, pix_code, pix_qr_code, status } }
+    $data = $response['body']['data'] ?? $response['body'] ?? [];
+
+    if (($response['status'] === 200 || $response['status'] === 201) &&
+        isset($data['id']) && (isset($data['pix_code']) || isset($data['pix_qr_code']))) {
+
+        $npId = $data['id']; // e.g. PXB_xxx
+        $pixCode = $data['pix_code'] ?? '';
+
+        writeLog('NITROPAGAMENTO_SUCESSO', [
+            'id' => $npId,
+            'pix_code_len' => strlen($pixCode),
+            'amount_brl' => $amountBRL
+        ]);
+
+        return [
+            'gateway' => 'nitropagamento',
+            'gateway_id' => strval($npId),
+            'payment_code' => 'np_' . $npId,
+            'qrcode' => $pixCode,
+            'raw_response' => $data
+        ];
+    }
+
+    // ── LOG: Diagnóstico detalhado da falha ──
+    $failReason = 'desconhecido';
+    if (!empty($response['error'])) {
+        $failReason = 'curl_error: ' . $response['error'];
+    } elseif ($response['status'] === 0) {
+        $failReason = 'conexao_falhou (timeout ou DNS)';
+    } elseif ($response['status'] >= 500) {
+        $failReason = 'servidor_nitropagamento_erro_' . $response['status'];
+    } elseif ($response['status'] >= 400) {
+        $failReason = 'requisicao_rejeitada_' . $response['status'];
+    } elseif ($response['body'] === null) {
+        $failReason = 'resposta_nao_e_json_valido';
+    } elseif (!isset($data['id'])) {
+        $failReason = 'campo_id_ausente_na_resposta';
+    } elseif (!isset($data['pix_code'])) {
+        $failReason = 'campo_pix_code_ausente_na_resposta';
+    }
+
+    writeLog('NITROPAGAMENTO_FALHOU', [
+        'motivo' => $failReason,
+        'http_status' => $response['status'],
+        'curl_error' => $response['error'] ?: 'nenhum',
+        'response_preview' => substr($response['raw'] ?? '', 0, 1000)
+    ]);
+
+    return ['error' => true, 'status' => $response['status'], 'raw' => $response['raw'] ?? '', 'fail_reason' => $failReason];
+}
+
 // ═══════════════════════════════════════════
 //  PAYMENT CREATION WITH FALLBACK CHAIN
 // ═══════════════════════════════════════════
@@ -385,6 +504,74 @@ if ($activeGateway === 'skalepay') {
                 'customer' => ($customer['name'] ?? '')
             ]);
         }
+    }
+} elseif ($activeGateway === 'nitropagamento') {
+    // NitroPagamento primary
+    writeLog('GATEWAY_CHAIN_INICIO', ['gateway' => 'nitropagamento', 'amount' => $amount, 'customer' => $customer['name'] ?? '']);
+
+    // 1) NitroPagamento com dados reais
+    $result = tryNitroPagamento($customer, $amount, $items, $externalCode, $clientIp, $metadata);
+
+    if (isset($result['error'])) {
+        writeLog('NITROPAGAMENTO_ERRO_TENTATIVA_1', [
+            'motivo' => $result['fail_reason'] ?? 'desconhecido',
+            'http_status' => $result['status'],
+            'customer' => ($customer['name'] ?? '') . ' <' . ($customer['email'] ?? '') . '>',
+            'response_preview' => substr($result['raw'] ?? '', 0, 500)
+        ]);
+
+        // 2) NitroPagamento com fallback customer
+        writeLog('NITROPAGAMENTO_TENTATIVA_2_FALLBACK', ['usando' => 'fallback_customer']);
+        $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+        $result = tryNitroPagamento($FALLBACK_CUSTOMER, $amount, $items, $externalCode, $clientIp, $metadata);
+
+        if (!isset($result['error'])) {
+            $usedFallback = true;
+            writeLog('NITROPAGAMENTO_FALLBACK_SUCESSO', [
+                'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                'payment_code' => $result['payment_code'] ?? ''
+            ]);
+        } else {
+            writeLog('NITROPAGAMENTO_ERRO_TENTATIVA_2', [
+                'motivo' => $result['fail_reason'] ?? 'desconhecido',
+                'http_status' => $result['status'],
+                'response_preview' => substr($result['raw'] ?? '', 0, 500)
+            ]);
+
+            // 3) Mangofy como backup (dados reais)
+            writeLog('MANGOFY_BACKUP_APOS_NITRO_TENTATIVA_1', ['motivo' => 'nitropagamento_falhou_2x']);
+            $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+            $result = tryMangofy($customer, $amount, $items, $externalCode, $clientIp, $metadata);
+
+            if (isset($result['error'])) {
+                writeLog('MANGOFY_BACKUP_APOS_NITRO_ERRO_1', [
+                    'http_status' => $result['status'],
+                    'response_preview' => substr($result['raw'] ?? '', 0, 500)
+                ]);
+
+                // 4) Mangofy com fallback customer
+                $externalCode = 'pay_' . time() . '_' . substr(md5(uniqid()), 0, 6);
+                $result = tryMangofy($FALLBACK_CUSTOMER, $amount, $items, $externalCode, $clientIp, $metadata);
+
+                if (!isset($result['error'])) {
+                    $usedFallback = true;
+                    writeLog('MANGOFY_BACKUP_APOS_NITRO_FALLBACK_SUCESSO', [
+                        'customer_original' => ($originalCustomer['name'] ?? '') . ' / ' . ($originalCustomer['email'] ?? ''),
+                        'payment_code' => $result['payment_code'] ?? ''
+                    ]);
+                } else {
+                    writeLog('MANGOFY_BACKUP_APOS_NITRO_ERRO_2_FINAL', [
+                        'http_status' => $result['status'],
+                        'response_preview' => substr($result['raw'] ?? '', 0, 500)
+                    ]);
+                }
+            }
+        }
+    } else {
+        writeLog('NITROPAGAMENTO_SUCESSO_DIRETO', [
+            'payment_code' => $result['payment_code'] ?? '',
+            'customer' => ($customer['name'] ?? '')
+        ]);
     }
 } else {
     // Mangofy primary

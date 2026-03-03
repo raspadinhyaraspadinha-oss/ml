@@ -10,7 +10,7 @@ require_once __DIR__ . '/config.php';
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     echo json_encode([
         'active_gateway' => getActiveGateway(),
-        'options' => ['mangofy', 'skalepay']
+        'options' => ['mangofy', 'skalepay', 'nitropagamento']
     ]);
     exit;
 }
@@ -19,9 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $gw = $input['gateway'] ?? '';
 
-    if (!in_array($gw, ['mangofy', 'skalepay'])) {
+    if (!in_array($gw, ['mangofy', 'skalepay', 'nitropagamento'])) {
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid gateway. Must be "mangofy" or "skalepay"']);
+        echo json_encode(['error' => 'Invalid gateway. Must be "mangofy", "skalepay" or "nitropagamento"']);
         exit;
     }
 

@@ -228,11 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
     buyBtn.onclick = null;
     buyBtn.removeAttribute('onclick');
 
-    buyBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
+    /* ── Shared add-to-cart + navigate logic ── */
+    function addAndGo() {
       // Safety: never add a product with price 0 to cart
       if (_pageProduct.price <= 0) {
         console.error('Cart: product price is 0, selectors may be wrong. Name:', _pageProduct.name, 'Price element:', priceEl);
@@ -268,7 +265,27 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       window.location.href = resolveUrl('/checkout/index.html') + getUTMQueryString();
+    }
+
+    buyBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      addAndGo();
     });
+
+    /* ── "Adicionar ao carrinho" button: same behavior ── */
+    var cartBtn = document.getElementById('cartBtn') || document.querySelector('.cart-btn');
+    if (cartBtn) {
+      cartBtn.onclick = null;
+      cartBtn.removeAttribute('onclick');
+      cartBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        addAndGo();
+      });
+    }
 
   }
 });

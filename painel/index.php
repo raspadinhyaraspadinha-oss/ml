@@ -310,6 +310,7 @@ if ($isAuthenticated) {
         }
         .gw-card.gw-mangofy::before { background: linear-gradient(90deg, #10b981, #34d399); }
         .gw-card.gw-skalepay::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .gw-card.gw-nitropagamento::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 
         .gw-info { display: flex; align-items: center; gap: 1rem; }
         .gw-icon {
@@ -319,6 +320,7 @@ if ($isAuthenticated) {
         }
         .gw-mangofy .gw-icon { background: #10b98118; color: #34d399; }
         .gw-skalepay .gw-icon { background: #8b5cf618; color: #a78bfa; }
+        .gw-nitropagamento .gw-icon { background: #f59e0b18; color: #fbbf24; }
 
         .gw-text-label { font-size: 0.72rem; color: #71717a; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
         .gw-text-name { font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
@@ -328,6 +330,7 @@ if ($isAuthenticated) {
         }
         .gw-mangofy .gw-live-dot { background: #34d399; box-shadow: 0 0 8px #34d39966; }
         .gw-skalepay .gw-live-dot { background: #a78bfa; box-shadow: 0 0 8px #a78bfa66; }
+        .gw-nitropagamento .gw-live-dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf2466; }
         @keyframes gwPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
@@ -351,6 +354,7 @@ if ($isAuthenticated) {
         }
         .gw-btn.gw-active-mg { background: #059669; }
         .gw-btn.gw-active-sk { background: #7c3aed; }
+        .gw-btn.gw-active-np { background: #d97706; }
         .gw-btn:disabled { opacity: 0.5; cursor: wait; }
 
         /* Filter Bar */
@@ -461,6 +465,7 @@ if ($isAuthenticated) {
         .badge-failed { background: #450a0a44; color: #f87171; }
         .badge-mg { background: #05966920; color: #34d399; }
         .badge-sk { background: #7c3aed20; color: #a78bfa; }
+        .badge-np { background: #d9770620; color: #fbbf24; }
 
         /* Event Log */
         .log-container {
@@ -484,6 +489,7 @@ if ($isAuthenticated) {
         .log-line.webhook { color: #fbbf24; }
         .log-line.aprovado { color: #34d399; }
         .log-line.skalepay { color: #a78bfa; }
+        .log-line.nitropagamento { color: #fbbf24; }
         .log-line.gateway { color: #f472b6; }
         .log-line.erro { color: #f87171; }
 
@@ -910,18 +916,19 @@ if ($isAuthenticated) {
              ═══════════════════════════════════════ -->
         <div class="gw-card gw-<?php echo $activeGateway; ?>" id="gwCard">
             <div class="gw-info">
-                <div class="gw-icon" id="gwIcon"><?php echo $activeGateway === 'skalepay' ? 'SK' : 'MG'; ?></div>
+                <div class="gw-icon" id="gwIcon"><?php echo $activeGateway === 'skalepay' ? 'SK' : ($activeGateway === 'nitropagamento' ? 'NP' : 'MG'); ?></div>
                 <div>
                     <div class="gw-text-label">Gateway Ativo</div>
                     <div class="gw-text-name" id="gwName">
                         <span class="gw-live-dot"></span>
-                        <?php echo $activeGateway === 'skalepay' ? 'SkalePay' : 'Mangofy'; ?>
+                        <?php echo $activeGateway === 'skalepay' ? 'SkalePay' : ($activeGateway === 'nitropagamento' ? 'NitroPagamento' : 'Mangofy'); ?>
                     </div>
                 </div>
             </div>
             <div class="gw-toggle-group">
                 <button class="gw-btn<?php echo $activeGateway === 'mangofy' ? ' gw-active gw-active-mg' : ''; ?>" data-gw="mangofy" onclick="switchGateway('mangofy')">Mangofy</button>
                 <button class="gw-btn<?php echo $activeGateway === 'skalepay' ? ' gw-active gw-active-sk' : ''; ?>" data-gw="skalepay" onclick="switchGateway('skalepay')">SkalePay</button>
+                <button class="gw-btn<?php echo $activeGateway === 'nitropagamento' ? ' gw-active gw-active-np' : ''; ?>" data-gw="nitropagamento" onclick="switchGateway('nitropagamento')">NitroPag</button>
             </div>
         </div>
 
@@ -1083,6 +1090,7 @@ if ($isAuthenticated) {
                         <button class="log-filter-btn" data-log-filter="webhook" onclick="filterLog('webhook')">Webhook</button>
                         <button class="log-filter-btn" data-log-filter="aprovado" onclick="filterLog('aprovado')">Aprovados</button>
                         <button class="log-filter-btn" data-log-filter="skalepay" onclick="filterLog('skalepay')">SkalePay</button>
+                        <button class="log-filter-btn" data-log-filter="nitropagamento" onclick="filterLog('nitropagamento')">NitroPag</button>
                         <button class="log-filter-btn" data-log-filter="gateway" onclick="filterLog('gateway')">Gateway</button>
                         <button class="log-filter-btn" data-log-filter="erro" onclick="filterLog('erro')">Erros</button>
                         <button class="log-filter-btn" data-log-filter="api" onclick="filterLog('api')">API</button>
@@ -1104,6 +1112,7 @@ if ($isAuthenticated) {
                         elseif (strpos($line, 'WEBHOOK_RECEBIDO') !== false) $cls = 'webhook';
                         elseif (strpos($line, 'PAGAMENTO_APROVADO') !== false) $cls = 'aprovado';
                         elseif (strpos($line, 'SKALEPAY_') !== false) $cls = 'skalepay';
+                        elseif (strpos($line, 'NITROPAGAMENTO_') !== false) $cls = 'nitropagamento';
                         elseif (strpos($line, 'GATEWAY_') !== false) $cls = 'gateway';
                         elseif (strpos($line, 'ERRO') !== false || strpos($line, 'FALHOU') !== false) $cls = 'erro';
                     ?>
@@ -1994,8 +2003,8 @@ if ($isAuthenticated) {
             const statusCls = p.status === 'paid' ? 'badge-paid' : p.status === 'failed' ? 'badge-failed' : 'badge-pending';
             const statusLabel = p.status === 'paid' ? 'Pago' : p.status === 'failed' ? 'Falhou' : 'Pendente';
             const gw = (p.gateway || 'mangofy').toLowerCase();
-            const gwCls = gw === 'skalepay' ? 'badge-sk' : 'badge-mg';
-            const gwLabel = gw === 'skalepay' ? 'SkalePay' : 'Mangofy';
+            const gwCls = gw === 'skalepay' ? 'badge-sk' : gw === 'nitropagamento' ? 'badge-np' : 'badge-mg';
+            const gwLabel = gw === 'skalepay' ? 'SkalePay' : gw === 'nitropagamento' ? 'NitroPag' : 'Mangofy';
             const t = p.tracking || {};
             const pc = esc(p.payment_code || '');
             return `<tr class="clickable-row" onclick="openSaleDetail('${pc}')">
@@ -2155,6 +2164,7 @@ if ($isAuthenticated) {
             else if (type === 'webhook' && text.indexOf('WEBHOOK_RECEBIDO') !== -1) show = true;
             else if (type === 'aprovado' && text.indexOf('PAGAMENTO_APROVADO') !== -1) show = true;
             else if (type === 'skalepay' && text.indexOf('SKALEPAY_') !== -1) show = true;
+            else if (type === 'nitropagamento' && text.indexOf('NITROPAGAMENTO_') !== -1) show = true;
             else if (type === 'gateway' && (text.indexOf('GATEWAY_') !== -1 || text.indexOf('GATEWAY_CHAIN') !== -1)) show = true;
             else if (type === 'erro' && (text.indexOf('ERRO') !== -1 || text.indexOf('erro') !== -1 || text.indexOf('FALHOU') !== -1)) show = true;
             else if (type === 'api' && (text.indexOf('UTMIFY') !== -1 || text.indexOf('FB_CAPI') !== -1 || text.indexOf('TIKTOK') !== -1 || text.indexOf('MANGOFY') !== -1)) show = true;
@@ -2271,7 +2281,7 @@ if ($isAuthenticated) {
                     <div class="detail-row"><span class="label">Codigo</span><span class="value" style="font-family:monospace;font-size:0.76rem">${esc(paymentCode)}</span></div>
                     <div class="detail-row"><span class="label">Valor</span><span class="value">${formatBRL(payment.amount || 0)}</span></div>
                     <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge ${payment.status==='paid'?'badge-paid':payment.status==='failed'?'badge-failed':'badge-pending'}">${payment.status==='paid'?'Pago':payment.status==='failed'?'Falhou'+(payment.fail_reason?' ('+esc(payment.fail_reason)+')':''):'Pendente'}</span></span></div>
-                    <div class="detail-row"><span class="label">Gateway</span><span class="value"><span class="badge ${(payment.gateway||'mangofy')==='skalepay'?'badge-sk':'badge-mg'}">${(payment.gateway||'mangofy')==='skalepay'?'SkalePay':'Mangofy'}</span></span></div>
+                    <div class="detail-row"><span class="label">Gateway</span><span class="value"><span class="badge ${(payment.gateway||'mangofy')==='skalepay'?'badge-sk':(payment.gateway||'mangofy')==='nitropagamento'?'badge-np':'badge-mg'}">${(payment.gateway||'mangofy')==='skalepay'?'SkalePay':(payment.gateway||'mangofy')==='nitropagamento'?'NitroPagamento':'Mangofy'}</span></span></div>
                     <div class="detail-row"><span class="label">Criado</span><span class="value">${formatDateBR(payment.created_at)}</span></div>
                     <div class="detail-row"><span class="label">Pago em</span><span class="value">${formatDateBR(payment.paid_at)}</span></div>
                     <div class="detail-row"><span class="label">Produtos</span><span class="value">${itemsStr}</span></div>
@@ -2372,9 +2382,12 @@ if ($isAuthenticated) {
 
     // ── Gateway Switcher ──
     function switchGateway(gw) {
-        if (!confirm('Trocar gateway ativo para ' + gw.toUpperCase() + '?\n\nTodos os novos pagamentos usarao esta gateway.')) return;
+        var gwNames = { mangofy: 'Mangofy', skalepay: 'SkalePay', nitropagamento: 'NitroPagamento' };
+        var gwIcons = { mangofy: 'MG', skalepay: 'SK', nitropagamento: 'NP' };
+        var gwActiveCls = { mangofy: 'gw-active-mg', skalepay: 'gw-active-sk', nitropagamento: 'gw-active-np' };
+        if (!confirm('Trocar gateway ativo para ' + (gwNames[gw] || gw.toUpperCase()) + '?\n\nTodos os novos pagamentos usarao esta gateway.')) return;
         const btns = document.querySelectorAll('.gw-btn');
-        btns.forEach(b => { b.classList.remove('gw-active', 'gw-active-mg', 'gw-active-sk'); b.disabled = true; });
+        btns.forEach(b => { b.classList.remove('gw-active', 'gw-active-mg', 'gw-active-sk', 'gw-active-np'); b.disabled = true; });
 
         fetch('/api/gateway.php', {
             method: 'POST',
@@ -2387,15 +2400,15 @@ if ($isAuthenticated) {
             if (data.success) {
                 btns.forEach(b => {
                     if (b.dataset.gw === gw) {
-                        b.classList.add('gw-active', gw === 'mangofy' ? 'gw-active-mg' : 'gw-active-sk');
+                        b.classList.add('gw-active', gwActiveCls[gw] || 'gw-active-mg');
                     }
                 });
                 // Update card visual
                 const card = document.getElementById('gwCard');
                 card.className = 'gw-card gw-' + gw;
-                document.getElementById('gwIcon').textContent = gw === 'skalepay' ? 'SK' : 'MG';
-                document.getElementById('gwName').innerHTML = '<span class="gw-live-dot"></span> ' + (gw === 'skalepay' ? 'SkalePay' : 'Mangofy');
-                showToast('Gateway alterado para ' + (gw === 'skalepay' ? 'SkalePay' : 'Mangofy'), 'success');
+                document.getElementById('gwIcon').textContent = gwIcons[gw] || 'MG';
+                document.getElementById('gwName').innerHTML = '<span class="gw-live-dot"></span> ' + (gwNames[gw] || gw);
+                showToast('Gateway alterado para ' + (gwNames[gw] || gw), 'success');
             } else {
                 showToast('Erro: ' + (data.error || 'falha ao trocar gateway'), 'error');
                 location.reload();
@@ -2728,6 +2741,9 @@ if ($isAuthenticated) {
         const skTotal = payments.filter(p => p.gateway === 'skalepay').length;
         const skPaid = payments.filter(p => p.gateway === 'skalepay' && p.status === 'paid').length;
         const skFailed = payments.filter(p => p.gateway === 'skalepay' && p.status === 'failed').length;
+        const npTotal = payments.filter(p => p.gateway === 'nitropagamento').length;
+        const npPaid = payments.filter(p => p.gateway === 'nitropagamento' && p.status === 'paid').length;
+        const npFailed = payments.filter(p => p.gateway === 'nitropagamento' && p.status === 'failed').length;
 
         let html = '';
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Total PIX</span><span class="analytics-stat-value">${total}</span></div>`;
@@ -2740,6 +2756,7 @@ if ($isAuthenticated) {
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Pagam <5min</span><span class="analytics-stat-value">${timings.length > 0 ? ((under5/timings.length)*100).toFixed(0) : 0}%</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">Mangofy</span><span class="analytics-stat-value">${mgPaid}/${mgTotal} (${mgTotal>0?((mgPaid/mgTotal)*100).toFixed(1):0}%)${mgFailed?' <span style="color:#f87171;font-size:0.65rem">'+mgFailed+' falha(s)</span>':''}</span></div>`;
         html += `<div class="analytics-stat-row"><span class="analytics-stat-label">SkalePay</span><span class="analytics-stat-value">${skPaid}/${skTotal} (${skTotal>0?((skPaid/skTotal)*100).toFixed(1):0}%)${skFailed?' <span style="color:#f87171;font-size:0.65rem">'+skFailed+' falha(s)</span>':''}</span></div>`;
+        if (npTotal > 0) html += `<div class="analytics-stat-row"><span class="analytics-stat-label">NitroPag</span><span class="analytics-stat-value">${npPaid}/${npTotal} (${npTotal>0?((npPaid/npTotal)*100).toFixed(1):0}%)${npFailed?' <span style="color:#f87171;font-size:0.65rem">'+npFailed+' falha(s)</span>':''}</span></div>`;
         container.innerHTML = html;
     }
 
@@ -3553,10 +3570,13 @@ if ($isAuthenticated) {
         const pendingPayments = RAW_PAYMENTS.filter(p => p.status === 'pending');
 
         const skPayments = RAW_PAYMENTS.filter(p => (p.gateway || '') === 'skalepay');
-        const mgPayments = RAW_PAYMENTS.filter(p => (p.gateway || '') !== 'skalepay');
+        const npPayments = RAW_PAYMENTS.filter(p => (p.gateway || '') === 'nitropagamento');
+        const mgPayments = RAW_PAYMENTS.filter(p => (p.gateway || '') !== 'skalepay' && (p.gateway || '') !== 'nitropagamento');
         const skPaid = skPayments.filter(p => p.status === 'paid').length;
+        const npPaidCro = npPayments.filter(p => p.status === 'paid').length;
         const mgPaid = mgPayments.filter(p => p.status === 'paid').length;
         const skRate = skPayments.length > 0 ? (skPaid / skPayments.length * 100).toFixed(1) : '0.0';
+        const npRate = npPayments.length > 0 ? (npPaidCro / npPayments.length * 100).toFixed(1) : '0.0';
         const mgRate = mgPayments.length > 0 ? (mgPaid / mgPayments.length * 100).toFixed(1) : '0.0';
 
         // Average time to payment
@@ -3574,6 +3594,7 @@ if ($isAuthenticated) {
                 <div class="kpi-card"><div class="kpi-label">Taxa Pagamento</div><div class="kpi-value green">${totalPayments > 0 ? (paidPayments.length / totalPayments * 100).toFixed(1) : 0}%</div></div>
                 <div class="kpi-card"><div class="kpi-label">SkalePay Rate</div><div class="kpi-value" style="color:#a78bfa">${skRate}% <span style="font-size:0.7rem;color:#71717a">(${skPayments.length})</span></div></div>
                 <div class="kpi-card"><div class="kpi-label">Mangofy Rate</div><div class="kpi-value" style="color:#34d399">${mgRate}% <span style="font-size:0.7rem;color:#71717a">(${mgPayments.length})</span></div></div>
+                ${npPayments.length > 0 ? '<div class="kpi-card"><div class="kpi-label">NitroPag Rate</div><div class="kpi-value" style="color:#fbbf24">' + npRate + '% <span style="font-size:0.7rem;color:#71717a">(' + npPayments.length + ')</span></div></div>' : ''}
                 <div class="kpi-card"><div class="kpi-label">Tempo Médio (min)</div><div class="kpi-value">${avgTime}</div></div>
                 <div class="kpi-card"><div class="kpi-label">Falhas Gateway</div><div class="kpi-value" style="color:#f87171">${failedPayments.length}</div></div>
                 <div class="kpi-card"><div class="kpi-label">Pendentes</div><div class="kpi-value" style="color:#fbbf24">${pendingPayments.length}</div></div>
