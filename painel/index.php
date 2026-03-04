@@ -1715,7 +1715,9 @@ if ($isAuthenticated) {
         const ticket = totalPaid > 0 ? Math.round(totalRevenue / totalPaid) : 0;
 
         // Usa o maior entre: registros no filtro atual OU total cumulativo (sem filtro de data)
-        const displayViews = (from || to) ? totalViews : Math.max(totalViews, PV_CUMULATIVE_TOTAL);
+        const _pvFrom = document.getElementById('dateFrom')?.value || '';
+        const _pvTo   = document.getElementById('dateTo')?.value   || '';
+        const displayViews = (_pvFrom || _pvTo) ? totalViews : Math.max(totalViews, PV_CUMULATIVE_TOTAL);
         document.getElementById('kpiAcessos').textContent = displayViews.toLocaleString('pt-BR');
         document.getElementById('kpiPix').textContent = totalPix.toLocaleString('pt-BR');
         document.getElementById('kpiVendas').textContent = totalPaid.toLocaleString('pt-BR');
