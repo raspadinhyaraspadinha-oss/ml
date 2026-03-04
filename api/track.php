@@ -47,9 +47,27 @@ if ($record['page'] === '') {
     exit;
 }
 
+// --- Increment cumulative pageview counter (survives trimming) ---
+$statsFile = DATA_DIR . 'pageview_stats.json';
+$sfp = fopen($statsFile, 'c+');
+if ($sfp && flock($sfp, LOCK_EX)) {
+    $ssize = filesize($statsFile);
+    $sc = ($ssize > 0) ? json_decode(fread($sfp, $ssize), true) : [];
+    if (!is_array($sc)) $sc = [];
+    $sc['total'] = ($sc['total'] ?? 0) + 1;
+    $sc['today'] = date('Y-m-d');
+    $sc['updated_at'] = date('c');
+    ftruncate($sfp, 0); rewind($sfp);
+    fwrite($sfp, json_encode($sc, JSON_UNESCAPED_UNICODE));
+    fflush($sfp); flock($sfp, LOCK_UN);
+}
+if ($sfp) fclose($sfp);
+
 // --- Write to pageviews.json with file locking ---
+// Capacity raised to 50,000 records so the rolling window is larger.
+// The cumulative total is stored in pageview_stats.json (never trimmed).
 $file = DATA_DIR . 'pageviews.json';
-$maxRecords = 10000;
+$maxRecords = 50000;
 
 $fp = fopen($file, 'c+');
 if ($fp && flock($fp, LOCK_EX)) {

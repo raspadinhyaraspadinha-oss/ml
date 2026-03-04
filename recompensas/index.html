@@ -837,32 +837,32 @@ body {
 <script>
 /* ===== PRODUCT DATA ===== */
 var products = [
-  { id:'jbl01', name:'JBL Boombox 3 Preta', image:'images/poco_preto.png', oldPrice:'R$ 2.999,90', newPrice:'R$ 67,79', stock:19, maxStock:30, cat:'audio', tag:'OFERTA DO DIA' },
-  { id:'projetor04', name:'Samsung The Freestyle Projetor Smart Portatil', image:'images/1.webp', oldPrice:'R$ 4.398,00', newPrice:'R$ 97,90', stock:10, maxStock:25, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'jbl02', name:'JBL Partybox 710 Preta', image:'images/JBL2.webp', oldPrice:'R$ 5.398,00', newPrice:'R$ 89,98', stock:10, maxStock:25, cat:'audio', tag:'OFERTA DO DIA' },
-  { id:'lilo', name:'Pelucia Stitch Grande Disney', image:'images/1.jpg', oldPrice:'R$ 398,00', newPrice:'R$ 79,29', stock:24, maxStock:40, cat:'casa', tag:'OFERTA DISNEY' },
-  { id:'sam25', name:'Samsung Galaxy S25 Ultra 5G 512GB Titanio Preto', image:'images/s1.jpg', oldPrice:'R$ 10.398,00', newPrice:'R$ 247,90', stock:16, maxStock:30, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'iphone16-preto', name:'iPhone 16 Pro Max (1T) Titanio Preto', image:'images/iphon1.jpg', oldPrice:'R$ 12.895,00', newPrice:'R$ 257,00', stock:8, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'fritadeira', name:'Air Fryer Fritadeira Eletrica', image:'images/f1.jpg', oldPrice:'R$ 529,99', newPrice:'R$ 81,24', stock:15, maxStock:30, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'xiaome', name:'Xiaomi POCO X5 256GB Blue', image:'images/x1_1.jpg', oldPrice:'R$ 1.685,00', newPrice:'R$ 87,00', stock:14, maxStock:25, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'kitferramenta', name:'Kit Combinado 7 Ferramentas DEWALT', image:'images/ferramenta.jpg', oldPrice:'R$ 1.050,90', newPrice:'R$ 83,97', stock:8, maxStock:20, cat:'casa', tag:'OFERTA DO DIA' },
-  { id:'iph06', name:'iPhone 15 Pro (256GB) Titanio Branco', image:'images/iphone_15_pro_max_titanio_branco.jpg', oldPrice:'R$ 5.849,10', newPrice:'R$ 117,58', stock:7, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'iph07', name:'iPhone 15 (256GB) Rosa', image:'images/iphone_15_rosa.jpg', oldPrice:'R$ 5.849,10', newPrice:'R$ 97,90', stock:6, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'iph08', name:'iPhone 15 Pro Max (512GB) Titanio Preto', image:'images/iphone_15_pro_max_titanio_preto.jpg', oldPrice:'R$ 6.199,00', newPrice:'R$ 134,90', stock:8, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'geladeira', name:'Geladeira Brastemp 588L Inox 220V', image:'images/geladeira.jpg', oldPrice:'R$ 3.999,00', newPrice:'R$ 167,82', stock:18, maxStock:30, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'xiaomex6', name:'Xiaomi Poco X6 Pro 256GB Preto', image:'images/x1_2.jpg', oldPrice:'R$ 3.527,00', newPrice:'R$ 97,37', stock:9, maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'xiaomex7', name:'Xiaomi Poco X7 Pro 512GB+12GB 2025', image:'images/x1.jpg', oldPrice:'R$ 3.999,00', newPrice:'R$ 148,89', stock:12, maxStock:25, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'aspirador', name:'Robo Aspirador Robot W90', image:'images/as1.jpg', oldPrice:'R$ 349,00', newPrice:'R$ 94,60', stock:18, maxStock:30, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'guarda-branco', name:'Guarda-roupa Casal Easy Slim com Espelho', image:'images/g1_1.jpg', oldPrice:'R$ 1.049,05', newPrice:'R$ 114,60', stock:16, maxStock:30, cat:'casa', tag:'OFERTA DO DIA' },
-  { id:'guarda-preto', name:'Guarda Roupa Casal 8 Portas Preto Fosco', image:'images/g1.jpg', oldPrice:'R$ 1.049,00', newPrice:'R$ 107,00', stock:7, maxStock:20, cat:'casa', tag:'OFERTA DO DIA' },
-  { id:'sofa', name:'Sofa Retratil Reclinavel 2,00m King House', image:'images/s1_2.jpg', oldPrice:'R$ 2.990,05', newPrice:'R$ 79,47', stock:18, maxStock:30, cat:'casa', tag:'OFERTA DO DIA' },
-  { id:'iph09', name:'iPhone 15 Pro (256GB) Titanio', image:'images/iphone_15_pro_titanio.jpg', oldPrice:'R$ 6.999,00', newPrice:'R$ 117,58', stock:4, maxStock:15, cat:'celular', tag:'OFERTA DO DIA' },
-  { id:'tv', name:'Samsung Smart TV 55" QLED 4K 2024', image:'images/tv1.jpg', oldPrice:'R$ 2.999,99', newPrice:'R$ 142,98', stock:12, maxStock:25, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'ps5', name:'PlayStation PS5 PRO Branco 2 TB', image:'images/s1_1.jpg', oldPrice:'R$ 6.499,99', newPrice:'R$ 108,17', stock:7, maxStock:20, cat:'gaming', tag:'OFERTA DO DIA' },
-  { id:'microo', name:'Microondas Brastemp 38L Inox', image:'images/m1.jpg', oldPrice:'R$ 1.757,99', newPrice:'R$ 102,16', stock:4, maxStock:15, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'lavar', name:'Lava E Seca Samsung Inox 11kg', image:'images/lavar1.jpg', oldPrice:'R$ 3.999,99', newPrice:'R$ 116,90', stock:8, maxStock:20, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'ar', name:'Ar Condicionado Split LG 24000 BTUs', image:'images/ar1.webp', oldPrice:'R$ 1.499,90', newPrice:'R$ 114,19', stock:9, maxStock:20, cat:'eletro', tag:'OFERTA DO DIA' },
-  { id:'fogao', name:'Fogao 5 Bocas Atlas Mesa de Vidro 127V/220V', image:'images/f1_1.jpg', oldPrice:'R$ 2.099,90', newPrice:'R$ 99,99', stock:7, maxStock:20, cat:'eletro', tag:'OFERTA DO DIA' }
+  { id:'geladeira',      name:'Geladeira Brastemp 588L Inox 220V',                   image:'images/geladeira.jpg',                          oldPrice:'R$ 3.999,00',  newPrice:'R$ 167,82', stock:18, maxStock:30, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'kitferramenta',  name:'Kit Combinado 7 Ferramentas DEWALT',                  image:'images/ferramenta.jpg',                         oldPrice:'R$ 1.050,90',  newPrice:'R$ 83,97',  stock:8,  maxStock:20, cat:'casa',    tag:'OFERTA DO DIA' },
+  { id:'jbl01',          name:'JBL Boombox 3 Preta',                                 image:'images/poco_preto.png',                         oldPrice:'R$ 2.999,90',  newPrice:'R$ 67,79',  stock:19, maxStock:30, cat:'audio',   tag:'OFERTA DO DIA' },
+  { id:'sofa',           name:'Sofa Retratil Reclinavel 2,00m King House',           image:'images/s1_2.jpg',                               oldPrice:'R$ 2.990,05',  newPrice:'R$ 79,47',  stock:18, maxStock:30, cat:'casa',    tag:'OFERTA DO DIA' },
+  { id:'iph09',          name:'iPhone 15 Pro (256GB) Titanio',                       image:'images/iphone_15_pro_titanio.jpg',              oldPrice:'R$ 6.999,00',  newPrice:'R$ 117,58', stock:4,  maxStock:15, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'projetor04',     name:'Samsung The Freestyle Projetor Smart Portatil',       image:'images/1.webp',                                 oldPrice:'R$ 4.398,00',  newPrice:'R$ 97,90',  stock:10, maxStock:25, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'iph08',          name:'iPhone 15 Pro Max (512GB) Titanio Preto',             image:'images/iphone_15_pro_max_titanio_preto.jpg',    oldPrice:'R$ 6.199,00',  newPrice:'R$ 134,90', stock:8,  maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'iphone16-preto', name:'iPhone 16 Pro Max (1T) Titanio Preto',                image:'images/iphon1.jpg',                             oldPrice:'R$ 12.895,00', newPrice:'R$ 257,00', stock:8,  maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'sam25',          name:'Samsung Galaxy S25 Ultra 5G 512GB Titanio Preto',     image:'images/s1.jpg',                                 oldPrice:'R$ 10.398,00', newPrice:'R$ 247,90', stock:16, maxStock:30, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'iph07',          name:'iPhone 15 (256GB) Rosa',                              image:'images/iphone_15_rosa.jpg',                     oldPrice:'R$ 5.849,10',  newPrice:'R$ 97,90',  stock:6,  maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'iph06',          name:'iPhone 15 Pro (256GB) Titanio Branco',                image:'images/iphone_15_pro_max_titanio_branco.jpg',   oldPrice:'R$ 5.849,10',  newPrice:'R$ 117,58', stock:7,  maxStock:20, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'xiaome',         name:'Xiaomi POCO X5 256GB Blue',                           image:'images/x1_1.jpg',                               oldPrice:'R$ 1.685,00',  newPrice:'R$ 87,00',  stock:14, maxStock:25, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'ps5',            name:'PlayStation PS5 PRO Branco 2 TB',                     image:'images/s1_1.jpg',                               oldPrice:'R$ 6.499,99',  newPrice:'R$ 108,17', stock:7,  maxStock:20, cat:'gaming',  tag:'OFERTA DO DIA' },
+  { id:'microo',         name:'Microondas Brastemp 38L Inox',                        image:'images/m1.jpg',                                 oldPrice:'R$ 1.757,99',  newPrice:'R$ 102,16', stock:4,  maxStock:15, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'guarda-branco',  name:'Guarda-roupa Casal Easy Slim com Espelho',            image:'images/g1_1.jpg',                               oldPrice:'R$ 1.049,05',  newPrice:'R$ 114,60', stock:16, maxStock:30, cat:'casa',    tag:'OFERTA DO DIA' },
+  { id:'ar',             name:'Ar Condicionado Split LG 24000 BTUs',                 image:'images/ar1.webp',                               oldPrice:'R$ 1.499,90',  newPrice:'R$ 114,19', stock:9,  maxStock:20, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'fogao',          name:'Fogao 5 Bocas Atlas Mesa de Vidro 127V/220V',         image:'images/f1_1.jpg',                               oldPrice:'R$ 2.099,90',  newPrice:'R$ 99,99',  stock:7,  maxStock:20, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'tv',             name:'Samsung Smart TV 55" QLED 4K 2024',                   image:'images/tv1.jpg',                                oldPrice:'R$ 2.999,99',  newPrice:'R$ 142,98', stock:12, maxStock:25, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'lavar',          name:'Lava E Seca Samsung Inox 11kg',                       image:'images/lavar1.jpg',                             oldPrice:'R$ 3.999,99',  newPrice:'R$ 116,90', stock:8,  maxStock:20, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'jbl02',          name:'JBL Partybox 710 Preta',                              image:'images/JBL2.webp',                              oldPrice:'R$ 5.398,00',  newPrice:'R$ 89,98',  stock:10, maxStock:25, cat:'audio',   tag:'OFERTA DO DIA' },
+  { id:'xiaomex7',       name:'Xiaomi Poco X7 Pro 512GB+12GB 2025',                  image:'images/x1.jpg',                                 oldPrice:'R$ 3.999,00',  newPrice:'R$ 148,89', stock:12, maxStock:25, cat:'celular', tag:'OFERTA DO DIA' },
+  { id:'aspirador',      name:'Robo Aspirador Robot W90',                            image:'images/as1.jpg',                                oldPrice:'R$ 349,00',    newPrice:'R$ 94,60',  stock:18, maxStock:30, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'fritadeira',     name:'Air Fryer Fritadeira Eletrica',                       image:'images/f1.jpg',                                 oldPrice:'R$ 529,99',    newPrice:'R$ 81,24',  stock:15, maxStock:30, cat:'eletro',  tag:'OFERTA DO DIA' },
+  { id:'lilo',           name:'Pelucia Stitch Grande Disney',                        image:'images/1.jpg',                                  oldPrice:'R$ 398,00',    newPrice:'R$ 79,29',  stock:24, maxStock:40, cat:'casa',    tag:'OFERTA DISNEY' },
+  { id:'guarda-preto',   name:'Guarda Roupa Casal 8 Portas Preto Fosco',             image:'images/g1.jpg',                                 oldPrice:'R$ 1.049,00',  newPrice:'R$ 107,00', stock:7,  maxStock:20, cat:'casa',    tag:'OFERTA DO DIA' },
+  { id:'xiaomex6',       name:'Xiaomi Poco X6 Pro 256GB Preto',                      image:'images/x1_2.jpg',                               oldPrice:'R$ 3.527,00',  newPrice:'R$ 97,37',  stock:9,  maxStock:20, cat:'celular', tag:'OFERTA DO DIA' }
 ];
 
 var soldOutProducts = [
@@ -872,6 +872,33 @@ var soldOutProducts = [
   { name:'iPhone 15 Pro Max (256GB) Dourado', image:'images/dourado.jpg' },
   { name:'iPad 10 Titanio Azul', image:'images/ipad_10.jpg' }
 ];
+
+/* ===== SECOND-VISIT URGENCY ===================================
+   Na 2ª+ visita, todos os produtos ficam com 1–3 unidades (vermelho).
+   Trigger: localStorage 'ml_recomp_vc' conta visitas à esta página.
+   ============================================================= */
+(function() {
+  var key = 'ml_recomp_vc';
+  var count = parseInt(localStorage.getItem(key) || '0') + 1;
+  localStorage.setItem(key, count);
+  if (count >= 2) {
+    /* Gera estoques únicos por produto para parecer real */
+    var urgencyPool = [1,1,2,2,2,3,3,1,2,3,1,2,3,2,1,3,2,1,2,3,1,1,3,2,1,3];
+    for (var i = urgencyPool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = urgencyPool[i]; urgencyPool[i] = urgencyPool[j]; urgencyPool[j] = tmp;
+    }
+    products = products.map(function(p, idx) {
+      var urgentStock = urgencyPool[idx % urgencyPool.length];
+      return {
+        id: p.id, name: p.name, image: p.image,
+        oldPrice: p.oldPrice, newPrice: p.newPrice,
+        stock: urgentStock, maxStock: 20,
+        cat: p.cat, tag: p.tag
+      };
+    });
+  }
+})();
 
 /* ===== RENDER PRODUCTS ===== */
 function getStockLevel(stock, max) {

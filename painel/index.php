@@ -122,9 +122,12 @@ function exportCSV(string $dir, array $params): void {
     fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
     fputcsv($out, [
-        'Codigo', 'Gateway', 'Status', 'Valor', 'Nome', 'Email', 'Telefone', 'Documento',
-        'Produtos', 'UTM Source', 'UTM Campaign', 'UTM Medium', 'UTM Content',
-        'Criado em', 'Pago em'
+        'Codigo', 'Gateway', 'Gateway_ID', 'Status', 'Motivo_Falha', 'Valor',
+        'Nome', 'Email', 'Telefone', 'Documento', 'IP', 'User_Agent',
+        'Produtos', 'Cidade', 'UF', 'CEP',
+        'UTM_Source', 'UTM_Campaign', 'UTM_Medium', 'UTM_Content', 'UTM_Term',
+        'FBC', 'FBP', 'SCK', 'SRC',
+        'Criado_em', 'Pago_em'
     ], ';');
 
     foreach ($payments as $p) {
@@ -137,20 +140,35 @@ function exportCSV(string $dir, array $params): void {
             $items[] = ($item['name'] ?? 'Produto') . ' x' . ($item['quantity'] ?? 1);
         }
 
+        $addr = $p['address'] ?? [];
+        $trk  = $p['tracking'] ?? [];
+        $cust = $p['customer'] ?? [];
         fputcsv($out, [
             $p['payment_code'] ?? '',
             $p['gateway'] ?? 'mangofy',
+            $p['gateway_id'] ?? '',
             $p['status'] ?? '',
+            $p['fail_reason'] ?? '',
             number_format(($p['amount'] ?? 0) / 100, 2, ',', '.'),
-            $p['customer']['name'] ?? '',
-            $p['customer']['email'] ?? '',
-            $p['customer']['phone'] ?? '',
-            $p['customer']['document'] ?? '',
+            $cust['name'] ?? '',
+            $cust['email'] ?? '',
+            $cust['phone'] ?? '',
+            $cust['document'] ?? '',
+            $p['client_ip'] ?? ($cust['ip'] ?? ''),
+            substr($p['user_agent'] ?? '', 0, 120),
             implode(', ', $items),
-            $p['tracking']['utm_source'] ?? '',
-            $p['tracking']['utm_campaign'] ?? '',
-            $p['tracking']['utm_medium'] ?? '',
-            $p['tracking']['utm_content'] ?? '',
+            $addr['cidade'] ?? '',
+            $addr['uf'] ?? '',
+            $addr['cep'] ?? '',
+            $trk['utm_source'] ?? '',
+            $trk['utm_campaign'] ?? '',
+            $trk['utm_medium'] ?? '',
+            $trk['utm_content'] ?? '',
+            $trk['utm_term'] ?? '',
+            $trk['fbc'] ?? '',
+            $trk['fbp'] ?? '',
+            $trk['sck'] ?? '',
+            $trk['src'] ?? '',
             $p['created_at'] ?? '',
             $p['paid_at'] ?? '',
         ], ';');
@@ -174,7 +192,16 @@ if ($isAuthenticated) {
     $pageviews = loadPageviews($DATA_DIR);
     $logLines = loadLog($DATA_DIR, 50);
     $apiEvents = loadApiEvents($DATA_DIR);
-    $analyticsEvents = loadAnalyticsEvents($DATA_DIR, 14);
+    $analyticsEvents = loadAnalyticsEvents($DATA_DIR, 30);
+
+    // Pageview cumulative stats (survives the 50k rolling window)
+    $pvStatsFile = $DATA_DIR . 'pageview_stats.json';
+    $pvStats = ['total' => 0];
+    if (file_exists($pvStatsFile)) {
+        $pvd = json_decode(file_get_contents($pvStatsFile), true);
+        if (is_array($pvd)) $pvStats = $pvd;
+    }
+    $pvCumulativeTotal = intval($pvStats['total'] ?? 0);
 
     // Gateway config
     $gwFile = $DATA_DIR . 'gateway_config.json';
@@ -1301,15 +1328,19 @@ if ($isAuthenticated) {
             <!-- Analytics Header with Date Filter + Export -->
             <div class="filter-bar" style="margin-bottom:1rem">
                 <label style="font-weight:600;color:#06b6d4">Analytics do Funil</label>
-                <div style="flex:1"></div>
-                <label>Fonte:</label>
+                <label style="font-size:0.8rem;color:#a1a1aa">Periodo:</label>
+                <input type="date" id="analyticsDateFrom" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.35rem 0.6rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="renderAnalytics()">
+                <span style="color:#52525b;font-size:0.8rem">até</span>
+                <input type="date" id="analyticsDateTo" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.35rem 0.6rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="renderAnalytics()">
+                <label style="font-size:0.8rem;color:#a1a1aa">Fonte:</label>
                 <select id="analyticsSourceFilter" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.4rem 0.7rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="renderAnalytics()">
                     <option value="all">Todas</option>
                     <option value="tiktok">TikTok</option>
                     <option value="facebook">Facebook</option>
                     <option value="organic">Organico</option>
                 </select>
-                <button class="btn btn-sm" style="background:#06468a;color:#38bdf8;border:1px solid #0369a1" onclick="exportAnalyticsCSV()">Exportar CSV</button>
+                <button class="btn btn-sm" style="background:#164e63;color:#67e8f9;border:1px solid #0e7490" onclick="exportSessionsCSV()">↓ Sessoes CSV</button>
+                <button class="btn btn-sm" style="background:#06468a;color:#38bdf8;border:1px solid #0369a1" onclick="exportAnalyticsCSV()">↓ Eventos CSV</button>
             </div>
 
             <!-- Main KPIs -->
@@ -1380,7 +1411,7 @@ if ($isAuthenticated) {
             <div class="section-title"><span class="dot" style="background:#06b6d4"></span> Sessoes Completas (Jornada do Usuario)</div>
             <div class="analytics-card">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
-                    <h3 style="margin:0"><span class="dot" style="background:#60a5fa"></span> Ultimas 30 Sessoes</h3>
+                    <h3 style="margin:0"><span class="dot" style="background:#60a5fa"></span> Sessoes (<span id="sessionCount">0</span> total — exibindo últimas 50)</h3>
                     <div class="api-filters">
                         <button class="api-filter-btn active" data-session-filter="all" onclick="filterSessions('all')">Todas</button>
                         <button class="api-filter-btn" data-session-filter="converted" onclick="filterSessions('converted')">Converteram</button>
@@ -1433,6 +1464,13 @@ if ($isAuthenticated) {
 
             <!-- Funnel Waterfall -->
             <div class="kpi-grid" id="croWaterfall"></div>
+
+            <!-- Entry Point Breakdown -->
+            <div class="section-title" style="margin-top:1.5rem"><span class="dot" style="background:#3b82f6"></span> Pontos de Entrada no Funil</div>
+            <div class="analytics-card" style="margin-bottom:1.5rem">
+                <p style="font-size:0.75rem;color:#71717a;margin:0 0 0.75rem">Qual foi a primeira página que cada sessão visitou (varia conforme onde você manda o lead).</p>
+                <div id="croEntryPoints"></div>
+            </div>
 
             <!-- PIX Health -->
             <div class="section-title" style="margin-top:1.5rem"><span class="dot" style="background:#10b981"></span> Saúde PIX</div>
@@ -1575,6 +1613,8 @@ if ($isAuthenticated) {
     const RAW_PAGEVIEWS = <?php echo json_encode($pageviews, JSON_UNESCAPED_UNICODE); ?>;
     const RAW_API_EVENTS = <?php echo json_encode($apiEvents ?? [], JSON_UNESCAPED_UNICODE); ?>;
     const RAW_ANALYTICS = <?php echo json_encode($analyticsEvents ?? [], JSON_UNESCAPED_UNICODE); ?>;
+    // Total cumulativo de pageviews (inclui registros antes do rolling window)
+    const PV_CUMULATIVE_TOTAL = <?php echo $pvCumulativeTotal; ?>;
     const ITEMS_PER_PAGE = <?php echo $ITEMS_PER_PAGE; ?>;
 
     // ── State ──
@@ -1674,7 +1714,9 @@ if ($isAuthenticated) {
             .reduce((s, p) => s + (p.amount || 0), 0);
         const ticket = totalPaid > 0 ? Math.round(totalRevenue / totalPaid) : 0;
 
-        document.getElementById('kpiAcessos').textContent = totalViews.toLocaleString('pt-BR');
+        // Usa o maior entre: registros no filtro atual OU total cumulativo (sem filtro de data)
+        const displayViews = (from || to) ? totalViews : Math.max(totalViews, PV_CUMULATIVE_TOTAL);
+        document.getElementById('kpiAcessos').textContent = displayViews.toLocaleString('pt-BR');
         document.getElementById('kpiPix').textContent = totalPix.toLocaleString('pt-BR');
         document.getElementById('kpiVendas').textContent = totalPaid.toLocaleString('pt-BR');
         document.getElementById('kpiCvr').textContent = cvr + '%';
@@ -2511,12 +2553,19 @@ if ($isAuthenticated) {
     // Helper: get filtered analytics based on source dropdown
     function getFilteredAnalytics() {
         const srcFilter = document.getElementById('analyticsSourceFilter')?.value || 'all';
-        if (srcFilter === 'all') return RAW_ANALYTICS;
+        const dateFrom  = document.getElementById('analyticsDateFrom')?.value  || '';
+        const dateTo    = document.getElementById('analyticsDateTo')?.value    || '';
+
         return RAW_ANALYTICS.filter(e => {
+            // Date filter
+            const d = (e.server_time || e.client_time || '').substring(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo   && d > dateTo)   return false;
+            // Source filter
             const src = (e.utms?.utm_source || '').toLowerCase();
-            if (srcFilter === 'tiktok') return src.indexOf('tiktok') !== -1;
+            if (srcFilter === 'tiktok')   return src.indexOf('tiktok') !== -1;
             if (srcFilter === 'facebook') return src.indexOf('facebook') !== -1 || src.indexOf('fb') !== -1 || src.indexOf('ig') !== -1;
-            if (srcFilter === 'organic') return !src || src === '(direto)';
+            if (srcFilter === 'organic')  return !src || src === '(direto)';
             return true;
         });
     }
@@ -2587,51 +2636,88 @@ if ($isAuthenticated) {
         const payments = getFilteredPaymentsForAnalytics();
 
         const stages = [
-            { key: 'prevsl', label: 'Pre-VSL', color: '#60a5fa' },
-            { key: 'vsl', label: 'VSL', color: '#818cf8' },
-            { key: 'questionario', label: 'Quiz', color: '#a78bfa' },
-            { key: 'roleta', label: 'Roleta', color: '#c084fc' },
-            { key: 'recompensas', label: 'Recomp.', color: '#e879f9' },
-            { key: 'produto', label: 'Produto', color: '#f472b6' },
-            { key: 'checkout', label: 'Checkout', color: '#fbbf24' },
-            { key: 'pix', label: 'PIX Gerado', color: '#34d399' },
-            { key: 'paid', label: 'Pago', color: '#10b981' }
+            { key: 'entrada',      label: 'Entrada',      color: '#60a5fa' },
+            { key: 'questionario', label: 'Quiz',          color: '#a78bfa' },
+            { key: 'roleta',       label: 'Roleta',        color: '#c084fc' },
+            { key: 'recompensas',  label: 'Recomp.',       color: '#e879f9' },
+            { key: 'produto',      label: 'Produto',       color: '#f472b6' },
+            { key: 'checkout',     label: 'Checkout',      color: '#fbbf24' },
+            { key: 'pix',          label: 'PIX Gerado',    color: '#34d399' },
+            { key: 'paid',         label: 'Pago',          color: '#10b981' }
         ];
 
-        // Count UNIQUE SESSIONS per funnel stage (not raw events)
+        // ── Build per-session data: first page + all pages visited ──
+        // (sorted by server_time to get the true chronological first event)
+        const sessionMap = {}; // sid → { firstPage, pages: Set, hasPix, hasPaid }
+        [...events].sort((a, b) => (a.server_time||'').localeCompare(b.server_time||'')).forEach(evt => {
+            const sid = evt.session_id || '';
+            if (!sid) return;
+            if (!sessionMap[sid]) sessionMap[sid] = { firstPage: null, pages: new Set(), hasPix: false, hasPaid: false };
+            const page = evt.page || '';
+            // First page = entry point (only consider funnel_view events for first page)
+            if (evt.event === 'funnel_view' && !sessionMap[sid].firstPage) sessionMap[sid].firstPage = page;
+            sessionMap[sid].pages.add(page);
+            if (evt.event === 'GeneratePixCode' || evt.event === 'CopyPixCode') sessionMap[sid].hasPix = true;
+            if (evt.event === 'Purchase') sessionMap[sid].hasPaid = true;
+            if (evt.event === 'InitiateCheckout') sessionMap[sid].pages.add('checkout');
+        });
+
+        // ── Count unique sessions per stage ──
         const sessionStages = {};
         stages.forEach(s => sessionStages[s.key] = new Set());
 
-        events.forEach(evt => {
-            const sid = evt.session_id || '';
-            if (evt.event === 'funnel_view') {
-                const page = evt.page || '';
-                if (page.indexOf('prevsl') !== -1) sessionStages.prevsl.add(sid);
-                else if (page === 'vsl' || (page.indexOf('vsl') !== -1 && page.indexOf('prevsl') === -1)) sessionStages.vsl.add(sid);
-                else if (page.indexOf('questionario') !== -1) sessionStages.questionario.add(sid);
-                else if (page.indexOf('roleta') !== -1) sessionStages.roleta.add(sid);
-                else if (page.indexOf('recompensas') !== -1) sessionStages.recompensas.add(sid);
-                else if (page.indexOf('produto') !== -1) sessionStages.produto.add(sid);
-                else if (page.indexOf('checkout') !== -1) sessionStages.checkout.add(sid);
-            } else if (evt.event === 'InitiateCheckout') {
-                sessionStages.checkout.add(sid);
-            } else if (evt.event === 'GeneratePixCode' || evt.event === 'CopyPixCode') {
-                sessionStages.pix.add(sid);
-            } else if (evt.event === 'Purchase') {
-                sessionStages.paid.add(sid);
+        // Recompensas: first vs return visit counter
+        let recompFirstVisit = 0, recompReturnVisit = 0;
+
+        Object.entries(sessionMap).forEach(([sid, s]) => {
+            const fp = s.firstPage || '';
+            // Entrada = first page the session landed on (regardless of which funnel step it is)
+            sessionStages.entrada.add(sid);
+
+            const pagesArr = Array.from(s.pages);
+            pagesArr.forEach(page => {
+                if (page.indexOf('questionario') !== -1) sessionStages.questionario.add(sid);
+                if (page.indexOf('roleta') !== -1)       sessionStages.roleta.add(sid);
+                if (page.indexOf('produto') !== -1)      sessionStages.produto.add(sid);
+                if (page.indexOf('checkout') !== -1)     sessionStages.checkout.add(sid);
+            });
+
+            // Recompensas: count unique sessions that visited, distinguish first vs return
+            const recompCount = pagesArr.filter(p => p.indexOf('recompensas') !== -1).length;
+            if (recompCount > 0) {
+                sessionStages.recompensas.add(sid);
+                if (recompCount === 1) recompFirstVisit++;
+                else recompReturnVisit++;
             }
+
+            if (s.hasPix)  sessionStages.pix.add(sid);
+            if (s.hasPaid) sessionStages.paid.add(sid);
         });
 
-        // Use payments data for pix + paid (more reliable)
+        // Use payments for pix/paid (authoritative source)
         const counts = {};
         stages.forEach(s => counts[s.key] = sessionStages[s.key].size);
-        // Always use payments for pix/paid counts as they're authoritative
-        counts.pix = Math.max(counts.pix, payments.length);
+        counts.pix  = Math.max(counts.pix,  payments.length);
         counts.paid = Math.max(counts.paid, payments.filter(p => p.status === 'paid').length);
+
+        // Detect dominant entry points for the "Entrada" label
+        const entryPoints = {};
+        Object.values(sessionMap).forEach(s => {
+            const fp = s.firstPage || 'direto';
+            const key = fp.indexOf('prevsl') !== -1 ? 'prevsl'
+                      : fp.indexOf('vsl') !== -1    ? 'vsl'
+                      : fp.indexOf('questionario') !== -1 ? 'quiz'
+                      : fp.indexOf('roleta') !== -1 ? 'roleta'
+                      : fp.indexOf('recompensas') !== -1 ? 'recompensas'
+                      : 'outro';
+            entryPoints[key] = (entryPoints[key] || 0) + 1;
+        });
+        const entryBreakdown = Object.entries(entryPoints).sort((a,b)=>b[1]-a[1])
+            .map(([k,v]) => `${k}: ${v}`).join(' | ');
 
         const maxCount = Math.max(...Object.values(counts), 1);
         const maxBarHeight = 160;
-        const entryCount = counts[stages[0].key] || 1;
+        const entryCount = counts.entrada || 1;
 
         let html = '';
         stages.forEach((stage, idx) => {
@@ -2639,8 +2725,7 @@ if ($isAuthenticated) {
             const height = Math.max(4, (count / maxCount) * maxBarHeight);
             const pct = ((count / entryCount) * 100).toFixed(1);
             const dropPct = idx > 0 && counts[stages[idx-1].key] > 0
-                ? ((1 - count / counts[stages[idx-1].key]) * 100).toFixed(0)
-                : '';
+                ? ((1 - count / counts[stages[idx-1].key]) * 100).toFixed(0) : '';
 
             if (idx > 0) {
                 html += `<div class="funnel-arrow" style="display:flex;flex-direction:column;align-items:center;padding-bottom:2rem">
@@ -2648,11 +2733,20 @@ if ($isAuthenticated) {
                     <span>&rarr;</span>
                 </div>`;
             }
+            // Recompensas: show first/return breakdown
+            const extraInfo = stage.key === 'recompensas' && count > 0
+                ? `<div style="font-size:0.6rem;color:#71717a;margin-top:2px">1ª: ${recompFirstVisit} / ret: ${recompReturnVisit}</div>`
+                : '';
+            // Entrada: show breakdown tooltip
+            const entryInfo = stage.key === 'entrada' && count > 0
+                ? `<div style="font-size:0.6rem;color:#71717a;margin-top:2px;max-width:60px;overflow:hidden;text-overflow:ellipsis" title="${esc(entryBreakdown)}">↓ vias</div>`
+                : '';
             html += `<div class="funnel-bar-wrap">
                 <div class="funnel-bar" style="height:${height}px;background:${stage.color}"></div>
                 <div class="funnel-label">${stage.label}</div>
                 <div class="funnel-count">${count.toLocaleString('pt-BR')}</div>
                 <div class="funnel-pct">${pct}%</div>
+                ${extraInfo}${entryInfo}
             </div>`;
         });
         container.innerHTML = html;
@@ -2660,7 +2754,12 @@ if ($isAuthenticated) {
         // Summary line
         const ratesEl = document.getElementById('funnelConversionRates');
         if (ratesEl) {
-            ratesEl.innerHTML = `<strong>Resumo:</strong> ${counts.prevsl} entraram &rarr; ${counts.checkout} checkout (${((counts.checkout/entryCount)*100).toFixed(1)}%) &rarr; ${counts.pix} PIX (${((counts.pix/entryCount)*100).toFixed(1)}%) &rarr; ${counts.paid} pagaram (${((counts.paid/entryCount)*100).toFixed(2)}%) &nbsp;|&nbsp; <strong style="color:#34d399">Ticket:</strong> ${formatBRL(payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount||0),0) / Math.max(counts.paid,1))}`;
+            const paidRevenue = payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount||0),0);
+            ratesEl.innerHTML = `<strong>Entradas:</strong> ${counts.entrada} (${entryBreakdown}) &nbsp;|&nbsp;`
+                + ` <strong>Checkout:</strong> ${counts.checkout} (${((counts.checkout/entryCount)*100).toFixed(1)}%) &nbsp;|&nbsp;`
+                + ` <strong>PIX:</strong> ${counts.pix} (${((counts.pix/entryCount)*100).toFixed(1)}%) &nbsp;|&nbsp;`
+                + ` <strong>Pagaram:</strong> ${counts.paid} (${((counts.paid/entryCount)*100).toFixed(2)}%) &nbsp;|&nbsp;`
+                + ` <strong style="color:#34d399">Ticket médio:</strong> ${formatBRL(paidRevenue / Math.max(counts.paid,1))}`;
         }
     }
 
@@ -2953,7 +3052,10 @@ if ($isAuthenticated) {
         else if (sessionFilter === 'abandoned') sessionList = sessionList.filter(s => s.hasCheckout && !s.hasPix);
         else if (sessionFilter === 'bounce') sessionList = sessionList.filter(s => s.isBounce);
 
-        sessionList = sessionList.slice(0, 30);
+        const totalSessions = sessionList.length;
+        const countEl = document.getElementById('sessionCount');
+        if (countEl) countEl.textContent = totalSessions;
+        sessionList = sessionList.slice(0, 50);
 
         if (!sessionList.length) { container.innerHTML = '<div style="color:#71717a;font-size:0.82rem;padding:1rem 0">Nenhuma sessao encontrada</div>'; return; }
 
@@ -2965,13 +3067,27 @@ if ($isAuthenticated) {
                 : session.hasCheckout ? '<span style="color:#f87171;font-size:0.68rem;font-weight:700"> ABANDONOU CHECKOUT</span>'
                 : session.isBounce ? '<span style="color:#71717a;font-size:0.68rem"> BOUNCE</span>' : '';
 
-            const pages = [...new Set(session.events.map(e => e.page).filter(Boolean))];
-            const journey = pages.join(' → ');
+            const pages = session.events.map(e => e.page).filter(Boolean);
+            const uniquePages = [...new Set(pages)];
+            const journey = uniquePages.join(' → ');
+            // Entry point = first page
+            const entryPage = pages[0] || '-';
+            // Duration
+            const tFirst = session.events[0]?.server_time, tLast = session.events[session.events.length-1]?.server_time;
+            let durStr = '';
+            if (tFirst && tLast) { const d = (new Date(tLast)-new Date(tFirst))/60000; if (!isNaN(d)) durStr = d.toFixed(1)+'min'; }
+            // UTMs
+            const utms = session.events.find(e=>e.utms?.utm_source)?.utms || {};
+            const utmStr = [utms.utm_source, utms.utm_campaign].filter(Boolean).join('/') || '';
 
             html += `<div style="margin-bottom:0.75rem;padding:0.75rem;background:#111114;border-radius:8px;border:1px solid #1f1f23">`;
             html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
                 <span style="font-size:0.75rem;color:#60a5fa;font-weight:600">Sessao ${esc(shortSid)} — ${session.events.length} evento(s)${badge}</span>
-                <span style="font-size:0.68rem;color:#52525b">${session.lastTime ? new Date(session.lastTime).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                <span style="font-size:0.68rem;color:#52525b">${durStr ? durStr+' — ' : ''}${session.lastTime ? new Date(session.lastTime).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : ''}</span>
+            </div>`;
+            html += `<div style="font-size:0.7rem;color:#52525b;margin-bottom:0.3rem">
+                <span style="color:#a1a1aa">Entrada:</span> <span style="color:#fbbf24">${esc(entryPage)}</span>
+                ${utmStr ? ' &nbsp;|&nbsp; <span style="color:#a1a1aa">UTM:</span> <span style="color:#a78bfa">' + esc(utmStr) + '</span>' : ''}
             </div>`;
             html += `<div style="font-size:0.72rem;color:#71717a;margin-bottom:0.5rem">Jornada: ${esc(journey)}</div>`;
 
@@ -3044,21 +3160,100 @@ if ($isAuthenticated) {
     function exportAnalyticsCSV() {
         const events = getFilteredAnalytics();
         if (!events.length) { showToast('Sem eventos para exportar', 'error'); return; }
-        let csv = '\ufeff' + 'Data;Sessao;Evento;Pagina;UTM Source;UTM Campaign;UTM Medium;Dados\n';
+        // Enriquecido: inclui todos os campos disponíveis para análise de IA
+        let csv = '\ufeff' + 'Data_Servidor;Data_Cliente;Sessao;Evento;Pagina;URL;Referrer;UTM_Source;UTM_Campaign;UTM_Medium;UTM_Content;UTM_Term;Experimento;Variante;IP;User_Agent;Dados\n';
         events.forEach(e => {
-            const time = e.server_time || '';
-            const sid = (e.session_id||'').replace('ses_','');
-            const dataStr = e.data ? JSON.stringify(e.data).replace(/;/g,',') : '';
-            csv += [time, sid, e.event||'', e.page||'', e.utms?.utm_source||'', e.utms?.utm_campaign||'', e.utms?.utm_medium||'', dataStr].join(';') + '\n';
+            const dataStr = e.data ? JSON.stringify(e.data).replace(/;/g,',').replace(/\r?\n/g,' ') : '';
+            const ua = (e.user_agent||'').replace(/;/g,' ');
+            csv += [
+                e.server_time||'', e.client_time||'',
+                (e.session_id||'').replace('ses_',''),
+                e.event||'', e.page||'',
+                (e.url||'').replace(/;/g,' '),
+                (e.referrer||'').replace(/;/g,' '),
+                e.utms?.utm_source||'', e.utms?.utm_campaign||'',
+                e.utms?.utm_medium||'', e.utms?.utm_content||'',
+                e.utms?.utm_term||'',
+                e.experiment_id||'', e.variant_id||'',
+                e.ip||'', ua, dataStr
+            ].join(';') + '\n';
         });
+        dlCSV(csv, 'analytics_eventos_' + new Date().toISOString().substring(0,10) + '.csv');
+        showToast('CSV exportado com ' + events.length + ' eventos!', 'success');
+    }
+
+    // ── Exportar Sessões Completas (jornada do usuário) ──
+    function exportSessionsCSV() {
+        const events = getFilteredAnalytics();
+        if (!events.length) { showToast('Sem eventos para exportar', 'error'); return; }
+
+        // Agrupa por sessão com ordenação cronológica
+        const sessionMap = {};
+        [...events].sort((a,b) => (a.server_time||'').localeCompare(b.server_time||'')).forEach(e => {
+            const sid = e.session_id || 'unknown';
+            if (!sessionMap[sid]) sessionMap[sid] = [];
+            sessionMap[sid].push(e);
+        });
+
+        // Uma linha por sessão com resumo completo da jornada
+        let csv = '\ufeff' + 'Sessao;Inicio;Fim;Duracao_min;Num_Eventos;Primeira_Pagina;Ultima_Pagina;Jornada;UTM_Source;UTM_Campaign;UTM_Medium;IP;Checkout;PIX_Gerado;Comprou;Payment_Code;Valor_R$;Gateway\n';
+
+        // Mapeamento de pagamentos por sessão (via purchase event)
+        const paymentBySid = {};
+        RAW_PAYMENTS.forEach(p => {
+            const sid = p.session_id || '';
+            if (sid && !paymentBySid[sid]) paymentBySid[sid] = p;
+        });
+
+        Object.entries(sessionMap).sort((a,b) => {
+            const la = a[1][a[1].length-1]?.server_time||'';
+            const lb = b[1][b[1].length-1]?.server_time||'';
+            return lb.localeCompare(la);
+        }).forEach(([sid, evts]) => {
+            const first = evts[0], last = evts[evts.length-1];
+            const startT = first.server_time||'', endT = last.server_time||'';
+            let durMin = '';
+            if (startT && endT) {
+                const diff = (new Date(endT) - new Date(startT)) / 60000;
+                durMin = isNaN(diff) ? '' : diff.toFixed(1);
+            }
+            const pages = evts.map(e => e.page||'').filter(Boolean);
+            const uniquePages = [...new Set(pages)];
+            const journey = uniquePages.join(' > ');
+            const hasCheckout = uniquePages.some(p => p.indexOf('checkout') !== -1);
+            const hasPix = evts.some(e => e.event==='GeneratePixCode'||e.event==='CopyPixCode');
+            const hasPaid = evts.some(e => e.event==='Purchase');
+            const utms = evts.find(e=>e.utms?.utm_source)?.utms || {};
+
+            // Procura pagamento associado
+            let payCode='', payVal='', payGw='';
+            const pay = paymentBySid[sid];
+            if (pay) { payCode=pay.payment_code||''; payVal=(pay.amount/100).toFixed(2).replace('.',','); payGw=pay.gateway||''; }
+            // Também busca pelo GeneratePixCode event data
+            const pixEvt = evts.find(e=>e.event==='GeneratePixCode' && e.data?.payment_code);
+            if (!payCode && pixEvt) payCode = pixEvt.data.payment_code;
+
+            csv += [
+                sid.replace('ses_',''), startT, endT, durMin, evts.length,
+                pages[0]||'', pages[pages.length-1]||'',
+                journey.replace(/;/g,'|').substring(0,500),
+                utms.utm_source||'', utms.utm_campaign||'', utms.utm_medium||'',
+                first.ip||'',
+                hasCheckout?'SIM':'NAO', hasPix?'SIM':'NAO', hasPaid?'SIM':'NAO',
+                payCode, payVal, payGw
+            ].join(';') + '\n';
+        });
+
+        dlCSV(csv, 'sessoes_jornada_' + new Date().toISOString().substring(0,10) + '.csv');
+        showToast('Sessoes exportadas: ' + Object.keys(sessionMap).length, 'success');
+    }
+
+    function dlCSV(csv, filename) {
         const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'analytics_funil_' + new Date().toISOString().substring(0,10) + '.csv';
-        a.click();
+        a.href = url; a.download = filename; a.click();
         URL.revokeObjectURL(url);
-        showToast('CSV exportado com ' + events.length + ' eventos!', 'success');
     }
 
     // ════════════════════════════════════════════
@@ -3522,32 +3717,61 @@ if ($isAuthenticated) {
     function renderCRO() {
         // Funnel waterfall from analytics events
         const events = RAW_ANALYTICS;
+
+        // Build session map sorted chronologically (for entry point detection)
         const sessions = {};
-        events.forEach(e => {
+        [...events].sort((a,b)=>(a.server_time||'').localeCompare(b.server_time||'')).forEach(e => {
             const sid = e.session_id || '';
-            if (!sessions[sid]) sessions[sid] = { pages: new Set(), events: [] };
-            sessions[sid].pages.add(e.page || '');
+            if (!sessions[sid]) sessions[sid] = { pages: [], pagesSet: new Set(), events: [], firstPage: null };
+            const page = e.page || '';
+            if (!sessions[sid].firstPage && e.event === 'funnel_view') sessions[sid].firstPage = page;
+            if (!sessions[sid].pagesSet.has(page)) { sessions[sid].pages.push(page); sessions[sid].pagesSet.add(page); }
             sessions[sid].events.push(e);
         });
 
         // Count sessions by funnel stage
+        // "Entrada" = total unique sessions (regardless of which page they landed on)
+        const totalSessions = Object.keys(sessions).length;
         const funnelStages = [
-            { key: 'prevsl', label: 'Pre-Sell', color: '#3b82f6' },
-            { key: 'questionario', label: 'Questionário', color: '#8b5cf6' },
-            { key: 'roleta', label: 'Roleta', color: '#06b6d4' },
-            { key: 'recompensas', label: 'Recompensas', color: '#10b981' },
-            { key: 'produto:', label: 'Produto', color: '#f59e0b' },
-            { key: 'checkout', label: 'Checkout', color: '#ef4444' }
+            { key: '__entrada__', label: 'Entrada (total)', color: '#3b82f6' },
+            { key: 'questionario', label: 'Questionário',   color: '#8b5cf6' },
+            { key: 'roleta',       label: 'Roleta',         color: '#06b6d4' },
+            { key: 'recompensas',  label: 'Recompensas',    color: '#10b981' },
+            { key: 'produto',      label: 'Produto',        color: '#f59e0b' },
+            { key: 'checkout',     label: 'Checkout',       color: '#ef4444' }
         ];
 
+        // Recompensas: first visit vs return
+        let recompFirst = 0, recompReturn = 0;
+
         const stageCounts = funnelStages.map(stage => {
+            if (stage.key === '__entrada__') return { ...stage, count: totalSessions };
             let count = 0;
             Object.values(sessions).forEach(s => {
-                const pages = Array.from(s.pages);
-                if (pages.some(p => p.indexOf(stage.key) !== -1)) count++;
+                const pages = s.pages;
+                if (pages.some(p => p.indexOf(stage.key) !== -1)) {
+                    count++;
+                    if (stage.key === 'recompensas') {
+                        const visits = pages.filter(p => p.indexOf('recompensas') !== -1).length;
+                        if (visits === 1) recompFirst++; else recompReturn++;
+                    }
+                }
             });
             return { ...stage, count };
         });
+
+        // Entry point breakdown
+        const entryMap = {};
+        Object.values(sessions).forEach(s => {
+            const fp = s.firstPage || 'direto';
+            const key = fp.indexOf('prevsl')!=-1?'prevsl':fp.indexOf('vsl')!=-1?'vsl':fp.indexOf('questionario')!=-1?'quiz':fp.indexOf('roleta')!=-1?'roleta':fp.indexOf('recompensas')!=-1?'recomp':'outro';
+            entryMap[key] = (entryMap[key]||0) + 1;
+        });
+        const entryEl = document.getElementById('croEntryPoints');
+        if (entryEl) {
+            entryEl.innerHTML = Object.entries(entryMap).sort((a,b)=>b[1]-a[1])
+                .map(([k,v])=>`<div class="analytics-stat-row"><span class="analytics-stat-label">${esc(k)}</span><span class="analytics-stat-value">${v} (${totalSessions>0?(v/totalSessions*100).toFixed(1):0}%)</span></div>`).join('');
+        }
 
         const waterfallEl = document.getElementById('croWaterfall');
         if (waterfallEl) {
@@ -3555,10 +3779,13 @@ if ($isAuthenticated) {
                 const prev = i > 0 ? stageCounts[i-1].count : s.count;
                 const drop = prev > 0 ? ((prev - s.count) / prev * 100).toFixed(1) : 0;
                 const dropColor = drop > 40 ? '#ef4444' : drop > 20 ? '#f59e0b' : '#10b981';
+                const recompInfo = s.key === 'recompensas'
+                    ? `<div style="font-size:0.65rem;color:#71717a;margin-top:2px">1ª: ${recompFirst} / retorno: ${recompReturn}</div>` : '';
                 return `<div class="kpi-card">
                     <div class="kpi-label">${esc(s.label)}</div>
                     <div class="kpi-value" style="color:${s.color}">${s.count}</div>
                     ${i > 0 ? `<div style="font-size:0.75rem;color:${dropColor};margin-top:0.3rem">↓ ${drop}% drop</div>` : ''}
+                    ${recompInfo}
                 </div>`;
             }).join('');
         }
