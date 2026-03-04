@@ -13,6 +13,8 @@ $flagsFile = DATA_DIR . 'feature_flags.json';
 
 // ── GET: Return current flags ──
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // HTTP cache: 5 minutes (matches JS sessionStorage TTL)
+    header('Cache-Control: public, max-age=300');
     $flags = getFeatureFlags();
     echo json_encode($flags);
     exit;

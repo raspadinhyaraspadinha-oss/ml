@@ -1325,9 +1325,18 @@ if ($isAuthenticated) {
              TAB: ANALYTICS / FUNIL
              ═══════════════════════════════════════ -->
         <div class="dash-tab-panel" id="tab-analytics">
+            <!-- PostHog Migration Notice -->
+            <div style="background:linear-gradient(135deg,#1d1b4b,#312e81);border:1px solid #4f46e5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem">
+                <span style="font-size:1.5rem">&#128202;</span>
+                <div>
+                    <div style="font-weight:700;color:#a5b4fc;font-size:0.9rem">Analytics migrado para PostHog Cloud</div>
+                    <div style="font-size:0.78rem;color:#94a3b8;margin-top:2px">Eventos em tempo real, funil e sessões agora estão no PostHog. Dados abaixo são históricos (pré-migração).</div>
+                </div>
+                <a href="https://us.posthog.com" target="_blank" style="margin-left:auto;background:#4f46e5;color:#fff;padding:0.4rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;white-space:nowrap">Abrir PostHog &rarr;</a>
+            </div>
             <!-- Analytics Header with Date Filter + Export -->
             <div class="filter-bar" style="margin-bottom:1rem">
-                <label style="font-weight:600;color:#06b6d4">Analytics do Funil</label>
+                <label style="font-weight:600;color:#06b6d4">Analytics do Funil <span style="font-size:0.7rem;color:#71717a">(histórico)</span></label>
                 <label style="font-size:0.8rem;color:#a1a1aa">Periodo:</label>
                 <input type="date" id="analyticsDateFrom" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.35rem 0.6rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="renderAnalytics()">
                 <span style="color:#52525b;font-size:0.8rem">até</span>
@@ -1460,7 +1469,16 @@ if ($isAuthenticated) {
              TAB: CRO / AUDIT
              ═══════════════════════════════════════ -->
         <div class="dash-tab-panel" id="tab-cro">
-            <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Auditoria CRO - Funil de Conversão</div>
+            <!-- PostHog Migration Notice -->
+            <div style="background:linear-gradient(135deg,#1d1b4b,#312e81);border:1px solid #4f46e5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem">
+                <span style="font-size:1.5rem">&#128202;</span>
+                <div>
+                    <div style="font-weight:700;color:#a5b4fc;font-size:0.9rem">CRO migrado para PostHog Cloud</div>
+                    <div style="font-size:0.78rem;color:#94a3b8;margin-top:2px">Funil, sessões e CRO em tempo real agora estão no PostHog. Dados de pagamento (PIX Health) continuam locais.</div>
+                </div>
+                <a href="https://us.posthog.com" target="_blank" style="margin-left:auto;background:#4f46e5;color:#fff;padding:0.4rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;white-space:nowrap">Abrir PostHog &rarr;</a>
+            </div>
+            <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Auditoria CRO - Funil de Conversão <span style="font-size:0.7rem;color:#71717a">(histórico)</span></div>
 
             <!-- Funnel Waterfall -->
             <div class="kpi-grid" id="croWaterfall"></div>

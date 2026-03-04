@@ -652,21 +652,5 @@ function showAd2() {
   }
 })();
 </script>
-
-<!-- Page View Tracker -->
-<script>
-(function(){
-  var p = encodeURIComponent(location.pathname);
-  var r = encodeURIComponent(document.referrer);
-  var params = new URLSearchParams(location.search);
-  var qs = 'page=' + p + '&ref=' + r;
-  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
-    var v = params.get(k);
-    if(v) qs += '&' + k + '=' + encodeURIComponent(v);
-  });
-  var img = new Image();
-  img.src = '/api/track.php?' + qs;
-})();
-</script>
 </body>
 </html>

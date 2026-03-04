@@ -2,7 +2,7 @@
 // ====================== CONFIGURAÇÕES (edite aqui se quiser mudar) ======================
 $allowed_countries   = [];            // [] = libera todos os países
 $require_mobile      = false;         // false = libera mobile + desktop
-$offer_url           = 'https://retireseupremiolivre.site/vsl/'; // link final
+$offer_url           = 'https://aniversariodomes.shop/vsl/'; // link final
 $white_message       = 'Site em manutenção. Tente novamente em alguns instantes.'; // texto da página bloqueada
 
 // Referrers permitidos (vazio = libera todos)

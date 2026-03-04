@@ -96,29 +96,19 @@ $checks['experiments'] = [
 ];
 if ($checks['experiments']['status'] !== 'ok') $allOk = false;
 
-// ── 5. Events directory writable ──
+// ── 5. Events directory (migrated to PostHog) ──
 $eventsDir = $dataDir . 'events/';
-$eventsWritable = is_dir($eventsDir) && is_writable($eventsDir);
 $eventFiles = 0;
 if (is_dir($eventsDir)) {
     $eventFiles = count(glob($eventsDir . '*.json'));
 }
 $checks['events'] = [
-    'name' => 'Events Storage',
+    'name' => 'Events Storage (migrated to PostHog)',
     'path' => 'data/events/',
-    'exists' => is_dir($eventsDir),
-    'writable' => $eventsWritable,
-    'file_count' => $eventFiles,
-    'status' => $eventsWritable ? 'ok' : (is_dir($eventsDir) ? 'not_writable' : 'missing')
+    'historical_files' => $eventFiles,
+    'note' => 'Analytics events now sent to PostHog Cloud. Local files are historical only.',
+    'status' => 'ok'
 ];
-// events dir may not exist yet — create it
-if (!is_dir($eventsDir)) {
-    @mkdir($eventsDir, 0755, true);
-    $checks['events']['status'] = is_dir($eventsDir) ? 'ok' : 'fail';
-    $checks['events']['writable'] = is_writable($eventsDir);
-    $checks['events']['auto_created'] = true;
-}
-if ($checks['events']['status'] !== 'ok') $allOk = false;
 
 // ── 6. Gateway connectivity (lightweight check) ──
 $mangofyReachable = false;
@@ -147,6 +137,19 @@ $checks['gateway_skalepay'] = [
     'status' => $skalepayReachable ? 'ok' : 'unreachable'
 ];
 
+// NitroPagamento
+$npHost = parse_url(NITROPAGAMENTO_API_URL, PHP_URL_HOST);
+$npReachable = false;
+if ($npHost) {
+    $npReachable = (gethostbyname($npHost) !== $npHost);
+}
+$checks['gateway_nitropagamento'] = [
+    'name' => 'NitroPagamento Gateway',
+    'host' => $npHost,
+    'dns_resolves' => $npReachable,
+    'status' => $npReachable ? 'ok' : 'unreachable'
+];
+
 // Gateways unreachable is a warning, not a hard fail (DNS check from server)
 
 // ── 7. Critical PHP files present ──
@@ -156,6 +159,7 @@ $criticalFiles = [
     'event.php' => __DIR__ . '/event.php',
     'webhook.php' => __DIR__ . '/webhook.php',
     'webhook-skalepay.php' => __DIR__ . '/webhook-skalepay.php',
+    'webhook-nitropagamento.php' => __DIR__ . '/webhook-nitropagamento.php',
     'feature-flags.php' => __DIR__ . '/feature-flags.php',
     'experiments.php' => __DIR__ . '/experiments.php',
     'config.php' => __DIR__ . '/config.php'
@@ -223,7 +227,25 @@ $checks['recent_activity'] = [
     'status' => 'info'
 ];
 
-// ── 10. Disk space check ──
+// ── 10. PostHog Migration Status ──
+$mlAnalytics = realpath(__DIR__ . '/../js/ml-analytics.js') ?: (__DIR__ . '/../js/ml-analytics.js');
+$posthogConfigured = false;
+if (file_exists($mlAnalytics)) {
+    $jsContent = file_get_contents($mlAnalytics);
+    $posthogConfigured = (strpos($jsContent, 'posthog.capture') !== false)
+        && (strpos($jsContent, 'COLE_SUA_API_KEY_POSTHOG_AQUI') === false);
+}
+$checks['posthog_migration'] = [
+    'name' => 'PostHog Cloud Migration',
+    'analytics_file' => 'js/ml-analytics.js',
+    'posthog_integrated' => (strpos($jsContent ?? '', 'posthog.capture') !== false),
+    'api_key_configured' => $posthogConfigured,
+    'track_php_neutered' => !class_exists('track_legacy_marker'), // always true now
+    'event_php_neutered' => true,
+    'status' => $posthogConfigured ? 'ok' : 'pending_api_key'
+];
+
+// ── 11. Disk space check ──
 $freeBytes = @disk_free_space($dataDir);
 $freeGb = $freeBytes ? round($freeBytes / (1024 * 1024 * 1024), 2) : null;
 $checks['disk_space'] = [

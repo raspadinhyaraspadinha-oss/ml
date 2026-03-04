@@ -409,22 +409,4 @@ var ElementorProFrontendConfig = {"ajaxurl":"https:\/\/checar-pagina.online\/wp-
   order: 1 !important;
 }
 </style>
-
-
-
-<!-- Page View Tracker -->
-<script>
-(function(){
-  var p = encodeURIComponent(location.pathname);
-  var r = encodeURIComponent(document.referrer);
-  var params = new URLSearchParams(location.search);
-  var qs = 'page=' + p + '&ref=' + r;
-  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
-    var v = params.get(k);
-    if(v) qs += '&' + k + '=' + encodeURIComponent(v);
-  });
-  var img = new Image();
-  img.src = '/api/track.php?' + qs;
-})();
-</script>
 </body></html><!-- Page cached by LiteSpeed Cache 7.2 on 2025-10-06 15:41:50 -->

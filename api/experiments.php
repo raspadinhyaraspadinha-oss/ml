@@ -18,6 +18,10 @@ if (!file_exists($expFile)) {
 
 // ── GET: Return experiment config ──
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // HTTP cache: 10 minutes (matches JS sessionStorage TTL)
+    if (!isset($_GET['all'])) {
+        header('Cache-Control: public, max-age=600');
+    }
     $data = json_decode(file_get_contents($expFile), true);
     if (!is_array($data)) $data = ['experiments' => []];
 
