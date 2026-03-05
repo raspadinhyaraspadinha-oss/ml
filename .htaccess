@@ -1,59 +1,70 @@
 RewriteEngine On
 
 # ============================================
-# LAYER 1: Bot Blocking (BEFORE any PHP touches)
-# Blocks abusive bots at Apache level = ZERO PHP workers
+# LAYER 0: LiteSpeed Cache (MOST IMPACTFUL)
+# LiteSpeed serves cached responses from MEMORY
+# = ZERO PHP workers for cached pages
+# ============================================
+
+# Enable LSCache for static HTML pages (vsl, prevsl, etc.)
+# These pages don't change — cache them aggressively
+<IfModule LiteSpeed>
+    # Cache static HTML pages for 1 hour
+    RewriteRule \.(html?)$ - [E=Cache-Control:max-age=3600]
+
+    # Cache static assets for 7 days (css, js, images, fonts)
+    RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot)$ - [E=Cache-Control:max-age=604800]
+
+    # NEVER cache PHP pages (dynamic: cloaker, API, painel)
+    RewriteRule \.php$ - [E=Cache-Control:no-cache]
+
+    # Cache the cloaker 302 redirect for 2 min per unique query string
+    # This means repeat visits from same UTM combo are served from cache
+    RewriteRule ^index\.php$ - [E=Cache-Control:max-age=120]
+    RewriteRule ^$ - [E=Cache-Control:max-age=120]
+</IfModule>
+
+# ============================================
+# LAYER 1: Bot Blocking (BEFORE any PHP)
+# Blocks at server level = ZERO PHP workers
 # ============================================
 
 # ── Block known bad bots by User-Agent ──
-# (Ad platform bots like facebookexternalhit are ALLOWED)
-<IfModule mod_rewrite.c>
-    RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|PetalBot|YandexBot|Bytespider|GPTBot|ClaudeBot|CCBot|DataForSeoBot|Sogou|Baiduspider|MegaIndex|ltx71|Nuclei|sqlmap|nikto|masscan|ZmEu|zgrab|Hakai|Tsunami|LOIC|w3af) [NC]
-    RewriteRule .* - [F,L]
-</IfModule>
+# Ad crawlers (facebookexternalhit, whatsapp, etc.) are NOT in this list
+RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|PetalBot|YandexBot|Bytespider|GPTBot|ClaudeBot|CCBot|DataForSeoBot|Sogou|Baiduspider|MegaIndex|ltx71|Nuclei|sqlmap|nikto|masscan|ZmEu|zgrab|Hakai|Tsunami|LOIC|w3af|python-requests|python-urllib|Scrapy|HTTrack|wget|curl/) [NC]
+RewriteRule .* - [F,L]
 
-# ── Block empty/missing User-Agent (almost always bots) ──
-<IfModule mod_rewrite.c>
-    RewriteCond %{HTTP_USER_AGENT} ^-?$ [OR]
-    RewriteCond %{HTTP_USER_AGENT} ^$
-    RewriteRule ^(api/|index\.php) - [F,L]
-</IfModule>
+# ── Block empty User-Agent hitting PHP endpoints ──
+RewriteCond %{HTTP_USER_AGENT} ^-?$
+RewriteRule ^(index\.php|api/) - [F,L]
 
-# ── Favicon: serve 1x1 pixel inline if file missing (ZERO PHP) ──
-<IfModule mod_rewrite.c>
-    RewriteCond %{REQUEST_URI} favicon\.ico$ [NC]
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule .* - [R=204,L]
-</IfModule>
+# ── Favicon: return 204 if no file exists (ZERO PHP) ──
+RewriteCond %{REQUEST_URI} favicon\.ico$ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .* - [R=204,L]
 
-# ── Block direct access to sensitive API endpoints from bots ──
-<IfModule mod_rewrite.c>
-    # health-check: only from painel (same origin)
-    RewriteCond %{REQUEST_URI} ^/api/health-check\.php$ [NC]
-    RewriteCond %{HTTP_REFERER} !aniversariodomes\.shop [NC]
-    RewriteRule .* - [F,L]
+# ── Protect sensitive API endpoints ──
+RewriteCond %{REQUEST_URI} ^/api/health-check\.php$ [NC]
+RewriteCond %{HTTP_REFERER} !aniversariodomes\.shop [NC]
+RewriteRule .* - [F,L]
 
-    # cron-skalepay: block if no valid key
-    RewriteCond %{REQUEST_URI} ^/api/cron-skalepay\.php$ [NC]
-    RewriteCond %{QUERY_STRING} !key=ml2025
-    RewriteRule .* - [F,L]
-</IfModule>
+RewriteCond %{REQUEST_URI} ^/api/cron-skalepay\.php$ [NC]
+RewriteCond %{QUERY_STRING} !key=ml2025
+RewriteRule .* - [F,L]
 
 # ============================================
 # LAYER 2: Canonical Host Redirect
 # ============================================
 
-# ANY non-canonical domain -> https://www (302 = não cacheado, preserva UTMs)
-# Captura: apex sem www, ultimoresgate.site, e qualquer outro domínio parkado
+# ANY non-canonical domain -> https://www (302 preserva UTMs)
 RewriteCond %{HTTP_HOST} !^www\.aniversariodomes\.shop$ [NC]
 RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
-
 
 # ============================================
 # LAYER 3: Performance & Caching
 # ============================================
 
-# ── Enable compression ──
+# ── Compression (LiteSpeed handles this natively, but explicit helps) ──
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/css
     AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript
@@ -61,47 +72,36 @@ RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
     AddOutputFilterByType DEFLATE image/svg+xml
 </IfModule>
 
-# ── Browser caching for static assets ──
+# ── Browser caching ──
 <IfModule mod_expires.c>
     ExpiresActive On
-
-    # Images: cache 30 days
     ExpiresByType image/jpeg "access plus 30 days"
     ExpiresByType image/png "access plus 30 days"
     ExpiresByType image/gif "access plus 30 days"
     ExpiresByType image/webp "access plus 30 days"
     ExpiresByType image/svg+xml "access plus 30 days"
     ExpiresByType image/x-icon "access plus 1 year"
-
-    # CSS/JS: cache 7 days (cleared on deploy)
     ExpiresByType text/css "access plus 7 days"
     ExpiresByType text/javascript "access plus 7 days"
     ExpiresByType application/javascript "access plus 7 days"
-
-    # Fonts: cache 30 days
     ExpiresByType font/woff2 "access plus 30 days"
     ExpiresByType font/woff "access plus 30 days"
     ExpiresByType application/font-woff2 "access plus 30 days"
-
-    # HTML: no cache (dynamic content)
     ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
 
 # ── Cache-Control headers ──
 <IfModule mod_headers.c>
-    # Static assets: immutable-ish (7 days)
     <FilesMatch "\.(css|js|woff2|woff|png|jpg|jpeg|gif|webp|svg|ico)$">
         Header set Cache-Control "public, max-age=604800, immutable"
     </FilesMatch>
 
-    # HTML pages: revalidate every time
     <FilesMatch "\.html$">
-        Header set Cache-Control "no-cache, must-revalidate"
+        Header set Cache-Control "public, max-age=3600, must-revalidate"
     </FilesMatch>
 
-    # PHP pages: short cache where safe
     <FilesMatch "\.php$">
-        Header set Cache-Control "no-cache, must-revalidate"
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
     </FilesMatch>
 
     # Security headers
@@ -110,7 +110,7 @@ RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# ── Allow robots.txt (before block rule) ──
+# ── Allow robots.txt ──
 <Files "robots.txt">
     <IfModule mod_authz_core.c>
         Require all granted
@@ -127,13 +127,11 @@ RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
     </IfModule>
 </FilesMatch>
 
-# ── Block access to hidden files/dirs ──
-<IfModule mod_rewrite.c>
-    RewriteRule (^|/)\.(?!well-known) - [F,L]
-</IfModule>
+# ── Block hidden files ──
+RewriteRule (^|/)\.(?!well-known) - [F,L]
 
-# ── ETag: use filesystem only (faster) ──
+# ── ETag ──
 FileETag MTime Size
 
-# ── Custom 503 error page (static HTML, ZERO PHP) ──
+# ── Custom 503 error page (static, ZERO PHP) ──
 ErrorDocument 503 "<html><head><meta charset='utf-8'><meta http-equiv='refresh' content='10'><title>Carregando...</title><style>body{font-family:Arial,sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}h2{color:#333}p{color:#666}</style></head><body><h2>Estamos com muitos acessos!</h2><p>A pagina vai recarregar automaticamente em 10 segundos...</p></body></html>"

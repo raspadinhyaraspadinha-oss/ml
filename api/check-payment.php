@@ -8,6 +8,8 @@
 
 require_once __DIR__ . '/config.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
@@ -232,7 +234,8 @@ if ($gateway === 'mangofy' && $payment['status'] === 'pending') {
     }
 }
 
-// Return current local status
+// Return current local status — cache 3s to reduce polling frequency
+header('Cache-Control: private, max-age=3');
 echo json_encode([
     'status' => $payment['status'],
     'payment_code' => $paymentCode,
