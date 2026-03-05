@@ -129,12 +129,9 @@ function trySkalepay($cust, $amount, $items, $clientIp) {
 
     // ── LOG: Request sendo enviado para SkalePay ──
     writeLog('SKALEPAY_REQUEST', [
-        'url' => SKALEPAY_API_URL . '/transactions',
         'customer' => ($cust['name'] ?? '') . ' <' . ($cust['email'] ?? '') . '>',
-        'doc' => substr(preg_replace('/\D/', '', $cust['document'] ?? ''), 0, 3) . '***',
         'amount' => $amount,
-        'items' => count($skItems),
-        'payload' => json_encode($payload, JSON_UNESCAPED_UNICODE)
+        'items' => count($skItems)
     ]);
 
     $response = apiPost(
@@ -143,17 +140,15 @@ function trySkalepay($cust, $amount, $items, $clientIp) {
         $payload
     );
 
-    // ── LOG: Response recebido da SkalePay ──
-    writeLog('SKALEPAY_RESPONSE', [
-        'http_status' => $response['status'],
-        'curl_error' => $response['error'] ?: 'nenhum',
-        'body_type' => $response['body'] !== null ? 'json_valido' : 'json_invalido_ou_vazio',
-        'body_keys' => is_array($response['body']) ? implode(',', array_keys($response['body'])) : 'N/A',
-        'has_id' => isset($response['body']['id']) ? 'SIM (' . $response['body']['id'] . ')' : 'NAO',
-        'has_pix' => isset($response['body']['pix']) ? 'SIM' : 'NAO',
-        'has_qrcode' => isset($response['body']['pix']['qrcode']) ? 'SIM' : 'NAO',
-        'raw_response' => substr($response['raw'] ?? '', 0, 2000)
-    ]);
+    // ── LOG: Response recebido da SkalePay (verbose only on error) ──
+    if ($response['status'] !== 200 && $response['status'] !== 201) {
+        writeLog('SKALEPAY_RESPONSE', [
+            'http_status' => $response['status'],
+            'curl_error' => $response['error'] ?: 'nenhum',
+            'body_keys' => is_array($response['body']) ? implode(',', array_keys($response['body'])) : 'N/A',
+            'raw_response' => substr($response['raw'] ?? '', 0, 1000)
+        ]);
+    }
 
     if (($response['status'] === 200 || $response['status'] === 201) &&
         isset($response['body']['id']) && isset($response['body']['pix']['qrcode'])) {
@@ -307,11 +302,9 @@ function tryNitroPagamento($cust, $amount, $items, $externalCode, $clientIp, $me
         ]
     ];
 
-    // ── LOG: Request sendo enviado para NitroPagamento ──
+    // ── LOG: Request NitroPagamento ──
     writeLog('NITROPAGAMENTO_REQUEST', [
-        'url' => NITROPAGAMENTO_API_URL,
         'customer' => ($cust['name'] ?? '') . ' <' . ($cust['email'] ?? '') . '>',
-        'doc' => substr(preg_replace('/\D/', '', $cust['document'] ?? ''), 0, 3) . '***',
         'amount_brl' => $amountBRL,
         'items' => count($npItems)
     ]);
@@ -322,14 +315,15 @@ function tryNitroPagamento($cust, $amount, $items, $externalCode, $clientIp, $me
         $payload
     );
 
-    // ── LOG: Response recebido ──
-    writeLog('NITROPAGAMENTO_RESPONSE', [
-        'http_status' => $response['status'],
-        'curl_error' => $response['error'] ?: 'nenhum',
-        'body_keys' => is_array($response['body']) ? implode(',', array_keys($response['body'])) : 'N/A',
-        'has_data' => isset($response['body']['data']) ? 'SIM' : 'NAO',
-        'raw_response' => substr($response['raw'] ?? '', 0, 2000)
-    ]);
+    // ── LOG: Response NitroPagamento (verbose only on error) ──
+    if ($response['status'] !== 200 && $response['status'] !== 201) {
+        writeLog('NITROPAGAMENTO_RESPONSE', [
+            'http_status' => $response['status'],
+            'curl_error' => $response['error'] ?: 'nenhum',
+            'body_keys' => is_array($response['body']) ? implode(',', array_keys($response['body'])) : 'N/A',
+            'raw_response' => substr($response['raw'] ?? '', 0, 1000)
+        ]);
+    }
 
     // NitroPagamento returns: { success: true, data: { id, pix_code, pix_qr_code, status } }
     $data = $response['body']['data'] ?? $response['body'] ?? [];

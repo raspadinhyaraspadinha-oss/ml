@@ -95,9 +95,18 @@ function savePayments($payments) {
     file_put_contents($file, json_encode($payments, JSON_PRETTY_PRINT), LOCK_EX);
 }
 
-/* Helper: Append to log.txt */
+/* Helper: Append to log.txt (BUFFERED)
+ * Logs are accumulated in memory during the request and written
+ * all at once on shutdown. This replaces ~15 LOCK_EX operations
+ * per request with a SINGLE write, dramatically reducing I/O
+ * contention under load (was a major 503 contributor).
+ */
+$_ML_LOG_BUFFER = [];
+$_ML_LOG_SHUTDOWN_REGISTERED = false;
+
 function writeLog($event, $data = []) {
-    $logFile = DATA_DIR . 'log.txt';
+    global $_ML_LOG_BUFFER, $_ML_LOG_SHUTDOWN_REGISTERED;
+
     $timestamp = date('Y-m-d H:i:s');
     $line = "[$timestamp] [$event]";
     foreach ($data as $key => $val) {
@@ -105,7 +114,22 @@ function writeLog($event, $data = []) {
         $line .= " | $key: $val";
     }
     $line .= PHP_EOL;
-    file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+
+    $_ML_LOG_BUFFER[] = $line;
+
+    // Register shutdown function ONCE to flush all logs at end of request
+    if (!$_ML_LOG_SHUTDOWN_REGISTERED) {
+        $_ML_LOG_SHUTDOWN_REGISTERED = true;
+        register_shutdown_function(function() {
+            global $_ML_LOG_BUFFER;
+            if (!empty($_ML_LOG_BUFFER)) {
+                $logFile = DATA_DIR . 'log.txt';
+                $allLines = implode('', $_ML_LOG_BUFFER);
+                file_put_contents($logFile, $allLines, FILE_APPEND | LOCK_EX);
+                $_ML_LOG_BUFFER = [];
+            }
+        });
+    }
 }
 
 /* Helper: Send TikTok Events API event (enriched)
@@ -157,15 +181,20 @@ function sendTikTokEvent($eventName, $eventId, $userData, $properties = [], $eve
     );
 }
 
-/* Helper: Log API event for dashboard debugging */
+/* Helper: Log API event for dashboard debugging (BUFFERED)
+ * Same pattern as writeLog(): events accumulate in memory during
+ * the request and are written all at once on shutdown.
+ * payment.php fires 5 writeApiEvent calls per request — each one
+ * previously did file_get_contents + json_decode + json_encode +
+ * file_put_contents with LOCK_EX. Now: 1 read + 1 write total.
+ */
+$_ML_API_EVENT_BUFFER = [];
+$_ML_API_EVENT_SHUTDOWN_REGISTERED = false;
+
 function writeApiEvent($paymentCode, $eventName, $api, $url, $httpStatus, $requestSummary, $response, $utms = [], $success = true) {
-    $file = DATA_DIR . 'api_events.json';
-    $events = [];
-    if (file_exists($file)) {
-        $events = json_decode(file_get_contents($file), true);
-        if (!is_array($events)) $events = [];
-    }
-    $events[] = [
+    global $_ML_API_EVENT_BUFFER, $_ML_API_EVENT_SHUTDOWN_REGISTERED;
+
+    $_ML_API_EVENT_BUFFER[] = [
         'timestamp' => date('Y-m-d H:i:s'),
         'payment_code' => $paymentCode,
         'event' => $eventName,
@@ -177,11 +206,31 @@ function writeApiEvent($paymentCode, $eventName, $api, $url, $httpStatus, $reque
         'utms' => $utms,
         'success' => $success
     ];
-    // Keep last 500 events
-    if (count($events) > 500) {
-        $events = array_slice($events, -500);
+
+    // Register shutdown function ONCE to flush all events at end of request
+    if (!$_ML_API_EVENT_SHUTDOWN_REGISTERED) {
+        $_ML_API_EVENT_SHUTDOWN_REGISTERED = true;
+        register_shutdown_function(function() {
+            global $_ML_API_EVENT_BUFFER;
+            if (!empty($_ML_API_EVENT_BUFFER)) {
+                $file = DATA_DIR . 'api_events.json';
+                $events = [];
+                if (file_exists($file)) {
+                    $events = json_decode(file_get_contents($file), true);
+                    if (!is_array($events)) $events = [];
+                }
+                foreach ($_ML_API_EVENT_BUFFER as $evt) {
+                    $events[] = $evt;
+                }
+                // Keep last 500 events
+                if (count($events) > 500) {
+                    $events = array_slice($events, -500);
+                }
+                file_put_contents($file, json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
+                $_ML_API_EVENT_BUFFER = [];
+            }
+        });
     }
-    file_put_contents($file, json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
 /* Helper: Get/set active gateway */
@@ -359,12 +408,13 @@ function fireApprovalTracking($paymentCode, $payment, $approvedAt) {
     ]);
 }
 
-/* Helper: cURL GET request */
+/* Helper: cURL GET request (polls — 10s timeout) */
 function apiGet($url, $headers) {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // 5s to establish connection
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);         // 10s total (was 30s)
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -378,14 +428,15 @@ function apiGet($url, $headers) {
     ];
 }
 
-/* Helper: cURL POST request */
+/* Helper: cURL POST request (payments — 15s timeout) */
 function apiPost($url, $headers, $body) {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // 5s to establish connection
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);         // 15s total (was 30s)
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
