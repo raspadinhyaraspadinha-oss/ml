@@ -6,7 +6,7 @@
     box-sizing: border-box;
     font-family: "Montserrat", sans-serif;
     font-optical-sizing: auto;
-    font-weight: <weight>;
+    font-weight: 400;
     font-style: normal;
 }
 
@@ -101,12 +101,21 @@
 }
 
 @keyframes slidein {
-    from {
+    0% {
         transform: translateY(100%);
+        opacity: 0;
     }
-
-    to {
-        transform: translateY(-100%);
+    20% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    80% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
     }
 }
 
@@ -322,25 +331,37 @@ h1 {
     justify-content: center;
     align-items: center;
     padding-inline: 10px;
-    padding-block: 12px;
+    padding-block: 10px;
     color: white;
     position: fixed;
-    top: 100%;
-    transform: translateY(-100%);
-    width: 100vw;
-    height: 60px;
-    gap: 12px;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    min-height: 55px;
+    gap: 10px;
     background-color: #2d3277;
     border-top: gray 1px solid;
     z-index: 9999;
+    transition: opacity 0.3s ease;
 }
 
 .slide-animation {
-    animation: slidein 1200ms;
+    animation: slidein 800ms ease-out;
 }
 
 .people img {
-    width: 40px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background-color: #4e5399; /* placeholder color while loading */
+}
+
+.people p {
+    font-size: 13px;
+    line-height: 1.3;
+    margin: 0;
 }
 
 form {
@@ -429,10 +450,12 @@ body, html {
 #page-content {
     background-image: url('../images/qvx36QzT43Tq.png');
     background-size: cover;
-    background-position: center;
+    background-position: center top;
     background-repeat: no-repeat;
-    height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh; /* dynamic viewport height — accounts for mobile browser bars */
     width: 100%;
+    padding-bottom: 80px; /* space for social proof bar */
 }
 
 ._form_36 button {
@@ -486,8 +509,9 @@ body, html {
     }
 
     .roulette {
-        margin-top: 15px;
-        overflow: hidden;
+        margin-top: 10px;
+        height: 80vw; /* proportional to wheel width — adapts to ANY screen */
+        overflow: visible; /* NEVER clip the wheel */
     }
 
     .button-roulette {
