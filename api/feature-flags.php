@@ -15,6 +15,8 @@ $flagsFile = DATA_DIR . 'feature_flags.json';
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // HTTP cache: 5 minutes (matches JS sessionStorage TTL)
     header('Cache-Control: public, max-age=300');
+    // LiteSpeed: serve from memory cache (ZERO PHP workers for repeat requests)
+    header('X-LiteSpeed-Cache-Control: public, max-age=300');
     $flags = getFeatureFlags();
     echo json_encode($flags);
     exit;

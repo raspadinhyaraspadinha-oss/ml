@@ -7,6 +7,8 @@
  *
  * Este arquivo é ULTRA LEVE: zero includes, zero file reads pesados
  * Retorna JSON com status do servidor em <1ms
+ *
+ * v2.0: Updated for .htaccess cloaker (ZERO PHP for landing pages)
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -17,6 +19,7 @@ $status = [
     'timestamp' => date('c'),
     'server'    => php_uname('n'),
     'php_sapi'  => php_sapi_name(),
+    'architecture' => 'htaccess_redirect_v2', // Landing page = .htaccess 302, NOT PHP
 ];
 
 // Checar load average (Linux)
@@ -41,48 +44,53 @@ $status['memory'] = [
     'limit'    => ini_get('memory_limit'),
 ];
 
-// Checar se rate limit file está grande (indicador de flood)
-$rlFile = sys_get_temp_dir() . '/ml_ratelimit.json';
-if (file_exists($rlFile)) {
-    $rlData = @json_decode(@file_get_contents($rlFile), true) ?: [];
-    $status['rate_limiter'] = [
-        'tracked_ips'    => count($rlData),
-        'file_size_kb'   => round(filesize($rlFile) / 1024, 1),
+// Checar APCu (in-memory rate limiting)
+if (function_exists('apcu_enabled') && apcu_enabled()) {
+    $info = apcu_cache_info(true);
+    $status['apcu'] = [
+        'enabled'     => true,
+        'entries'     => $info['num_entries'] ?? 0,
+        'memory_mb'   => round(($info['mem_size'] ?? 0) / 1048576, 1),
+        'hits'        => $info['num_hits'] ?? 0,
+        'misses'      => $info['num_misses'] ?? 0,
+    ];
+} else {
+    $status['apcu'] = ['enabled' => false];
+}
+
+// Checar se data directory é gravável (necessário para payments, logs, etc.)
+$dataDir = __DIR__ . '/data/';
+$status['data_dir'] = [
+    'exists'   => is_dir($dataDir),
+    'writable' => is_writable($dataDir),
+];
+
+// Checar tamanho de payments.json (arquivo mais lido/escrito)
+$paymentsFile = $dataDir . 'payments.json';
+if (file_exists($paymentsFile)) {
+    $status['payments_file'] = [
+        'size_kb'   => round(filesize($paymentsFile) / 1024, 1),
+        'modified'  => date('c', filemtime($paymentsFile)),
     ];
 }
 
-// Checar log de bloqueios do cloaker
-$blockLog = __DIR__ . '/data/cloaker_blocks.log';
-if (file_exists($blockLog)) {
-    $size = filesize($blockLog);
-    // Contar linhas das últimas horas (ler só o final do arquivo)
-    $tail = '';
-    if ($size > 0) {
-        $fh = fopen($blockLog, 'r');
-        fseek($fh, max(0, $size - 8192)); // últimos 8KB
-        $tail = fread($fh, 8192);
-        fclose($fh);
-    }
-    $recentLines = array_filter(explode("\n", $tail));
-    $lastHour = 0;
-    $cutoff = date('Y-m-d H:i:s', time() - 3600);
-    foreach ($recentLines as $line) {
-        if (substr($line, 0, 19) >= $cutoff) $lastHour++;
-    }
-    $status['cloaker_blocks'] = [
-        'log_size_kb'     => round($size / 1024, 1),
-        'blocks_last_hour' => $lastHour,
+// Checar log.txt (indica se writeLog está escrevendo)
+$logFile = $dataDir . 'log.txt';
+if (file_exists($logFile)) {
+    $status['log_file'] = [
+        'size_kb'   => round(filesize($logFile) / 1024, 1),
+        'modified'  => date('c', filemtime($logFile)),
     ];
 }
 
-// Log 503 tracking
-$log503 = __DIR__ . '/data/503_events.log';
-if (file_exists($log503)) {
-    $size = filesize($log503);
-    $status['503_log'] = [
-        'exists'      => true,
-        'size_kb'     => round($size / 1024, 1),
-    ];
-}
+// Resumo da arquitetura atual
+$status['optimization_notes'] = [
+    'landing_page' => '.htaccess 302 redirect (ZERO PHP)',
+    'feature_flags' => 'LiteSpeed cached (5 min)',
+    'experiments' => 'LiteSpeed cached (10 min)',
+    'event_php' => 'neutered (zero I/O)',
+    'track_php' => 'neutered (zero I/O)',
+    'error_503' => 'JS redirect to VSL (no retry storm)',
+];
 
 echo json_encode($status, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

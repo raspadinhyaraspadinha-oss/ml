@@ -1,19 +1,26 @@
 <?php
 /**
- * CLOAKER v4.0 — ZERO I/O Architecture
+ * CLOAKER v4.1 — FALLBACK ONLY
  *
- * CRITICAL FIX: Remove ALL file I/O from hot path.
- * Previous version caused LOCK_EX convoy (126 IPs competing for 1 file lock)
- * that pushed load average to 26+ and caused cascading 503 errors.
+ * ╔════════════════════════════════════════════════════════════╗
+ * ║  THIS FILE SHOULD NEVER BE REACHED IN NORMAL OPERATION.  ║
+ * ║                                                           ║
+ * ║  Landing page redirect is now handled by .htaccess:       ║
+ * ║    RewriteRule ^.*$ .../vsl/ [R=302,L,QSA]               ║
+ * ║                                                           ║
+ * ║  = ZERO PHP workers for ALL landing page traffic          ║
+ * ║  = LiteSpeed handles 302 at server level                  ║
+ * ║  = Infinite capacity (no PHP involved)                    ║
+ * ╚════════════════════════════════════════════════════════════╝
  *
- * This version:
- * - ZERO file reads on happy path
- * - ZERO file writes on happy path
- * - Bot detection = pure string operations (~0.05ms)
- * - Rate limiting = APCu only (in-memory), SKIP if no APCu
- * - GeoIP = disabled by default ($block_non_br = false)
- * - Total execution: <1ms per request
- * - Capacity: 40 workers × 100 req/s/worker = 4000+ req/s
+ * This PHP file is kept as a safety net in case .htaccess rules
+ * are bypassed for any reason. It performs the same redirect
+ * with bot detection as a final defense layer.
+ *
+ * Architecture:
+ * - .htaccess Layer 1: Bot blocking (403 at server level)
+ * - .htaccess Layer 2: 302 redirect to /vsl/ (ZERO PHP)
+ * - index.php (THIS): Fallback if .htaccess somehow bypassed
  */
 
 // ====================== CONFIGURAÇÕES ======================

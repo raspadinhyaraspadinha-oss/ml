@@ -6,8 +6,6 @@ RewriteEngine On
 # = ZERO PHP workers for cached pages
 # ============================================
 
-# Enable LSCache for static HTML pages (vsl, prevsl, etc.)
-# These pages don't change — cache them aggressively
 <IfModule LiteSpeed>
     # Cache static HTML pages for 1 hour
     RewriteRule \.(html?)$ - [E=Cache-Control:max-age=3600]
@@ -15,13 +13,14 @@ RewriteEngine On
     # Cache static assets for 7 days (css, js, images, fonts)
     RewriteRule \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot)$ - [E=Cache-Control:max-age=604800]
 
-    # NEVER cache PHP pages (dynamic: cloaker, API, painel)
-    RewriteRule \.php$ - [E=Cache-Control:no-cache]
+    # Cache feature-flags and experiments (public, same for all users)
+    RewriteRule ^api/feature-flags\.php$ - [E=Cache-Control:max-age=300]
+    RewriteRule ^api/experiments\.php$ - [E=Cache-Control:max-age=600]
 
-    # Cache the cloaker 302 redirect for 2 min per unique query string
-    # This means repeat visits from same UTM combo are served from cache
-    RewriteRule ^index\.php$ - [E=Cache-Control:max-age=120]
-    RewriteRule ^$ - [E=Cache-Control:max-age=120]
+    # All OTHER PHP: no cache (skip feature-flags and experiments)
+    RewriteCond %{REQUEST_URI} !^/api/feature-flags\.php$ [NC]
+    RewriteCond %{REQUEST_URI} !^/api/experiments\.php$ [NC]
+    RewriteRule \.php$ - [E=Cache-Control:no-cache]
 </IfModule>
 
 # ============================================
@@ -30,8 +29,8 @@ RewriteEngine On
 # ============================================
 
 # ── Block known bad bots by User-Agent ──
-# Ad crawlers (facebookexternalhit, whatsapp, etc.) are NOT in this list
-RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|PetalBot|YandexBot|Bytespider|GPTBot|ClaudeBot|CCBot|DataForSeoBot|Sogou|Baiduspider|MegaIndex|ltx71|Nuclei|sqlmap|nikto|masscan|ZmEu|zgrab|Hakai|Tsunami|LOIC|w3af|python-requests|python-urllib|Scrapy|HTTrack|wget|curl/) [NC]
+# Ad crawlers (facebookexternalhit, whatsapp, etc.) are NOT blocked
+RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|PetalBot|YandexBot|Bytespider|GPTBot|ClaudeBot|CCBot|DataForSeoBot|Sogou|Baiduspider|MegaIndex|ltx71|Nuclei|sqlmap|nikto|masscan|ZmEu|zgrab|Hakai|Tsunami|LOIC|w3af|python-requests|python-urllib|Scrapy|HTTrack|wget|curl/|Go-http-client|httpx|axios|node-fetch|PhantomJS|HeadlessChrome|Puppeteer|Selenium|Playwright) [NC]
 RewriteRule .* - [F,L]
 
 # ── Block empty User-Agent hitting PHP endpoints ──
@@ -53,7 +52,33 @@ RewriteCond %{QUERY_STRING} !key=ml2025
 RewriteRule .* - [F,L]
 
 # ============================================
-# LAYER 2: Canonical Host Redirect
+# LAYER 2: CLOAKER REDIRECT (ZERO PHP!!!)
+#
+# THIS IS THE CRITICAL OPTIMIZATION.
+# Previously: every TikTok ad click invoked PHP (index.php)
+#   = 1 PHP worker consumed per landing page visit
+#   = 40 workers exhausted under load = 503 for EVERYONE
+#
+# NOW: LiteSpeed handles the 302 redirect at SERVER LEVEL
+#   = ZERO PHP workers for landing pages
+#   = Capacity: unlimited (limited only by LiteSpeed, not PHP)
+#   = TikTok pre-renders, real clicks, retries — ALL handled
+#     without touching PHP
+#
+# Bot blocking already done in Layer 1 above.
+# GeoIP blocking disabled ($block_non_br = false).
+# index.php kept as fallback but should NEVER be reached.
+# ============================================
+
+# Root path (/ or /index.php) on ANY host → redirect to VSL
+# QSA preserves all UTM parameters (utm_source, ttclid, etc.)
+RewriteCond %{REQUEST_URI} ^/?$ [OR]
+RewriteCond %{REQUEST_URI} ^/index\.php$
+RewriteRule ^.*$ https://www.aniversariodomes.shop/vsl/ [R=302,L,QSA]
+
+# ============================================
+# LAYER 3: Canonical Host Redirect
+# Only for NON-ROOT paths (root already handled above)
 # ============================================
 
 # ANY non-canonical domain -> https://www (302 preserva UTMs)
@@ -61,7 +86,7 @@ RewriteCond %{HTTP_HOST} !^www\.aniversariodomes\.shop$ [NC]
 RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
 
 # ============================================
-# LAYER 3: Performance & Caching
+# LAYER 4: Performance & Caching
 # ============================================
 
 # ── Compression (LiteSpeed handles this natively, but explicit helps) ──
@@ -133,5 +158,10 @@ RewriteRule (^|/)\.(?!well-known) - [F,L]
 # ── ETag ──
 FileETag MTime Size
 
-# ── Custom 503 error page (static, ZERO PHP) ──
-ErrorDocument 503 "<html><head><meta charset='utf-8'><meta http-equiv='refresh' content='10'><title>Carregando...</title><style>body{font-family:Arial,sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}h2{color:#333}p{color:#666}</style></head><body><h2>Estamos com muitos acessos!</h2><p>A pagina vai recarregar automaticamente em 10 segundos...</p></body></html>"
+# ── Custom 503 error page ──
+# CRITICAL: NO auto-refresh! Old 10-second retry created a "retry storm"
+# that amplified server load (50 users x 10s = 5 extra req/s forever).
+# Instead: redirect to VSL directly after 3 seconds.
+# The VSL is STATIC HTML cached by LiteSpeed = ZERO PHP load.
+# User sees a loading spinner, then seamlessly arrives at the sales page.
+ErrorDocument 503 "<html><head><meta charset='utf-8'><title>Carregando...</title><style>body{font-family:Arial,sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}.c{max-width:400px}h2{color:#333;margin-bottom:8px}p{color:#666;font-size:14px}.s{display:inline-block;width:40px;height:40px;border:4px solid #e9ecef;border-top:4px solid #007bff;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class='c'><div class='s'></div><h2>Carregando...</h2><p>Aguarde um momento...</p></div><script>setTimeout(function(){var q=location.search||'';location.href='https://www.aniversariodomes.shop/vsl/'+q;},3000);</script></body></html>"

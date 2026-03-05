@@ -11,16 +11,18 @@ require_once __DIR__ . '/config.php';
 
 $expFile = DATA_DIR . 'experiments.json';
 
-// Ensure file exists
-if (!file_exists($expFile)) {
-    file_put_contents($expFile, json_encode(['experiments' => [], 'updated_at' => null], JSON_PRETTY_PRINT), LOCK_EX);
-}
-
 // ── GET: Return experiment config ──
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // HTTP cache: 10 minutes (matches JS sessionStorage TTL)
     if (!isset($_GET['all'])) {
         header('Cache-Control: public, max-age=600');
+        // LiteSpeed: serve from memory cache (ZERO PHP workers for repeat requests)
+        header('X-LiteSpeed-Cache-Control: public, max-age=600');
+    }
+
+    // Ensure file exists (lazy init — only on GET, not on module load)
+    if (!file_exists($expFile)) {
+        file_put_contents($expFile, json_encode(['experiments' => [], 'updated_at' => null], JSON_PRETTY_PRINT), LOCK_EX);
     }
     $data = json_decode(file_get_contents($expFile), true);
     if (!is_array($data)) $data = ['experiments' => []];
@@ -51,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Ensure file exists before reading
+    if (!file_exists($expFile)) {
+        file_put_contents($expFile, json_encode(['experiments' => [], 'updated_at' => null], JSON_PRETTY_PRINT), LOCK_EX);
+    }
     $data = json_decode(file_get_contents($expFile), true);
     if (!is_array($data)) $data = ['experiments' => []];
 
