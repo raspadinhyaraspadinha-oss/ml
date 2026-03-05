@@ -21,8 +21,8 @@ header('Access-Control-Allow-Headers: Content-Type');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); die('{"error":"POST only"}'); }
 
-// Auth: require dashboard session
-if (!isset($_SESSION['ml_painel_auth']) || $_SESSION['ml_painel_auth'] !== true) {
+// Auth: require dashboard session (same key used by painel/index.php)
+if (!isset($_SESSION['painel_auth']) || $_SESSION['painel_auth'] !== true) {
     http_response_code(403);
     die('{"error":"Nao autenticado. Faca login no painel primeiro."}');
 }
