@@ -64,6 +64,7 @@ foreach ($payments as $code => $payment) {
             $approvedAt = $response['body']['paidAt'] ?? date('Y-m-d H:i:s');
             $payments[$code]['status'] = 'paid';
             $payments[$code]['paid_at'] = $approvedAt;
+            $payments[$code]['paid_source'] = 'skalepay_cron';
             savePayments($payments);
 
             // Fire all tracking

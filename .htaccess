@@ -42,6 +42,19 @@ RewriteCond %{REQUEST_URI} favicon\.ico$ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule .* - [R=204,L]
 
+# ── NEUTERED ENDPOINTS: return 204 at server level (ZERO PHP) ──
+# event.php and track.php are stubs (PostHog migration).
+# AdsBot-Google hammers event.php wasting PHP workers.
+# Return 204 No Content without ever touching PHP.
+RewriteCond %{REQUEST_URI} ^/api/event\.php$ [NC,OR]
+RewriteCond %{REQUEST_URI} ^/api/track\.php$ [NC]
+RewriteRule .* - [R=204,L]
+
+# ── Block Google-Read-Aloud and similar bots from API endpoints ──
+RewriteCond %{HTTP_USER_AGENT} (Google-Read-Aloud|Googlebot-Image|Google-InspectionTool) [NC]
+RewriteCond %{REQUEST_URI} ^/api/ [NC]
+RewriteRule .* - [F,L]
+
 # ── Protect sensitive API endpoints ──
 RewriteCond %{REQUEST_URI} ^/api/health-check\.php$ [NC]
 RewriteCond %{HTTP_REFERER} !aniversariodomes\.shop [NC]
@@ -159,9 +172,7 @@ RewriteRule (^|/)\.(?!well-known) - [F,L]
 FileETag MTime Size
 
 # ── Custom 503 error page ──
-# CRITICAL: NO auto-refresh! Old 10-second retry created a "retry storm"
-# that amplified server load (50 users x 10s = 5 extra req/s forever).
-# Instead: redirect to VSL directly after 3 seconds.
-# The VSL is STATIC HTML cached by LiteSpeed = ZERO PHP load.
-# User sees a loading spinner, then seamlessly arrives at the sales page.
-ErrorDocument 503 "<html><head><meta charset='utf-8'><title>Carregando...</title><style>body{font-family:Arial,sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}.c{max-width:400px}h2{color:#333;margin-bottom:8px}p{color:#666;font-size:14px}.s{display:inline-block;width:40px;height:40px;border:4px solid #e9ecef;border-top:4px solid #007bff;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class='c'><div class='s'></div><h2>Carregando...</h2><p>Aguarde um momento...</p></div><script>setTimeout(function(){var q=location.search||'';location.href='https://www.aniversariodomes.shop/vsl/'+q;},3000);</script></body></html>"
+# SMART: Only redirect to VSL for root/funnel pages.
+# /api/ endpoints and /painel/ show "retry" message (NO redirect).
+# NO auto-refresh retry storm. Funnel pages redirect to static VSL.
+ErrorDocument 503 "<html><head><meta charset='utf-8'><title>Carregando...</title><style>body{font-family:Arial,sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}.c{max-width:400px}h2{color:#333;margin-bottom:8px}p{color:#666;font-size:14px}.s{display:inline-block;width:40px;height:40px;border:4px solid #e9ecef;border-top:4px solid #007bff;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><div class='c'><div class='s'></div><h2 id='t'>Carregando...</h2><p id='d'>Aguarde um momento...</p></div><script>var p=location.pathname||'/';if(p.indexOf('/api/')===0||p.indexOf('/painel')===0){document.getElementById('t').textContent='Servidor ocupado';document.getElementById('d').textContent='Aguarde alguns segundos e tente novamente.';document.querySelector('.s').style.display='none';}else{setTimeout(function(){location.href='https://www.aniversariodomes.shop/vsl/'+(location.search||'');},3000);}</script></body></html>"

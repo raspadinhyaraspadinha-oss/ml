@@ -17,8 +17,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     header('Cache-Control: public, max-age=300');
     // LiteSpeed: serve from memory cache (ZERO PHP workers for repeat requests)
     header('X-LiteSpeed-Cache-Control: public, max-age=300');
+
+    // APCu cache: serve from PHP memory (ZERO file I/O)
+    // This is critical under high load — avoids disk reads on every request
+    $cacheKey = 'ml_ff_response';
+    if (function_exists('apcu_enabled') && apcu_enabled()) {
+        $cached = apcu_fetch($cacheKey);
+        if ($cached !== false) {
+            echo $cached;
+            exit;
+        }
+    }
+
     $flags = getFeatureFlags();
-    echo json_encode($flags);
+    $response = json_encode($flags);
+
+    // Store in APCu for 5 minutes
+    if (function_exists('apcu_store')) {
+        apcu_store($cacheKey, $response, 300);
+    }
+
+    echo $response;
     exit;
 }
 
@@ -62,6 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $flags['updated_at'] = date('Y-m-d H:i:s');
 
     file_put_contents($flagsFile, json_encode($flags, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
+
+    // Invalidate APCu cache so GET requests pick up changes immediately
+    if (function_exists('apcu_delete')) {
+        apcu_delete('ml_ff_response');
+    }
 
     writeLog('FEATURE_FLAGS_UPDATED', [
         'killswitch' => $flags['global_killswitch'] ? 'ON' : 'OFF',

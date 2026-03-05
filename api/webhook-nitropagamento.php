@@ -152,6 +152,7 @@ if ($payment['status'] === 'paid') {
 $approvedAt = $txData['paid_at'] ?? $input['timestamp'] ?? date('Y-m-d H:i:s');
 $payments[$foundCode]['status'] = 'paid';
 $payments[$foundCode]['paid_at'] = $approvedAt;
+$payments[$foundCode]['paid_source'] = 'nitropagamento_webhook';
 savePayments($payments);
 
 writeLog('NITROPAGAMENTO_WEBHOOK_APROVADO', [

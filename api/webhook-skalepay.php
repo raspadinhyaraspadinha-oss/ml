@@ -160,6 +160,7 @@ if ($payment['status'] === 'paid') {
 $approvedAt = $txData['paidAt'] ?? $txData['date_updated'] ?? $input['date_updated'] ?? date('Y-m-d H:i:s');
 $payments[$foundCode]['status'] = 'paid';
 $payments[$foundCode]['paid_at'] = $approvedAt;
+$payments[$foundCode]['paid_source'] = 'skalepay_webhook';
 savePayments($payments);
 
 writeLog('SKALEPAY_WEBHOOK_APROVADO', [

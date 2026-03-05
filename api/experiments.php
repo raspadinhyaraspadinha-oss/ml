@@ -14,28 +14,46 @@ $expFile = DATA_DIR . 'experiments.json';
 // ── GET: Return experiment config ──
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // HTTP cache: 10 minutes (matches JS sessionStorage TTL)
-    if (!isset($_GET['all'])) {
+    $isDashboard = isset($_GET['all']);
+    if (!$isDashboard) {
         header('Cache-Control: public, max-age=600');
         // LiteSpeed: serve from memory cache (ZERO PHP workers for repeat requests)
         header('X-LiteSpeed-Cache-Control: public, max-age=600');
+
+        // APCu cache: serve from PHP memory (ZERO file I/O)
+        $cacheKey = 'ml_exp_response';
+        if (function_exists('apcu_enabled') && apcu_enabled()) {
+            $cached = apcu_fetch($cacheKey);
+            if ($cached !== false) {
+                echo $cached;
+                exit;
+            }
+        }
     }
 
-    // Ensure file exists (lazy init — only on GET, not on module load)
+    // Ensure file exists (lazy init)
     if (!file_exists($expFile)) {
         file_put_contents($expFile, json_encode(['experiments' => [], 'updated_at' => null], JSON_PRETTY_PRINT), LOCK_EX);
     }
     $data = json_decode(file_get_contents($expFile), true);
     if (!is_array($data)) $data = ['experiments' => []];
 
-    // For public endpoint: only return running experiments (or all if ?all=1 from dashboard)
-    if (!isset($_GET['all'])) {
+    // For public endpoint: only return running experiments
+    if (!$isDashboard) {
         $running = [];
         foreach (($data['experiments'] ?? []) as $id => $exp) {
             if (($exp['status'] ?? '') === 'running') {
                 $running[$id] = $exp;
             }
         }
-        echo json_encode(['experiments' => $running]);
+        $response = json_encode(['experiments' => $running]);
+
+        // Store in APCu for 10 minutes
+        if (function_exists('apcu_store')) {
+            apcu_store('ml_exp_response', $response, 600);
+        }
+
+        echo $response;
     } else {
         echo json_encode($data);
     }
@@ -60,6 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents($expFile), true);
     if (!is_array($data)) $data = ['experiments' => []];
 
+    // Helper: invalidate APCu cache after any change
+    $invalidateCache = function() {
+        if (function_exists('apcu_delete')) apcu_delete('ml_exp_response');
+    };
+
     $action = $input['action'] ?? '';
 
     switch ($action) {
@@ -79,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'status' => $exp['status'] ?? 'draft'
             ]);
 
+            $invalidateCache();
             echo json_encode(['success' => true]);
             break;
 
@@ -103,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'new_status' => $status
             ]);
 
+            $invalidateCache();
             echo json_encode(['success' => true]);
             break;
 
@@ -114,6 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 file_put_contents($expFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
                 writeLog('EXPERIMENT_DELETED', ['id' => $id]);
             }
+            $invalidateCache();
             echo json_encode(['success' => true]);
             break;
 

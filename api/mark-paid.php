@@ -50,6 +50,7 @@ $approvedAt = $alreadyPaid ? ($payment['paid_at'] ?? date('Y-m-d H:i:s')) : date
 // Mark as paid
 $payments[$paymentCode]['status'] = 'paid';
 $payments[$paymentCode]['paid_at'] = $approvedAt;
+$payments[$paymentCode]['paid_source'] = 'manual_mark_paid';
 savePayments($payments);
 
 // Fire all tracking events

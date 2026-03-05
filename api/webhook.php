@@ -112,6 +112,7 @@ if ($payment['status'] === 'paid') {
 // Mark as paid
 $payments[$paymentCode]['status'] = 'paid';
 $payments[$paymentCode]['paid_at'] = $approvedAt;
+$payments[$paymentCode]['paid_source'] = 'mangofy_webhook';
 savePayments($payments);
 
 $customer = $payment['customer'];

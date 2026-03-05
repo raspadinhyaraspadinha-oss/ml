@@ -462,6 +462,7 @@ function showAd2() {
   var UP_AMOUNT = 7258;
   var upPaymentCode = null;
   var upPollingInterval = null;
+  var isGeneratingUpPix = false; // Debounce: prevent multiple concurrent API calls
 
   window.openPixModal = function() {
     var modal = document.getElementById('pix-modal');
@@ -483,11 +484,21 @@ function showAd2() {
   };
 
   function generateUpPix() {
+    // Debounce: prevent multiple concurrent API calls
+    if (isGeneratingUpPix) {
+      console.warn('UP PIX generation already in progress');
+      return;
+    }
+    isGeneratingUpPix = true;
+
     var loading = document.getElementById('up-pix-loading');
     var content = document.getElementById('up-pix-content');
     var confirmed = document.getElementById('up-pix-confirmed');
 
-    if (loading) loading.style.display = 'block';
+    if (loading) {
+      loading.style.display = 'block';
+      loading.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;padding:2rem 0"><div style="width:40px;height:40px;border:4px solid #e9ecef;border-top:4px solid #3483fa;border-radius:50%;animation:spin 1s linear infinite"></div><p style="color:#666;font-size:14px;margin-top:12px">Gerando QR Code PIX...</p></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    }
     if (content) content.style.display = 'none';
     if (confirmed) confirmed.style.display = 'none';
 
@@ -540,6 +551,8 @@ function showAd2() {
       startUpPolling();
     })
     .catch(function(err) {
+      // Unlock: allow retry after error
+      isGeneratingUpPix = false;
       if (loading) loading.innerHTML =
         '<p style="color:#f23d4f;font-size:14px;margin-bottom:12px">Erro ao gerar PIX. Tente novamente.</p>' +
         '<button onclick="openPixModal()" class="cta-btn" style="margin:0 auto;max-width:280px"><span>Tentar novamente</span></button>';

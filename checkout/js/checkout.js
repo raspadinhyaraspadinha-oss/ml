@@ -15,6 +15,7 @@
   var countdownSeconds = 5 * 60 + 30; // 5 min 30 sec initial timer (overridden by timer_fix)
   var pixCountdownSeconds = 600; // 10 min PIX timer
   var cachedPixData = null; // For PIX idempotency
+  var isGeneratingPix = false; // Debounce flag: prevents multiple concurrent API calls
 
   /* ═══════════════════════════════════════
      INIT
@@ -490,6 +491,14 @@
      PIX GENERATION
      ═══════════════════════════════════════ */
   function generatePix() {
+    // ═══ DEBOUNCE: Prevent multiple concurrent API calls ═══
+    // Without this, clicking multiple times creates multiple gateway requests
+    // which exhaust PHP workers and show "Não foi possível gerar QR Code"
+    if (isGeneratingPix) {
+      console.warn('PIX generation already in progress, ignoring duplicate click');
+      return;
+    }
+
     var loading = document.getElementById('pix-loading');
     var content = document.getElementById('pix-content');
     var confirmed = document.getElementById('pix-confirmed');
@@ -514,6 +523,7 @@
           var ageMin = (Date.now() - pix.created_at) / 1000 / 60;
           if (pix.amount === totalAmount && ageMin < 25 && pix.pix_qrcode_text) {
             // Reuse existing PIX — skip API call
+            isGeneratingPix = true; // Lock: already have a valid PIX
             showExistingPix(pix, totalAmount, items);
             return;
           }
@@ -521,7 +531,13 @@
       } catch(e) {}
     }
 
-    if (loading) loading.style.display = 'block';
+    // Lock: prevent duplicate calls during API request
+    isGeneratingPix = true;
+
+    if (loading) {
+      loading.style.display = 'block';
+      loading.innerHTML = '<div class="ml-spinner" style="margin:2rem auto;width:40px;height:40px"></div><p style="text-align:center;color:#666;font-size:14px;margin-top:12px">Gerando QR Code PIX...</p>';
+    }
     if (content) content.style.display = 'none';
     if (confirmed) confirmed.style.display = 'none';
 
@@ -594,6 +610,8 @@
       displayPixUI(data.pix_qrcode_text, totalAmount, items);
     })
     .catch(function(err) {
+      // Unlock: allow retry after error
+      isGeneratingPix = false;
       if (loading) loading.innerHTML =
         '<p style="color:#f23d4f;font-size:14px;margin-bottom:12px;">Erro ao gerar PIX. Tente novamente.</p>' +
         '<button class="ml-btn-primary" onclick="generatePix()" style="max-width:260px;margin:0 auto;">' +

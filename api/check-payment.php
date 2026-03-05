@@ -1,9 +1,15 @@
 <?php
 /* ============================================
-   Check Payment Status (Multi-Gateway)
+   Check Payment Status (Multi-Gateway) v2.0
    GET /api/check-payment.php?code=PAYMENT_CODE
    - Mangofy: reads local status (updated by webhook)
    - SkalePay: polls API in real-time, fires tracking on paid
+   - NitroPagamento: polls API in real-time
+
+   v2.0 CHANGES:
+   - Added 'paid_source' field for forensic tracking
+   - Added logging when payment transitions to 'paid'
+   - APCu throttle to reduce gateway API polling under load
    ============================================ */
 
 require_once __DIR__ . '/config.php';
@@ -38,7 +44,8 @@ if ($payment['status'] === 'paid') {
     echo json_encode([
         'status' => 'paid',
         'payment_code' => $paymentCode,
-        'paid_at' => $payment['paid_at']
+        'paid_at' => $payment['paid_at'],
+        'paid_source' => $payment['paid_source'] ?? 'unknown'
     ]);
     exit;
 }
@@ -54,10 +61,23 @@ if ($payment['status'] === 'failed') {
     exit;
 }
 
-// ── SkalePay: poll API for real-time status ──
+// ── APCu throttle: don't poll the same payment more than once per 4 seconds ──
+// Under 503 conditions, multiple frontend tabs or retries can create a poll storm
+// hitting the gateway API too frequently. This throttle reduces API calls.
 $gateway = $payment['gateway'] ?? 'mangofy';
+$shouldPollGateway = true;
 
-if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
+if (function_exists('apcu_enabled') && apcu_enabled()) {
+    $throttleKey = 'ml_poll_' . $paymentCode;
+    if (apcu_exists($throttleKey)) {
+        $shouldPollGateway = false; // Already polled recently — skip API call
+    } else {
+        apcu_store($throttleKey, 1, 4); // Throttle for 4 seconds
+    }
+}
+
+// ── SkalePay: poll API for real-time status ──
+if ($gateway === 'skalepay' && $payment['status'] === 'pending' && $shouldPollGateway) {
     $gatewayId = $payment['gateway_id'] ?? '';
 
     if ($gatewayId) {
@@ -65,8 +85,7 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
         $pollUrl = SKALEPAY_API_URL . '/transactions/' . $gatewayId;
         $response = apiGet($pollUrl, ['Accept: application/json', 'Authorization: ' . $auth]);
 
-        // Only log on errors or status changes (not every 5s poll)
-        $skStatus = $response['body']['status'] ?? 'N/A';
+        // Only log on errors (not every 5s poll)
         if ($response['status'] !== 200 || !empty($response['error'])) {
             writeLog('SKALEPAY_POLL_ERRO', [
                 'payment_code' => $paymentCode,
@@ -80,14 +99,29 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
             $skStatus = $response['body']['status'];
 
             if ($skStatus === 'paid') {
-                // Mark as paid
                 $approvedAt = $response['body']['paidAt'] ?? date('Y-m-d H:i:s');
-                $payments[$paymentCode]['status'] = 'paid';
-                $payments[$paymentCode]['paid_at'] = $approvedAt;
-                savePayments($payments);
 
-                // Fire all tracking events (same as webhook.php)
-                fireApprovalTracking($paymentCode, $payments[$paymentCode], $approvedAt);
+                // Re-read payments to minimize race condition window
+                $payments = getPayments();
+                if (isset($payments[$paymentCode]) && $payments[$paymentCode]['status'] === 'pending') {
+                    $payments[$paymentCode]['status'] = 'paid';
+                    $payments[$paymentCode]['paid_at'] = $approvedAt;
+                    $payments[$paymentCode]['paid_source'] = 'skalepay_poll';
+                    savePayments($payments);
+
+                    // Log payment confirmation (forensic tracking)
+                    writeLog('PAYMENT_CONFIRMED', [
+                        'payment_code' => $paymentCode,
+                        'gateway' => 'skalepay',
+                        'source' => 'poll',
+                        'gateway_id' => $gatewayId,
+                        'approved_at' => $approvedAt,
+                        'amount' => $payment['amount'] ?? 0,
+                        'gateway_status' => $skStatus
+                    ]);
+
+                    fireApprovalTracking($paymentCode, $payments[$paymentCode], $approvedAt);
+                }
 
                 echo json_encode([
                     'status' => 'paid',
@@ -97,7 +131,7 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
                 exit;
             }
 
-            // Detect SkalePay error/refused statuses via polling
+            // Detect SkalePay error/refused statuses
             $skErrorStatuses = ['refused', 'error', 'chargedback', 'cancelled', 'expired', 'failed'];
             if (in_array($skStatus, $skErrorStatuses)) {
                 $payments[$paymentCode]['status'] = 'failed';
@@ -123,7 +157,7 @@ if ($gateway === 'skalepay' && $payment['status'] === 'pending') {
 }
 
 // ── NitroPagamento: poll API for real-time status ──
-if ($gateway === 'nitropagamento' && $payment['status'] === 'pending') {
+if ($gateway === 'nitropagamento' && $payment['status'] === 'pending' && $shouldPollGateway) {
     $gatewayId = $payment['gateway_id'] ?? '';
 
     if ($gatewayId) {
@@ -144,14 +178,30 @@ if ($gateway === 'nitropagamento' && $payment['status'] === 'pending') {
         $npStatus = $npData['status'] ?? '';
 
         if ($response['status'] === 200 && $npStatus !== '') {
-            // NitroPagamento status: "pago" = paid
             if ($npStatus === 'pago' || $npStatus === 'paid') {
                 $approvedAt = $npData['paid_at'] ?? date('Y-m-d H:i:s');
-                $payments[$paymentCode]['status'] = 'paid';
-                $payments[$paymentCode]['paid_at'] = $approvedAt;
-                savePayments($payments);
 
-                fireApprovalTracking($paymentCode, $payments[$paymentCode], $approvedAt);
+                // Re-read payments to minimize race condition window
+                $payments = getPayments();
+                if (isset($payments[$paymentCode]) && $payments[$paymentCode]['status'] === 'pending') {
+                    $payments[$paymentCode]['status'] = 'paid';
+                    $payments[$paymentCode]['paid_at'] = $approvedAt;
+                    $payments[$paymentCode]['paid_source'] = 'nitropagamento_poll';
+                    savePayments($payments);
+
+                    // Log payment confirmation (forensic tracking)
+                    writeLog('PAYMENT_CONFIRMED', [
+                        'payment_code' => $paymentCode,
+                        'gateway' => 'nitropagamento',
+                        'source' => 'poll',
+                        'gateway_id' => $gatewayId,
+                        'approved_at' => $approvedAt,
+                        'amount' => $payment['amount'] ?? 0,
+                        'gateway_status' => $npStatus
+                    ]);
+
+                    fireApprovalTracking($paymentCode, $payments[$paymentCode], $approvedAt);
+                }
 
                 echo json_encode([
                     'status' => 'paid',
@@ -185,7 +235,7 @@ if ($gateway === 'nitropagamento' && $payment['status'] === 'pending') {
         }
     }
 
-    // Also check for stale NitroPagamento payments (no webhook/poll after 60min)
+    // Check for stale NitroPagamento payments (no webhook/poll after 60min)
     $createdAt = strtotime($payment['created_at'] ?? '');
     $minutesElapsed = $createdAt ? (time() - $createdAt) / 60 : 0;
     if ($minutesElapsed > 60) {
@@ -208,12 +258,11 @@ if ($gateway === 'nitropagamento' && $payment['status'] === 'pending') {
     }
 }
 
-// ── Mangofy: check for stale pending payments (no webhook after 30min = likely failed) ──
+// ── Mangofy: check for stale pending payments (no webhook after 60min) ──
 if ($gateway === 'mangofy' && $payment['status'] === 'pending') {
     $createdAt = strtotime($payment['created_at'] ?? '');
     $minutesElapsed = $createdAt ? (time() - $createdAt) / 60 : 0;
 
-    // After 60 minutes without approval, mark as expired
     if ($minutesElapsed > 60) {
         $payments[$paymentCode]['status'] = 'failed';
         $payments[$paymentCode]['failed_at'] = date('Y-m-d H:i:s');
@@ -241,5 +290,3 @@ echo json_encode([
     'payment_code' => $paymentCode,
     'paid_at' => $payment['paid_at'] ?? null
 ]);
-
-// fireApprovalTracking() is now in config.php (shared)
