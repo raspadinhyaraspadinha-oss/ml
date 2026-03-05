@@ -189,19 +189,43 @@ $recentSales = [];
 
 if ($isAuthenticated) {
     $payments = loadPayments($DATA_DIR);
-    $pageviews = loadPageviews($DATA_DIR);
     $logLines = loadLog($DATA_DIR, 50);
     $apiEvents = loadApiEvents($DATA_DIR);
-    $analyticsEvents = loadAnalyticsEvents($DATA_DIR, 30);
 
-    // Pageview cumulative stats (survives the 50k rolling window)
+    // ── PostHog cache: prefer over local files ──
+    $phAnalyticsFile = $DATA_DIR . 'posthog_analytics.json';
+    $phPageviewsFile = $DATA_DIR . 'posthog_pageviews.json';
+    $phSyncMetaFile  = $DATA_DIR . 'posthog_sync_meta.json';
+
+    if (file_exists($phAnalyticsFile)) {
+        $analyticsEvents = json_decode(file_get_contents($phAnalyticsFile), true) ?: [];
+    } else {
+        $analyticsEvents = loadAnalyticsEvents($DATA_DIR, 30);
+    }
+
+    if (file_exists($phPageviewsFile)) {
+        $pageviews = json_decode(file_get_contents($phPageviewsFile), true) ?: [];
+    } else {
+        $pageviews = loadPageviews($DATA_DIR);
+    }
+
+    // Sync metadata (for display in dashboard)
+    $syncMeta = null;
+    if (file_exists($phSyncMetaFile)) {
+        $syncMeta = json_decode(file_get_contents($phSyncMetaFile), true);
+    }
+
+    // Pageview cumulative stats
     $pvStatsFile = $DATA_DIR . 'pageview_stats.json';
     $pvStats = ['total' => 0];
     if (file_exists($pvStatsFile)) {
         $pvd = json_decode(file_get_contents($pvStatsFile), true);
         if (is_array($pvd)) $pvStats = $pvd;
     }
-    $pvCumulativeTotal = intval($pvStats['total'] ?? 0);
+    // If PostHog cache exists, use its count as cumulative total
+    $pvCumulativeTotal = file_exists($phPageviewsFile)
+        ? count($pageviews)
+        : intval($pvStats['total'] ?? 0);
 
     // Gateway config
     $gwFile = $DATA_DIR . 'gateway_config.json';
@@ -1325,18 +1349,34 @@ if ($isAuthenticated) {
              TAB: ANALYTICS / FUNIL
              ═══════════════════════════════════════ -->
         <div class="dash-tab-panel" id="tab-analytics">
-            <!-- PostHog Migration Notice -->
-            <div style="background:linear-gradient(135deg,#1d1b4b,#312e81);border:1px solid #4f46e5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem">
-                <span style="font-size:1.5rem">&#128202;</span>
-                <div>
-                    <div style="font-weight:700;color:#a5b4fc;font-size:0.9rem">Analytics migrado para PostHog Cloud</div>
-                    <div style="font-size:0.78rem;color:#94a3b8;margin-top:2px">Eventos em tempo real, funil e sessões agora estão no PostHog. Dados abaixo são históricos (pré-migração).</div>
+            <!-- PostHog Sync Bar -->
+            <div style="background:linear-gradient(135deg,#1d1b4b,#312e81);border:1px solid #4f46e5;border-radius:12px;padding:0.85rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+                <span style="font-size:1.3rem">&#128202;</span>
+                <div style="flex:1;min-width:200px">
+                    <div style="font-weight:700;color:#a5b4fc;font-size:0.85rem">PostHog Cloud</div>
+                    <div id="syncStatus" style="font-size:0.72rem;color:#94a3b8;margin-top:1px">
+                        <?php if ($syncMeta): ?>
+                            Ultimo sync: <?php echo date('d/m H:i', strtotime($syncMeta['last_sync'])); ?> &middot;
+                            <?php echo number_format($syncMeta['analytics_count']); ?> eventos &middot;
+                            <?php echo number_format($syncMeta['pageviews_count']); ?> pageviews &middot;
+                            <?php echo $syncMeta['days']; ?>d
+                        <?php else: ?>
+                            Nunca sincronizado. Clique para buscar dados.
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <a href="https://us.posthog.com" target="_blank" style="margin-left:auto;background:#4f46e5;color:#fff;padding:0.4rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;white-space:nowrap">Abrir PostHog &rarr;</a>
+                <select id="syncDays" style="background:#1e1b4b;border:1px solid #4f46e5;color:#a5b4fc;padding:0.3rem 0.5rem;border-radius:6px;font-size:0.78rem">
+                    <option value="3">3 dias</option>
+                    <option value="7" selected>7 dias</option>
+                    <option value="14">14 dias</option>
+                    <option value="30">30 dias</option>
+                </select>
+                <button id="btnSyncPH" onclick="syncPostHog(parseInt(document.getElementById('syncDays').value))" style="background:#4f46e5;color:#fff;padding:0.4rem 1rem;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;white-space:nowrap">Sincronizar PostHog</button>
+                <a href="https://us.posthog.com" target="_blank" style="color:#818cf8;font-size:0.75rem;text-decoration:none;white-space:nowrap">Abrir PostHog &rarr;</a>
             </div>
             <!-- Analytics Header with Date Filter + Export -->
             <div class="filter-bar" style="margin-bottom:1rem">
-                <label style="font-weight:600;color:#06b6d4">Analytics do Funil <span style="font-size:0.7rem;color:#71717a">(histórico)</span></label>
+                <label style="font-weight:600;color:#06b6d4">Analytics do Funil</label>
                 <label style="font-size:0.8rem;color:#a1a1aa">Periodo:</label>
                 <input type="date" id="analyticsDateFrom" style="background:#09090b;border:1px solid #3f3f46;color:#fff;padding:0.35rem 0.6rem;border-radius:8px;font-family:inherit;font-size:0.82rem" onchange="renderAnalytics()">
                 <span style="color:#52525b;font-size:0.8rem">até</span>
@@ -1469,16 +1509,7 @@ if ($isAuthenticated) {
              TAB: CRO / AUDIT
              ═══════════════════════════════════════ -->
         <div class="dash-tab-panel" id="tab-cro">
-            <!-- PostHog Migration Notice -->
-            <div style="background:linear-gradient(135deg,#1d1b4b,#312e81);border:1px solid #4f46e5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem">
-                <span style="font-size:1.5rem">&#128202;</span>
-                <div>
-                    <div style="font-weight:700;color:#a5b4fc;font-size:0.9rem">CRO migrado para PostHog Cloud</div>
-                    <div style="font-size:0.78rem;color:#94a3b8;margin-top:2px">Funil, sessões e CRO em tempo real agora estão no PostHog. Dados de pagamento (PIX Health) continuam locais.</div>
-                </div>
-                <a href="https://us.posthog.com" target="_blank" style="margin-left:auto;background:#4f46e5;color:#fff;padding:0.4rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;white-space:nowrap">Abrir PostHog &rarr;</a>
-            </div>
-            <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Auditoria CRO - Funil de Conversão <span style="font-size:0.7rem;color:#71717a">(histórico)</span></div>
+            <div class="section-title"><span class="dot" style="background:#f59e0b"></span> Auditoria CRO - Funil de Conversão</div>
 
             <!-- Funnel Waterfall -->
             <div class="kpi-grid" id="croWaterfall"></div>
@@ -1634,6 +1665,7 @@ if ($isAuthenticated) {
     // Total cumulativo de pageviews (inclui registros antes do rolling window)
     const PV_CUMULATIVE_TOTAL = <?php echo $pvCumulativeTotal; ?>;
     const ITEMS_PER_PAGE = <?php echo $ITEMS_PER_PAGE; ?>;
+    const SYNC_META = <?php echo json_encode($syncMeta, JSON_UNESCAPED_UNICODE); ?>;
 
     // ── State ──
     let filteredPayments = [];
@@ -1642,6 +1674,31 @@ if ($isAuthenticated) {
     let trafficPage = 1;
     let autoRefreshTimer = null;
     let sortState = {};
+
+    // ── PostHog Sync ──
+    function syncPostHog(days) {
+        const btn = document.getElementById('btnSyncPH');
+        if (!btn) return;
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = 'Sincronizando...';
+        btn.style.opacity = '0.6';
+
+        fetch('/api/sync-posthog.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({ days: days || 7 })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { showToast(data.error, 'error'); return; }
+            showToast('Sincronizado: ' + data.analytics_count.toLocaleString('pt-BR') + ' eventos + ' + data.pageviews_count.toLocaleString('pt-BR') + ' pageviews (' + data.duration_ms + 'ms)', 'success');
+            setTimeout(() => location.reload(), 1200);
+        })
+        .catch(err => showToast('Erro: ' + err.message, 'error'))
+        .finally(() => { btn.disabled = false; btn.textContent = origText; btn.style.opacity = '1'; });
+    }
 
     // ── Toast ──
     function showToast(msg, type) {

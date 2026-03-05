@@ -21,6 +21,11 @@ define('NITROPAGAMENTO_API_URL', 'https://api.nitropagamento.app');
 define('NITROPAGAMENTO_PK', 'pk_live_XVjoJDuQj9hEkp8LC08b41SFSoGsm7KQ');
 define('NITROPAGAMENTO_SK', 'sk_live_VC01aogUUwK1nCPmQPTAcLbBbtEK7pHz');
 
+// PostHog Cloud (server-side data sync for dashboard)
+define('POSTHOG_PERSONAL_KEY', 'phx_qJUVLfh0pwUtsLthMTb5Jcp9TO3vXy7WM2EAxAGV08ybWWI');
+define('POSTHOG_PROJECT_ID', '331796');
+define('POSTHOG_API_HOST', 'https://us.i.posthog.com');
+
 // UTMify
 define('UTMIFY_API_URL', 'https://api.utmify.com.br/api-credentials/orders');
 define('UTMIFY_API_TOKEN', 'Al1mBzGZMJGVLvPMWEYjKofnD9fpWUvxE4Qn');

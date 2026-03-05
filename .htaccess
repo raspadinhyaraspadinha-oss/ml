@@ -1,3 +1,11 @@
+RewriteEngine On
+
+# Canonical host: ANY non-canonical domain -> https://www (302 = não cacheado, preserva UTMs)
+# Captura: apex sem www, ultimoresgate.site, e qualquer outro domínio parkado
+RewriteCond %{HTTP_HOST} !^www\.aniversariodomes\.shop$ [NC]
+RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
+
+
 # ============================================
 # Performance & Caching Rules
 # Mitigate 503 errors under high traffic
@@ -67,7 +75,6 @@
 
 # ── Block access to hidden files/dirs ──
 <IfModule mod_rewrite.c>
-    RewriteEngine On
     RewriteRule (^|/)\.(?!well-known) - [F,L]
 </IfModule>
 

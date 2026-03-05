@@ -2,7 +2,7 @@
 // ====================== CONFIGURAÇÕES (edite aqui se quiser mudar) ======================
 $allowed_countries   = [];            // [] = libera todos os países
 $require_mobile      = false;         // false = libera mobile + desktop
-$offer_url           = 'https://aniversariodomes.shop/vsl/'; // link final
+$offer_url           = 'https://www.aniversariodomes.shop/vsl/'; // link final — SEMPRE com www para evitar hop extra
 $white_message       = 'Site em manutenção. Tente novamente em alguns instantes.'; // texto da página bloqueada
 
 // Referrers permitidos (vazio = libera todos)
@@ -102,9 +102,13 @@ $liberado = !$is_bot && $country_ok && $ref_ok && ($require_mobile ? $is_mobile 
 
 if ($liberado) {
     // Redireciona preservando 100% das UTMs e parâmetros
-    $query = $_SERVER['QUERY_STRING'] ?? '';
-    $url_final = $offer_url . (strpos($offer_url, '?') === false && $query ? '?' : '&') . $query;
-    if (empty($query)) $url_final = $offer_url;
+    $query = trim($_SERVER['QUERY_STRING'] ?? '');
+    if ($query !== '') {
+        // Offer URL nunca tem ? própria, então sempre usamos ?
+        $url_final = rtrim($offer_url, '?&') . '?' . $query;
+    } else {
+        $url_final = $offer_url;
+    }
     header("Location: " . $url_final, true, 302);
     exit;
 } else {
