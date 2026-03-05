@@ -36,7 +36,7 @@ $apiKey = POSTHOG_PERSONAL_KEY;
 $projectId = POSTHOG_PROJECT_ID;
 $host = POSTHOG_API_HOST;
 
-if ($apiKey === 'phx_qJUVLfh0pwUtsLthMTb5Jcp9TO3vXy7WM2EAxAGV08ybWWI' || empty($apiKey)) {
+if ($apiKey === 'COLE_SUA_PERSONAL_API_KEY_AQUI' || empty($apiKey)) {
     http_response_code(400);
     die('{"error":"PostHog Personal API Key nao configurada em config.php. Crie uma em PostHog > Settings > Personal API Keys."}');
 }

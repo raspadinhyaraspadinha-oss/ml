@@ -1,0 +1,57 @@
+# Robots.txt - aniversariodomes.shop
+# Bloqueia crawlers de áreas sensíveis, permite funil
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: *
+Disallow: /api/
+Disallow: /painel/
+Disallow: /scripts/
+Disallow: /js/
+Disallow: /css/
+Disallow: /geo_cache.json
+Allow: /vsl/
+Allow: /prevsl/
+Allow: /questionario/
+Allow: /roleta/
+Allow: /recompensas/
+Allow: /checkout/
+Allow: /up/
+Allow: /produtos/
+
+# Crawl-delay para bots educados
+Crawl-delay: 10

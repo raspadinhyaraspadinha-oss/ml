@@ -9,6 +9,16 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: public, max-age=86400'); // Cache 24h — CEPs rarely change
 header('Access-Control-Allow-Origin: *');
 
+// Rate limit: máx 5 CEP lookups por segundo por IP (anti-flood)
+$cepIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '0';
+$cepIp = trim(explode(',', $cepIp)[0]);
+if (function_exists('apcu_fetch')) {
+    $cepKey = 'cep_' . $cepIp;
+    $cepCount = apcu_fetch($cepKey);
+    if ($cepCount === false) { apcu_store($cepKey, 1, 2); }
+    else { apcu_inc($cepKey); if ($cepCount > 10) { http_response_code(429); die('{"erro":true,"message":"Muitas consultas. Aguarde."}'); } }
+}
+
 $cep = preg_replace('/\D/', '', $_GET['cep'] ?? '');
 
 if (strlen($cep) !== 8) {
@@ -36,8 +46,8 @@ $ch = curl_init();
 curl_setopt_array($ch, [
     CURLOPT_URL => $url,
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 8,
-    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_TIMEOUT => 4,
+    CURLOPT_CONNECTTIMEOUT => 2,
     CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_SSL_VERIFYPEER => true,
     CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; MLCheckout/1.0)'
@@ -56,8 +66,8 @@ if ($httpCode !== 200 || !$response) {
     curl_setopt_array($ch2, [
         CURLOPT_URL => $fallbackUrl,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 8,
-        CURLOPT_CONNECTTIMEOUT => 5,
+        CURLOPT_TIMEOUT => 4,
+        CURLOPT_CONNECTTIMEOUT => 2,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_SSL_VERIFYPEER => true,
         CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; MLCheckout/1.0)'

@@ -1,14 +1,56 @@
 RewriteEngine On
 
-# Canonical host: ANY non-canonical domain -> https://www (302 = não cacheado, preserva UTMs)
+# ============================================
+# LAYER 1: Bot Blocking (BEFORE any PHP touches)
+# Blocks abusive bots at Apache level = ZERO PHP workers
+# ============================================
+
+# ── Block known bad bots by User-Agent ──
+# (Ad platform bots like facebookexternalhit are ALLOWED)
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} (AhrefsBot|SemrushBot|MJ12bot|DotBot|BLEXBot|PetalBot|YandexBot|Bytespider|GPTBot|ClaudeBot|CCBot|DataForSeoBot|Sogou|Baiduspider|MegaIndex|ltx71|Nuclei|sqlmap|nikto|masscan|ZmEu|zgrab|Hakai|Tsunami|LOIC|w3af) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ── Block empty/missing User-Agent (almost always bots) ──
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} ^-?$ [OR]
+    RewriteCond %{HTTP_USER_AGENT} ^$
+    RewriteRule ^(api/|index\.php) - [F,L]
+</IfModule>
+
+# ── Favicon: serve 1x1 pixel inline if file missing (ZERO PHP) ──
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} favicon\.ico$ [NC]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule .* - [R=204,L]
+</IfModule>
+
+# ── Block direct access to sensitive API endpoints from bots ──
+<IfModule mod_rewrite.c>
+    # health-check: only from painel (same origin)
+    RewriteCond %{REQUEST_URI} ^/api/health-check\.php$ [NC]
+    RewriteCond %{HTTP_REFERER} !aniversariodomes\.shop [NC]
+    RewriteRule .* - [F,L]
+
+    # cron-skalepay: block if no valid key
+    RewriteCond %{REQUEST_URI} ^/api/cron-skalepay\.php$ [NC]
+    RewriteCond %{QUERY_STRING} !key=ml2025
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ============================================
+# LAYER 2: Canonical Host Redirect
+# ============================================
+
+# ANY non-canonical domain -> https://www (302 = não cacheado, preserva UTMs)
 # Captura: apex sem www, ultimoresgate.site, e qualquer outro domínio parkado
 RewriteCond %{HTTP_HOST} !^www\.aniversariodomes\.shop$ [NC]
 RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
 
 
 # ============================================
-# Performance & Caching Rules
-# Mitigate 503 errors under high traffic
+# LAYER 3: Performance & Caching
 # ============================================
 
 # ── Enable compression ──
@@ -47,13 +89,18 @@ RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
 
 # ── Cache-Control headers ──
 <IfModule mod_headers.c>
-    # Static assets: immutable-ish
+    # Static assets: immutable-ish (7 days)
     <FilesMatch "\.(css|js|woff2|woff|png|jpg|jpeg|gif|webp|svg|ico)$">
         Header set Cache-Control "public, max-age=604800, immutable"
     </FilesMatch>
 
     # HTML pages: revalidate every time
-    <FilesMatch "\.(html|php)$">
+    <FilesMatch "\.html$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    # PHP pages: short cache where safe
+    <FilesMatch "\.php$">
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
 
@@ -63,8 +110,15 @@ RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
+# ── Allow robots.txt (before block rule) ──
+<Files "robots.txt">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</Files>
+
 # ── Block access to sensitive files ──
-<FilesMatch "\.(json|txt|log|md|cjs|sh)$">
+<FilesMatch "\.(json|log|md|cjs|sh|mmdb)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -80,3 +134,6 @@ RewriteRule ^(.*)$ https://www.aniversariodomes.shop/$1 [R=302,L,QSA]
 
 # ── ETag: use filesystem only (faster) ──
 FileETag MTime Size
+
+# ── Custom 503 error page (static HTML, ZERO PHP) ──
+ErrorDocument 503 "<html><head><meta charset='utf-8'><meta http-equiv='refresh' content='10'><title>Carregando...</title><style>body{font-family:Arial,sans-serif;background:#f8f9fa;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}h2{color:#333}p{color:#666}</style></head><body><h2>Estamos com muitos acessos!</h2><p>A pagina vai recarregar automaticamente em 10 segundos...</p></body></html>"
