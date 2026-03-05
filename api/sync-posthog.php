@@ -81,7 +81,7 @@ SELECT
     event,
     properties.session_id,
     properties.page,
-    toInt32OrZero(toString(properties.funnel_stage)),
+    toIntOrZero(toString(properties.funnel_stage)),
     properties.page_url,
     properties.page_referrer,
     properties.experiment_id,
