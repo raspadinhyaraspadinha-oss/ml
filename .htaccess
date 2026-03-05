@@ -64,6 +64,10 @@ RewriteCond %{REQUEST_URI} ^/api/cron-skalepay\.php$ [NC]
 RewriteCond %{QUERY_STRING} !key=ml2025
 RewriteRule .* - [F,L]
 
+RewriteCond %{REQUEST_URI} ^/api/cron-cleanup\.php$ [NC]
+RewriteCond %{QUERY_STRING} !key=ml2025
+RewriteRule .* - [F,L]
+
 # ============================================
 # LAYER 2: CLOAKER REDIRECT (ZERO PHP!!!)
 #
