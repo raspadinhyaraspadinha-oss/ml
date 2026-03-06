@@ -36,8 +36,8 @@ define('FB_ACCESS_TOKEN', 'EAAMJ4lbAOXMBQy8xkl2eKvSBDOGbwOdwP0cwJS6CNZBWRKOOkbVt
 define('FB_API_VERSION', 'v21.0');
 
 // TikTok Events API
-define('TIKTOK_PIXEL_ID', 'D6G7SLBC77U2V3Q5N7A0');
-define('TIKTOK_ACCESS_TOKEN', '14d9ff5601dbf0386da60a7925b3a38c37d7af5b'); // ← Substitua pelo seu Access Token do TikTok Events API
+define('TIKTOK_PIXEL_ID', 'D5MQFEBC77UEK8Q4IIB0');
+define('TIKTOK_ACCESS_TOKEN', '47b717425c9e8a45d74ab4033e9db9ccbe105942'); // ← Substitua pelo seu Access Token do TikTok Events API
 
 // Data storage path
 define('DATA_DIR', __DIR__ . '/data/');
