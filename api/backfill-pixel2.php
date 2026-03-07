@@ -28,7 +28,7 @@ if (php_sapi_name() !== 'cli') {
     exit;
 }
 
-// Carrega config (tem apiPost, TIKTOK_ACCESS_TOKEN, etc.)
+// Carrega config (tem apiPost, TIKTOK_ACCESS_TOKEN_2, etc.)
 require_once __DIR__ . '/config.php';
 
 // ─── ARGS ─────────────────────────────────────────────
@@ -185,7 +185,7 @@ function sendToPixel2($eventName, $eventId, $payment, $eventTime) {
 
     return apiPost(
         'https://business-api.tiktok.com/open_api/v1.3/event/track/',
-        ['Content-Type: application/json', 'Access-Token: ' . TIKTOK_ACCESS_TOKEN],
+        ['Content-Type: application/json', 'Access-Token: ' . TIKTOK_ACCESS_TOKEN_2],
         $payload
     );
 }

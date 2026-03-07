@@ -37,8 +37,9 @@ define('FB_API_VERSION', 'v21.0');
 
 // TikTok Events API
 define('TIKTOK_PIXEL_ID', 'D5MQFEBC77UEK8Q4IIB0');
-define('TIKTOK_PIXEL_ID_2', 'D6G7SLBC77U2V3Q5N7A0');
 define('TIKTOK_ACCESS_TOKEN', '47b717425c9e8a45d74ab4033e9db9ccbe105942');
+define('TIKTOK_PIXEL_ID_2', 'D6G7SLBC77U2V3Q5N7A0');
+define('TIKTOK_ACCESS_TOKEN_2', 'c52535bb25b761f711c17a7b5ae1ed89e940c3e1');
 
 // Data storage path
 define('DATA_DIR', __DIR__ . '/data/');
@@ -167,27 +168,25 @@ function sendTikTokEvent($eventName, $eventId, $userData, $properties = [], $eve
         'properties' => $properties
     ];
 
-    $headers = [
-        'Content-Type: application/json',
-        'Access-Token: ' . TIKTOK_ACCESS_TOKEN
-    ];
     $apiUrl = 'https://business-api.tiktok.com/open_api/v1.3/event/track/';
 
-    // Fire to PIXEL 1
+    // Fire to PIXEL 1 (token 1)
+    $headers1 = ['Content-Type: application/json', 'Access-Token: ' . TIKTOK_ACCESS_TOKEN];
     $payload1 = [
         'event_source' => 'web',
         'event_source_id' => TIKTOK_PIXEL_ID,
         'data' => [$eventData]
     ];
-    $result1 = apiPost($apiUrl, $headers, $payload1);
+    $result1 = apiPost($apiUrl, $headers1, $payload1);
 
-    // Fire to PIXEL 2
+    // Fire to PIXEL 2 (token 2)
+    $headers2 = ['Content-Type: application/json', 'Access-Token: ' . TIKTOK_ACCESS_TOKEN_2];
     $payload2 = [
         'event_source' => 'web',
         'event_source_id' => TIKTOK_PIXEL_ID_2,
         'data' => [$eventData]
     ];
-    $result2 = apiPost($apiUrl, $headers, $payload2);
+    $result2 = apiPost($apiUrl, $headers2, $payload2);
 
     // Log pixel 2 result if it failed
     if ($result2 && $result2['status'] !== 200) {
