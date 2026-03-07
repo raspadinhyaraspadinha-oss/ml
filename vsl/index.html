@@ -143,6 +143,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;color:#333;
 .watchers .dot{width:8px;height:8px;border-radius:50%;background:#e53935;animation:pulse-dot 1.5s ease-in-out infinite}
 @keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(229,57,53,.4)}50%{box-shadow:0 0 0 5px rgba(229,57,53,0)}}
 
+/* MINI COMMENTS (above fold social proof) */
+.mini-comments{margin-top:14px;border-top:1px solid #f0f0f0;padding-top:12px}
+.mini-comment{display:flex;align-items:flex-start;gap:8px;padding:6px 0}
+.mini-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px;flex-shrink:0}
+.mini-text{font-size:12px;color:#555;line-height:1.4}
+.mini-text b{color:#1a1a2e;font-weight:600}
+
 /* FOOTER */
 .footer{text-align:center;padding:16px;font-size:11px;color:#999}
 </style>
@@ -190,7 +197,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;color:#333;
     <div class="cta-wrap">
       <button id="ctaBtn" class="cta-btn disabled" disabled>
         <div class="spinner-icon"></div>
-        <span id="ctaBtnText">Aguarde o vídeo... (0:40)</span>
+        <span id="ctaBtnText">Aguarde o vídeo... (0:10)</span>
       </button>
     </div>
 
@@ -198,9 +205,25 @@ body{font-family:'Inter',-apple-system,sans-serif;background:#f5f5f5;color:#333;
       <div class="dot"></div>
       <span><strong id="watcherCount">347</strong> pessoas assistindo agora</span>
     </div>
+
+    <!-- SOCIAL PROOF: mini comments inside hero card for above-fold visibility -->
+    <div class="mini-comments">
+      <div class="mini-comment">
+        <div class="mini-avatar" style="background:#3483fa">M</div>
+        <div class="mini-text"><b>Maria S.</b> · SP — "Pensei que era mentira, mas meu prêmio chegou mesmo! 🎉"</div>
+      </div>
+      <div class="mini-comment">
+        <div class="mini-avatar" style="background:#00a650">J</div>
+        <div class="mini-text"><b>João P.</b> · PE — "Resgatei meu fone bluetooth grátis em 30 segundos!"</div>
+      </div>
+      <div class="mini-comment">
+        <div class="mini-avatar" style="background:#ff7733">R</div>
+        <div class="mini-text"><b>Rafaela T.</b> · MG — "Acabei de ganhar! Vale cada segundo assistir."</div>
+      </div>
+    </div>
   </div>
 
-  <!-- COMMENTS -->
+  <!-- FULL COMMENTS (below fold, more detail) -->
   <div class="comments-section">
     <h2 class="comments-title">
       <svg viewBox="0 0 24 24"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z"/></svg>
@@ -269,8 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Today's date
   todayDate.textContent = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
 
-  // Countdown 40 seconds
-  var countdown = 40;
+  // Countdown 10 seconds (optimized for TikTok cold traffic)
+  var countdown = 10;
   var countInterval = setInterval(function() {
     if (countdown <= 0) {
       clearInterval(countInterval);

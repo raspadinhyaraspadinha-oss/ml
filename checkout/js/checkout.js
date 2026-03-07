@@ -1,6 +1,6 @@
 /* ============================================
    Checkout - Mercado Livre Style
-   5 Steps: Carrinho → Dados → Endereço → Envio → Pagamento
+   4 Steps: Carrinho → Dados → Entrega → Pagamento
    ============================================ */
 
 (function() {
@@ -220,10 +220,23 @@
     try {
       var items = Cart.getItems();
       var subtotal = Cart.getSubtotal();
+
+      // ── Safety net: recalculate subtotal from items if 0 but cart not empty ──
+      if ((!subtotal || subtotal <= 0) && items.length > 0) {
+        console.warn('Review: subtotal was', subtotal, '— recalculating from items');
+        subtotal = 0;
+        for (var ri = 0; ri < items.length; ri++) {
+          var p = parseInt(items[ri].price) || 0;
+          var q = parseInt(items[ri].quantity) || 1;
+          subtotal += p * q;
+        }
+      }
+
       var total = subtotal + selectedFrete;
 
       // Format price as "R$ XX<sup>YY</sup>"
       function priceWithSup(cents) {
+        cents = Math.round(cents) || 0;
         var reais = Math.floor(cents / 100);
         var centavos = cents % 100;
         return 'R$ ' + reais.toLocaleString('pt-BR') + '<sup>' + (centavos < 10 ? '0' : '') + centavos + '</sup>';
@@ -243,15 +256,19 @@
       // ── Show savings badge ──
       var totalOld = 0;
       items.forEach(function(item) {
-        var qty = item.quantity || 1;
-        totalOld += (item.oldPrice && item.oldPrice > item.price) ? item.oldPrice * qty : item.price * qty;
+        var qty = parseInt(item.quantity) || 1;
+        var ip = parseInt(item.price) || 0;
+        var iop = parseInt(item.oldPrice) || 0;
+        totalOld += (iop > ip) ? iop * qty : ip * qty;
       });
-      var savingsAmount = totalOld - subtotal;
+      var savingsAmount = Math.round(totalOld - subtotal);
       var savingsDiv = document.getElementById('review-savings');
       var savingsText = document.getElementById('review-savings-text');
-      if (savingsAmount > 0 && savingsDiv && savingsText) {
+      if (savingsAmount >= 100 && savingsDiv && savingsText) {
         savingsText.textContent = 'Você está economizando ' + formatPrice(savingsAmount);
         savingsDiv.style.display = 'flex';
+      } else if (savingsDiv) {
+        savingsDiv.style.display = 'none';
       }
 
       // Billing info
@@ -518,7 +535,18 @@
     var confirmed = document.getElementById('pix-confirmed');
 
     var items = Cart.getItems();
-    var totalAmount = Cart.getSubtotal() + selectedFrete;
+    var subtotalCalc = Cart.getSubtotal();
+
+    // ── Safety net: recalculate if subtotal is 0 but cart has items ──
+    if ((!subtotalCalc || subtotalCalc <= 0) && items.length > 0) {
+      console.warn('generatePix: subtotal was', subtotalCalc, '— recalculating from items');
+      subtotalCalc = 0;
+      for (var gi = 0; gi < items.length; gi++) {
+        subtotalCalc += (parseInt(items[gi].price) || 0) * (parseInt(items[gi].quantity) || 1);
+      }
+    }
+
+    var totalAmount = subtotalCalc + selectedFrete;
 
     // Safety: block payment if amount is invalid (minimum R$5,00 = 500 cents)
     if (totalAmount < 500) {
@@ -686,25 +714,30 @@
 
     var totalOldPrice = 0;
     items.forEach(function(item) {
-      var qty = item.quantity || 1;
-      totalOldPrice += (item.oldPrice && item.oldPrice > item.price) ? item.oldPrice * qty : item.price * qty;
+      var qty = parseInt(item.quantity) || 1;
+      var ip = parseInt(item.price) || 0;
+      var iop = parseInt(item.oldPrice) || 0;
+      totalOldPrice += (iop > ip) ? iop * qty : ip * qty;
     });
 
     var oldPriceEl = document.getElementById('pix-old-price');
     var savingsEl = document.getElementById('pix-savings-text');
     var lossAmountEl = document.getElementById('pix-loss-amount');
-    var savings = totalOldPrice - totalAmount;
+    var savingsDiv = document.getElementById('pix-savings');
+    var lossDiv = document.getElementById('pix-loss-text');
+    var savings = Math.round(totalOldPrice - totalAmount);
 
-    if (savings > 0) {
-      if (oldPriceEl) oldPriceEl.textContent = formatPrice(totalOldPrice);
+    if (savings >= 100) {
+      // Show savings (at least R$ 1,00)
+      if (oldPriceEl) { oldPriceEl.textContent = formatPrice(totalOldPrice); oldPriceEl.style.display = ''; }
       if (savingsEl) savingsEl.textContent = 'Você economiza ' + formatPrice(savings);
+      if (savingsDiv) savingsDiv.style.display = 'flex';
       if (lossAmountEl) lossAmountEl.textContent = formatPrice(savings);
+      if (lossDiv) lossDiv.style.display = 'flex';
     } else {
-      // No savings to show — hide savings elements
+      // No meaningful savings — hide all savings/loss elements
       if (oldPriceEl) oldPriceEl.style.display = 'none';
-      var savingsDiv = document.getElementById('pix-savings');
       if (savingsDiv) savingsDiv.style.display = 'none';
-      var lossDiv = document.getElementById('pix-loss-text');
       if (lossDiv) lossDiv.style.display = 'none';
     }
 

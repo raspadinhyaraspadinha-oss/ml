@@ -371,12 +371,12 @@
               <div class="pix-product-info">
                 <div class="pix-product-name" id="pix-product-name"></div>
                 <div class="pix-product-pricing">
-                  <span class="pix-old-price" id="pix-old-price"></span>
+                  <span class="pix-old-price" id="pix-old-price" style="display:none"></span>
                   <span class="pix-new-price" id="pix-amount">R$ 0,00</span>
                 </div>
-                <div class="pix-savings" id="pix-savings">
+                <div class="pix-savings" id="pix-savings" style="display:none">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                  <span id="pix-savings-text">Você economiza R$ 0,00</span>
+                  <span id="pix-savings-text"></span>
                 </div>
               </div>
             </div>
@@ -388,10 +388,10 @@
             <span>COPIAR CÓDIGO PIX</span>
           </button>
 
-          <!-- Loss aversion text -->
-          <div class="pix-loss-text" id="pix-loss-text">
+          <!-- Loss aversion text (hidden by default, shown by JS when savings exist) -->
+          <div class="pix-loss-text" id="pix-loss-text" style="display:none">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#f23d4f"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-            <span>Seu desconto de <b id="pix-loss-amount">R$ 0</b> será perdido se não pagar a tempo</span>
+            <span>Seu desconto de <b id="pix-loss-amount"></b> será perdido se não pagar a tempo</span>
           </div>
 
           <!-- 3-Step Visual Instructions -->
