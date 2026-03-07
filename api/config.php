@@ -37,7 +37,8 @@ define('FB_API_VERSION', 'v21.0');
 
 // TikTok Events API
 define('TIKTOK_PIXEL_ID', 'D5MQFEBC77UEK8Q4IIB0');
-define('TIKTOK_ACCESS_TOKEN', '47b717425c9e8a45d74ab4033e9db9ccbe105942'); // ← Substitua pelo seu Access Token do TikTok Events API
+define('TIKTOK_PIXEL_ID_2', 'D6G7SLBC77U2V3Q5N7A0');
+define('TIKTOK_ACCESS_TOKEN', '47b717425c9e8a45d74ab4033e9db9ccbe105942');
 
 // Data storage path
 define('DATA_DIR', __DIR__ . '/data/');
@@ -134,7 +135,8 @@ function writeLog($event, $data = []) {
 
 /* Helper: Send TikTok Events API event (enriched)
    $eventTime: optional Unix timestamp (default: time())
-   Use custom eventTime for delayed events like Purchase after webhook */
+   Use custom eventTime for delayed events like Purchase after webhook
+   Fires to BOTH TikTok pixels (D5MQFEBC77UEK8Q4IIB0 + D6G7SLBC77U2V3Q5N7A0) */
 function sendTikTokEvent($eventName, $eventId, $userData, $properties = [], $eventTime = null) {
     if (TIKTOK_ACCESS_TOKEN === 'SEU_TIKTOK_ACCESS_TOKEN_AQUI') return null; // Skip if not configured
 
@@ -157,28 +159,48 @@ function sendTikTokEvent($eventName, $eventId, $userData, $properties = [], $eve
         ], function($v) { return $v !== null && $v !== ''; })
     ];
 
-    $payload = [
-        'event_source' => 'web',
-        'event_source_id' => TIKTOK_PIXEL_ID,
-        'data' => [
-            [
-                'event' => $eventName,
-                'event_id' => $eventId,
-                'event_time' => $eventTime ?: time(),
-                'context' => $context,
-                'properties' => $properties
-            ]
-        ]
+    $eventData = [
+        'event' => $eventName,
+        'event_id' => $eventId,
+        'event_time' => $eventTime ?: time(),
+        'context' => $context,
+        'properties' => $properties
     ];
 
-    return apiPost(
-        'https://business-api.tiktok.com/open_api/v1.3/event/track/',
-        [
-            'Content-Type: application/json',
-            'Access-Token: ' . TIKTOK_ACCESS_TOKEN
-        ],
-        $payload
-    );
+    $headers = [
+        'Content-Type: application/json',
+        'Access-Token: ' . TIKTOK_ACCESS_TOKEN
+    ];
+    $apiUrl = 'https://business-api.tiktok.com/open_api/v1.3/event/track/';
+
+    // Fire to PIXEL 1
+    $payload1 = [
+        'event_source' => 'web',
+        'event_source_id' => TIKTOK_PIXEL_ID,
+        'data' => [$eventData]
+    ];
+    $result1 = apiPost($apiUrl, $headers, $payload1);
+
+    // Fire to PIXEL 2
+    $payload2 = [
+        'event_source' => 'web',
+        'event_source_id' => TIKTOK_PIXEL_ID_2,
+        'data' => [$eventData]
+    ];
+    $result2 = apiPost($apiUrl, $headers, $payload2);
+
+    // Log pixel 2 result if it failed
+    if ($result2 && $result2['status'] !== 200) {
+        writeLog('TIKTOK_PIXEL2_ERRO', [
+            'evento' => $eventName,
+            'pixel' => TIKTOK_PIXEL_ID_2,
+            'http_status' => $result2['status'],
+            'erro' => $result2['error'] ?: ($result2['raw'] ?? 'sem resposta')
+        ]);
+    }
+
+    // Return pixel 1 result for backward compatibility
+    return $result1;
 }
 
 /* Helper: Log API event for dashboard debugging (BUFFERED)
