@@ -28,7 +28,7 @@ define('POSTHOG_API_HOST', 'https://us.i.posthog.com');
 
 // UTMify
 define('UTMIFY_API_URL', 'https://api.utmify.com.br/api-credentials/orders');
-define('UTMIFY_API_TOKEN', 'Al1mBzGZMJGVLvPMWEYjKofnD9fpWUvxE4Qn');
+define('UTMIFY_API_TOKEN', 'tqLJDBDWzPN1ngqD5eclhmxnCWPJZXYH9Tos');
 
 // Facebook Conversions API
 define('FB_PIXEL_ID', '895868873361776');
