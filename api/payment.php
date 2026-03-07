@@ -384,16 +384,16 @@ function tryNitroPagamento($cust, $amount, $items, $externalCode, $clientIp, $me
 $result = null;
 $usedFallback = false;
 
-// SkalePay PIX limit: R$ 200,00 (20000 cents)
-$SKALEPAY_LIMIT = 20000;
+// SkalePay PIX limit: R$ 300,00 (30000 cents)
+$SKALEPAY_LIMIT = 30000;
 
 if ($activeGateway === 'skalepay') {
-    writeLog('GATEWAY_CHAIN_INICIO', ['gateway' => 'skalepay', 'amount' => $amount, 'limite_skalepay' => $SKALEPAY_LIMIT, 'customer' => $customer['name'] ?? '']);
+    writeLog('GATEWAY_CHAIN_INICIO', ['gateway' => 'skalepay', 'amount' => $amount, 'limite_skalepay_cents' => $SKALEPAY_LIMIT, 'customer' => $customer['name'] ?? '']);
 
     // ── Check SkalePay R$200 PIX limit ──
     if ($amount > $SKALEPAY_LIMIT) {
         writeLog('SKALEPAY_SKIP_LIMITE', [
-            'motivo' => 'valor_excede_limite_R200',
+            'motivo' => 'valor_excede_limite_R300',
             'amount_cents' => $amount,
             'amount_brl' => 'R$ ' . number_format($amount / 100, 2, ',', '.'),
             'limite_cents' => $SKALEPAY_LIMIT,

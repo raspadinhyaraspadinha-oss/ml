@@ -160,14 +160,14 @@
       }));
     }
 
-    // ── Track checkout step changes ──
+    // ── Track checkout step changes (4-step flow) ──
     if (typeof MLA !== 'undefined') {
-      var stepNames = { 1: 'carrinho', 2: 'dados', 3: 'endereco', 4: 'envio', 5: 'pagamento' };
+      var stepNames = { 1: 'carrinho', 2: 'dados', 3: 'entrega', 4: 'pagamento' };
       MLA.trackCheckoutStep(step, stepNames[step] || 'step_' + step);
     }
 
-    // Step 5: show REVIEW first (not PIX yet)
-    if (step === 5) {
+    // Step 4: show REVIEW first (not PIX yet)
+    if (step === 4) {
       renderReview();
       var reviewEl = document.getElementById('step-5-review');
       var pixEl = document.getElementById('step-5-pix');
@@ -186,7 +186,7 @@
       // If on PIX view within step 5, go back to review (not previous step)
       var pixEl = document.getElementById('step-5-pix');
       var reviewEl = document.getElementById('step-5-review');
-      if (currentStep === 5 && pixEl && pixEl.style.display !== 'none') {
+      if (currentStep === 4 && pixEl && pixEl.style.display !== 'none') {
         pixEl.style.display = 'none';
         if (reviewEl) reviewEl.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -239,6 +239,20 @@
       if (freteEl) freteEl.innerHTML = selectedFrete === 0 ? '<span style="color:#00a650;font-weight:600">Grátis</span>' : priceWithSup(selectedFrete);
       if (subEl) subEl.innerHTML = priceWithSup(total);
       if (totalEl) totalEl.innerHTML = priceWithSup(total);
+
+      // ── Show savings badge ──
+      var totalOld = 0;
+      items.forEach(function(item) {
+        var qty = item.quantity || 1;
+        totalOld += (item.oldPrice && item.oldPrice > item.price) ? item.oldPrice * qty : item.price * qty;
+      });
+      var savingsAmount = totalOld - subtotal;
+      var savingsDiv = document.getElementById('review-savings');
+      var savingsText = document.getElementById('review-savings-text');
+      if (savingsAmount > 0 && savingsDiv && savingsText) {
+        savingsText.textContent = 'Você está economizando ' + formatPrice(savingsAmount);
+        savingsDiv.style.display = 'flex';
+      }
 
       // Billing info
       var nameEl = document.getElementById('review-name');
@@ -631,33 +645,18 @@
     displayPixUI(pixData.pix_qrcode_text, totalAmount, items);
   }
 
-  // ═══ Shared PIX UI display logic ═══
+  // ═══ Shared PIX UI display logic (CRO Redesign) ═══
   function displayPixUI(pixQrcodeText, totalAmount, items) {
     var loading = document.getElementById('pix-loading');
     var content = document.getElementById('pix-content');
 
-    // ═══ FASE 3C: QR Code visibility toggle ═══
-    var qrVisible = (typeof MLFlags !== 'undefined' && MLFlags.isEnabled('qr_code_visible'));
-    var qrSection = document.getElementById('pix-qr-section');
-    var qrDetails = document.getElementById('pix-qr-details');
-    if (qrSection) qrSection.style.display = qrVisible ? 'block' : 'none';
-    if (qrDetails) qrDetails.style.display = qrVisible ? 'none' : 'block';
-
-    // Generate QR Code
+    // Generate QR Code inside the details toggle
     var qrContainer = document.getElementById('qr-code');
     if (qrContainer && typeof qrcode !== 'undefined') {
       var qr = qrcode(0, 'M');
       qr.addData(pixQrcodeText);
       qr.make();
-      qrContainer.innerHTML = qr.createImgTag(5, 12);
-    }
-    // Also fill fallback QR container if present
-    var qrFallback = document.getElementById('qr-code-fallback');
-    if (qrFallback && typeof qrcode !== 'undefined') {
-      var qr2 = qrcode(0, 'M');
-      qr2.addData(pixQrcodeText);
-      qr2.make();
-      qrFallback.innerHTML = qr2.createImgTag(5, 12);
+      qrContainer.innerHTML = qr.createImgTag(4, 8);
     }
 
     // Set copy code
@@ -668,9 +667,53 @@
     if (loading) loading.style.display = 'none';
     if (content) content.style.display = 'block';
 
-    // Set PIX amount in hero
+    // ── Populate product card with first item info ──
+    var firstItem = items && items.length > 0 ? items[0] : null;
+    var prodImg = document.getElementById('pix-product-img');
+    var prodName = document.getElementById('pix-product-name');
+    if (firstItem) {
+      if (prodImg) { prodImg.src = firstItem.image || ''; prodImg.alt = firstItem.name || ''; }
+      if (prodName) {
+        var nameText = firstItem.name || 'Produto';
+        if (items.length > 1) nameText += ' + ' + (items.length - 1) + ' item(s)';
+        prodName.textContent = nameText;
+      }
+    }
+
+    // ── Price anchoring: show old price and savings ──
     var pixAmountEl = document.getElementById('pix-amount');
     if (pixAmountEl) pixAmountEl.textContent = formatPrice(totalAmount);
+
+    var totalOldPrice = 0;
+    items.forEach(function(item) {
+      var qty = item.quantity || 1;
+      totalOldPrice += (item.oldPrice && item.oldPrice > item.price) ? item.oldPrice * qty : item.price * qty;
+    });
+
+    var oldPriceEl = document.getElementById('pix-old-price');
+    var savingsEl = document.getElementById('pix-savings-text');
+    var lossAmountEl = document.getElementById('pix-loss-amount');
+    var savings = totalOldPrice - totalAmount;
+
+    if (savings > 0) {
+      if (oldPriceEl) oldPriceEl.textContent = formatPrice(totalOldPrice);
+      if (savingsEl) savingsEl.textContent = 'Você economiza ' + formatPrice(savings);
+      if (lossAmountEl) lossAmountEl.textContent = formatPrice(savings);
+    } else {
+      // No savings to show — hide savings elements
+      if (oldPriceEl) oldPriceEl.style.display = 'none';
+      var savingsDiv = document.getElementById('pix-savings');
+      if (savingsDiv) savingsDiv.style.display = 'none';
+      var lossDiv = document.getElementById('pix-loss-text');
+      if (lossDiv) lossDiv.style.display = 'none';
+    }
+
+    // ── Randomized social proof counter ──
+    var buyersEl = document.getElementById('pix-buyers-count');
+    if (buyersEl) {
+      var count = 30 + Math.floor(Math.random() * 40); // 30-69
+      buyersEl.textContent = count + ' pessoas compraram hoje';
+    }
 
     // Start PIX countdown timer
     startPixCountdown();
@@ -702,7 +745,7 @@
       }
     }
 
-    // ═══ FASE 1: Track page visibility changes (user switching to bank app) ═══
+    // ═══ Track page visibility changes (user switching to bank app) ═══
     if (!window._pixVisibilityTracked) {
       window._pixVisibilityTracked = true;
       document.addEventListener('visibilitychange', function() {
@@ -749,20 +792,16 @@
 
   function updatePixCountdown() {
     var el = document.getElementById('pix-countdown');
-    var box = document.getElementById('pix-timer-box');
+    var banner = document.getElementById('pix-urgency-banner');
     if (!el) return;
 
     var m = Math.floor(pixCountdownSeconds / 60);
     var s = pixCountdownSeconds % 60;
     el.textContent = pad(m) + ':' + pad(s);
 
-    if (box) {
-      box.classList.remove('warning', 'urgent');
-      if (pixCountdownSeconds <= 120) {
-        box.classList.add('urgent');
-      } else if (pixCountdownSeconds <= 300) {
-        box.classList.add('warning');
-      }
+    // Hide banner when expired
+    if (pixCountdownSeconds <= 0 && banner) {
+      banner.style.display = 'none';
     }
   }
 
@@ -777,12 +816,12 @@
     var copySuccess = function() {
       if (btn) {
         btn.classList.add('copied');
-        btn.textContent = '\u2713 Código copiado!';
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>\u2713 CÓDIGO COPIADO!</span>';
 
         setTimeout(function() {
           btn.classList.remove('copied');
-          btn.textContent = 'Copiar código';
-        }, 3000);
+          btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg><span>COPIAR CÓDIGO PIX</span>';
+        }, 4000);
       }
       showToast('Código PIX copiado! Cole no app do seu banco.');
 
@@ -1040,6 +1079,73 @@
     toast.classList.add('show');
     setTimeout(function() { toast.classList.remove('show'); }, 3000);
   }
+
+  /* ═══════════════════════════════════════
+     SOCIAL PROOF NOTIFICATIONS
+     ═══════════════════════════════════════ */
+  function initSocialProof() {
+    var names = [
+      {n:'Roberto',s:'MG'},{n:'Luciana',s:'SP'},{n:'Carlos',s:'RJ'},
+      {n:'Fernanda',s:'BA'},{n:'Marcos',s:'PR'},{n:'Juliana',s:'RS'},
+      {n:'Anderson',s:'PE'},{n:'Patrícia',s:'CE'},{n:'Ricardo',s:'GO'},
+      {n:'Camila',s:'SC'},{n:'Thiago',s:'MA'},{n:'Bruna',s:'PA'},
+      {n:'Lucas',s:'DF'},{n:'Aline',s:'ES'},{n:'Felipe',s:'MT'},
+      {n:'Vanessa',s:'RN'},{n:'Diego',s:'PB'},{n:'Renata',s:'AL'}
+    ];
+    var actions = [
+      'acabou de confirmar o pagamento',
+      'finalizou a compra agora',
+      'garantiu o desconto',
+      'acabou de pagar via PIX'
+    ];
+    var photos = [
+      'alinerocha','camilafernandes','biancamartins','patriciasilva',
+      'renatalima','larissaaparecida','nataliaribeiro','gabrieladuarte',
+      'lucasferreira','danielvasques','ricardomoura','felipeandrade'
+    ];
+
+    var container = document.createElement('div');
+    container.className = 'social-proof';
+    container.innerHTML =
+      '<img src="" alt="" class="sp-photo">' +
+      '<div class="sp-body">' +
+        '<p class="sp-text"></p>' +
+        '<span class="sp-time"></span>' +
+      '</div>' +
+      '<button class="sp-close" onclick="this.parentElement.classList.remove(\'show\')">&times;</button>';
+    document.body.appendChild(container);
+
+    function showNotification() {
+      var person = names[Math.floor(Math.random() * names.length)];
+      var action = actions[Math.floor(Math.random() * actions.length)];
+      var photo = photos[Math.floor(Math.random() * photos.length)];
+      var mins = Math.floor(Math.random() * 8) + 1;
+
+      var img = container.querySelector('.sp-photo');
+      var text = container.querySelector('.sp-text');
+      var time = container.querySelector('.sp-time');
+
+      if (img) img.src = '../images/' + photo + '.jpeg';
+      if (text) text.innerHTML = '<b>' + person.n + '</b> de ' + person.s + ' ' + action;
+      if (time) time.textContent = 'há ' + mins + ' min';
+
+      container.classList.add('show');
+      setTimeout(function() { container.classList.remove('show'); }, 5000);
+    }
+
+    // First notification after 8s, then every 25-45s
+    setTimeout(function() {
+      showNotification();
+      setInterval(function() {
+        showNotification();
+      }, (25 + Math.floor(Math.random() * 20)) * 1000);
+    }, 8000);
+  }
+
+  // Start social proof when DOM ready
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initSocialProof, 3000);
+  });
 
   /* ═══════════════════════════════════════
      HELPERS

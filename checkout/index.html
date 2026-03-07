@@ -58,7 +58,7 @@
     </div>
   </header>
 
-  <!-- ======== STEPPER ======== -->
+  <!-- ======== STEPPER (4 steps: merged Endereço+Envio) ======== -->
   <div class="ml-stepper">
     <div class="ml-stepper-inner">
       <div class="ml-step active" data-step="1">
@@ -73,16 +73,11 @@
       <div class="ml-step-line"></div>
       <div class="ml-step" data-step="3">
         <div class="ml-step-dot"><span>3</span></div>
-        <div class="ml-step-label">Endereço</div>
+        <div class="ml-step-label">Entrega</div>
       </div>
       <div class="ml-step-line"></div>
       <div class="ml-step" data-step="4">
         <div class="ml-step-dot"><span>4</span></div>
-        <div class="ml-step-label">Envio</div>
-      </div>
-      <div class="ml-step-line"></div>
-      <div class="ml-step" data-step="5">
-        <div class="ml-step-dot"><span>5</span></div>
         <div class="ml-step-label">Pagamento</div>
       </div>
     </div>
@@ -130,7 +125,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
           <h2>Dados pessoais</h2>
         </div>
-        <p class="panel-card-desc">Informe seus dados para entrega e nota fiscal</p>
+        <p class="panel-card-desc">Informe seus dados para entrega</p>
 
         <div class="field">
           <label for="email">E-mail</label>
@@ -165,7 +160,7 @@
     </section>
 
     <!-- ════════════════════════════════════════ -->
-    <!--  STEP 3: ENDEREÇO                        -->
+    <!--  STEP 3: ENDEREÇO + ENVIO (merged)      -->
     <!-- ════════════════════════════════════════ -->
     <section class="step-panel" id="step-3">
       <a href="#" onclick="goBack(); return false;" class="back-link">
@@ -219,22 +214,11 @@
         </div>
       </div>
 
-      <button class="ml-btn-primary" onclick="goToStep(4)">Continuar</button>
-    </section>
-
-    <!-- ════════════════════════════════════════ -->
-    <!--  STEP 4: OPÇÕES DE ENVIO                 -->
-    <!-- ════════════════════════════════════════ -->
-    <section class="step-panel" id="step-4">
-      <a href="#" onclick="goBack(); return false;" class="back-link">
-        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="#3483fa"/></svg>
-        Voltar para endereço
-      </a>
-
-      <div class="panel-card">
+      <!-- Shipping options integrated into same step -->
+      <div class="panel-card" style="margin-top:2px">
         <div class="panel-card-title">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#3483fa"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          <h2>Opções de envio</h2>
+          <h2>Opção de envio</h2>
         </div>
 
         <label class="ship-opt selected" onclick="selectFrete('0')">
@@ -269,13 +253,13 @@
         </label>
       </div>
 
-      <button class="ml-btn-primary" onclick="goToStep(5)">Continuar</button>
+      <button class="ml-btn-primary" onclick="goToStep(4)">Continuar</button>
     </section>
 
     <!-- ════════════════════════════════════════ -->
-    <!--  STEP 5: REVISE E CONFIRME + PIX        -->
+    <!--  STEP 4: REVISE E CONFIRME + PIX        -->
     <!-- ════════════════════════════════════════ -->
-    <section class="step-panel" id="step-5">
+    <section class="step-panel" id="step-4">
 
       <!-- ──── SUB-VIEW A: REVISE E CONFIRME ──── -->
       <div id="step-5-review">
@@ -308,6 +292,11 @@
               <span class="review-price-big" id="review-total">R$ 0<sup>00</sup></span>
               <span class="review-method">Pix</span>
             </div>
+          </div>
+          <!-- Savings badge -->
+          <div class="review-savings" id="review-savings" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            <span id="review-savings-text">Você está economizando R$ 0,00</span>
           </div>
         </div>
 
@@ -355,7 +344,7 @@
         </div>
       </div>
 
-      <!-- ──── SUB-VIEW B: PIX PAYMENT (clean) ──── -->
+      <!-- ──── SUB-VIEW B: PIX PAYMENT (CRO Redesign) ──── -->
       <div id="step-5-pix" style="display:none;">
 
         <!-- Loading -->
@@ -367,69 +356,112 @@
         <!-- PIX Content -->
         <div id="pix-content" style="display:none;">
 
-          <!-- Hero area -->
-          <div class="pix-hero">
-            <div class="pix-hero-icon">
-              <img src="../images/pixcheckout.png" alt="PIX" width="48" height="48" style="object-fit:contain;">
+          <!-- PIX Timer Banner (urgency) -->
+          <div class="pix-urgency-banner" id="pix-urgency-banner">
+            <div class="pix-urgency-inner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              <span>Seu desconto expira em <b id="pix-countdown">10:00</b></span>
             </div>
-            <p class="pix-hero-sub">Falta pouco!</p>
-            <h2 class="pix-hero-title">Pague <span id="pix-amount">R$ 0,00</span> via Pix para concluir sua compra</h2>
           </div>
 
-          <!-- Instructions -->
-          <div class="pix-instr-card">
-            <h3 class="pix-instr-title">Instruções de pagamento</h3>
-            <ol class="pix-instr-list">
-              <li>Acesse seu Internet Banking ou app de pagamentos.</li>
-              <li>Escolha pagar via Pix.</li>
-              <li>Cole o código abaixo</li>
-            </ol>
+          <!-- Product + Price Anchoring Card -->
+          <div class="pix-product-card">
+            <div class="pix-product-row">
+              <img id="pix-product-img" src="" alt="" class="pix-product-thumb">
+              <div class="pix-product-info">
+                <div class="pix-product-name" id="pix-product-name"></div>
+                <div class="pix-product-pricing">
+                  <span class="pix-old-price" id="pix-old-price"></span>
+                  <span class="pix-new-price" id="pix-amount">R$ 0,00</span>
+                </div>
+                <div class="pix-savings" id="pix-savings">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#00a650"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  <span id="pix-savings-text">Você economiza R$ 0,00</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
+          <!-- COPY BUTTON - Above fold, giant, green -->
+          <button class="pix-copy-btn" onclick="copyPixCode()" id="copy-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            <span>COPIAR CÓDIGO PIX</span>
+          </button>
+
+          <!-- Loss aversion text -->
+          <div class="pix-loss-text" id="pix-loss-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f23d4f"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            <span>Seu desconto de <b id="pix-loss-amount">R$ 0</b> será perdido se não pagar a tempo</span>
+          </div>
+
+          <!-- 3-Step Visual Instructions -->
+          <div class="pix-steps-card">
+            <h3 class="pix-steps-title">Como pagar em 3 passos:</h3>
+            <div class="pix-steps-grid">
+              <div class="pix-step-item">
+                <div class="pix-step-num">1</div>
+                <span>Copie o código acima</span>
+              </div>
+              <div class="pix-step-item">
+                <div class="pix-step-num">2</div>
+                <span>Abra o app do seu banco</span>
+              </div>
+              <div class="pix-step-item">
+                <div class="pix-step-num">3</div>
+                <span>Escolha Pix Copia e Cola e confirme</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PIX Code (visible but secondary) -->
+          <div class="pix-code-section">
+            <label class="pix-code-label">Código PIX Copia e Cola:</label>
             <div class="pix-code-field">
               <input type="text" id="pix-code" readonly value="">
-            </div>
-
-            <div class="pix-credit-line">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#666"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-              <span>Pague e será creditado na hora.</span>
-            </div>
-
-            <div class="pix-info-box">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#3483fa"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-              <span>Confirmaremos a data de entrega quando o pagamento for aprovado.</span>
-            </div>
-
-            <button class="ml-btn-primary" onclick="copyPixCode()" id="copy-btn">Copiar código</button>
-
-            <!-- Polling status -->
-            <div class="pix-status" id="payment-status">
-              <div class="pix-status-dot"></div>
-              <span>Aguardando pagamento...</span>
-            </div>
-
-            <button class="pix-link-btn" onclick="checkPayment()" id="check-btn">Já paguei - Verificar</button>
-
-            <!-- Timer -->
-            <div class="pix-timer-line" id="pix-timer-box">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-              <span>Expira em <b id="pix-countdown">10:00</b></span>
+              <button class="pix-code-copy-sm" onclick="copyPixCode()" title="Copiar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              </button>
             </div>
           </div>
 
-          <!-- FASE 3C: QR Code visible by default (controlled by feature flag) -->
-          <div class="pix-qr-section" id="pix-qr-section">
-            <div class="pix-qr-area" style="text-align:center;padding:1rem 0">
-              <div id="qr-code" class="pix-qr"></div>
-              <div style="font-size:0.75rem;color:#666;margin-top:0.5rem">Escaneie com o app do seu banco</div>
+          <!-- Polling status -->
+          <div class="pix-status" id="payment-status">
+            <div class="pix-status-dot"></div>
+            <span>Aguardando pagamento...</span>
+          </div>
+
+          <button class="pix-link-btn" onclick="checkPayment()" id="check-btn">Já paguei - Verificar</button>
+
+          <!-- Trust + Social Proof Footer -->
+          <div class="pix-trust-footer">
+            <div class="pix-trust-row">
+              <div class="pix-trust-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#00a650"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                <span>Pagamento seguro</span>
+              </div>
+              <div class="pix-trust-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#00a650"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                <span>Dados protegidos</span>
+              </div>
+            </div>
+            <div class="pix-trust-mp">
+              <span>Processado por</span>
+              <img src="../images/cgP551iIq0Ce.png" alt="Mercado Pago" class="pix-mp-logo">
+            </div>
+            <div class="pix-social-counter" id="pix-social-counter">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#00a650"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              <span id="pix-buyers-count">47 pessoas compraram hoje</span>
             </div>
           </div>
-          <!-- Fallback: hidden QR for when flag is off -->
-          <details class="pix-qr-toggle" id="pix-qr-details" style="display:none">
-            <summary>Ver QR Code</summary>
+
+          <!-- QR Code (minimized on mobile) -->
+          <details class="pix-qr-toggle" id="pix-qr-details">
+            <summary>Ver QR Code (para pagar de outro celular)</summary>
             <div class="pix-qr-area">
-              <div id="qr-code-fallback" class="pix-qr"></div>
+              <div id="qr-code" class="pix-qr"></div>
             </div>
           </details>
+
         </div>
 
         <!-- Payment confirmed -->
